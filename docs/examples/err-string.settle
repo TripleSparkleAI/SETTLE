@@ -1,0 +1,7 @@
+model :m do
+  thing :a
+end
+
+run :m do
+  export "out.json, as: :ising
+end

@@ -1,0 +1,13 @@
+# Three things that each want to disagree with the other two cannot all get their way.
+model :triangle do
+  thing :x, :y, :z
+  x.pushes :y, by: 1
+  y.pushes :z, by: 1
+  z.pushes :x, by: 1
+  thing :x, leans: :yes, by: 0.1   # a small lean breaks the tie
+end
+
+run :triangle do
+  anneal 2_000, seed: 3            # cool slowly and keep the calmest arrangement
+  best                             # print it with its energy
+end

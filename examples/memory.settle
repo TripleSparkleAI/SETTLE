@@ -1,0 +1,16 @@
+# Memory with nothing held: every pattern lives in the pulls between 512 free things.
+model :mind do
+  memory :m, size: 512, fade: 0.95
+  m.remember :cat
+  m.remember :dog
+  m.save :note, "meet at the harbour at nine"
+  m.remember :owl
+end
+
+run :mind do
+  m.recall read-address: :cat, address-noise: 0.3, seed: 1      # cat at 30% address-noise comes back whole
+  m.recall read-address: :note, address-noise: 0.3, seed: 2     # the text comes back letter for letter
+  m.recall seed: 3                              # pure noise: the shaking finds some memory
+  m.recall seed: 4
+  m.recall read-address: :zebra, address-noise: 0.0, seed: 5    # never stored, so it cannot be found
+end

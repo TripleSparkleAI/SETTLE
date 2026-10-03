@@ -1,0 +1,4 @@
+contenttrack top-k read, 20000 hard locations of 256 bits, activation-radius 106, 300 patterns, 30% address-noise: TRACK-C predicts recall 1.000 (fresh) 1.000 (persist) over 20 sampled reads
+contenttrack top-k read, 20000 hard locations of 256 bits, activation-radius 106, 300 patterns, 40% address-noise: TRACK-C predicts recall 0.650 (fresh) 0.500 (persist) over 20 sampled reads
+contenttrack top-k read, 20000 hard locations of 256 bits, activation-radius 106, 2000 patterns, 30% address-noise: TRACK-C predicts recall 0.900 (fresh) 0.800 (persist) over 10 sampled reads
+contenttrack block read, 20000 hard locations of 256 bits, activation-radius 106, 2000 patterns, 30% address-noise: TRACK-C predicts recall 0.300 (fresh) 0.500 (persist) over 10 sampled reads

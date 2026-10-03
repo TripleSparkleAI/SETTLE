@@ -1,0 +1,10 @@
+# A four-step denoising chain over 4 x 4 glyphs: generate before and after training.
+model :glyphs do
+  examples :train, "data/denoise-glyphs.txt"           # 24 rows over the 16 things p0 .. p15
+  denoiser :d, steps: 4, hidden: 8, over: :train, width: 4
+end
+run :glyphs do
+  d.generate 8, sweeps: 20, seed: 1                    # untrained: random pulls, the negative control
+  d.train :train, rounds: 100, rate: 0.05, batch: 8, seed: 1
+  d.generate 8, sweeps: 20, seed: 2, out: "denoise-chain-samples.pgm", chain: "denoise-chain-levels.pgm", cols: 4
+end

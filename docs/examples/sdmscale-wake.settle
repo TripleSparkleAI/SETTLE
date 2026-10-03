@@ -1,0 +1,13 @@
+# The pulls read wakes a hard location by what it holds: by the agreement of its bit-counters with the state.
+# Three rules pick which hard locations wake. At 30% address-noise the fixed rule wakes nothing.
+model :big do
+  sdmscale :k, word-size: 128, hard-locations: 20_000
+  k.put :cat
+  k.fill 100
+end
+
+run :big do
+  k.read read-address: :cat, address-noise: 0.3, via: :pulls, seed: 1                  # wake: :fixed, above 0.4 x size
+  k.read read-address: :cat, address-noise: 0.3, via: :pulls, wake: :density, seed: 1  # a threshold scaled with the load
+  k.read read-address: :cat, address-noise: 0.3, via: :pulls, wake: :top, seed: 1      # the best p x M rows
+end

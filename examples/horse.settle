@@ -1,0 +1,17 @@
+# Muybridge's horse (1878, public domain) played on a grid of 15,000 p-bits, one per pixel.
+# The frames are not in git. Make them once, from the thermosim folder:
+#   python3 -c "import os; from PIL import Image
+#   s='../../_research/films/muybridge_frames'; d='runs/gridplayer/frames'; os.makedirs(d, exist_ok=True)
+#   [Image.open(os.path.join(s,f)).convert('L').resize((150,100), Image.LANCZOS).save(os.path.join(d,f[:-4]+'.pgm'))
+#    for f in sorted(os.listdir(s)) if f.endswith('.png')]"
+# Then, from settle-rs:  cargo run --release -- examples/horse.settle
+model :horse do
+  grid :img, width: 150, height: 100, smooth: 0          # no pulls: the best quality measured for yes/no things
+  img.lean_from "../../runs/gridplayer/frames/horse_00.pgm", by: 1
+end
+
+run :horse do
+  settle 200, seed: 1
+  img.show_as "../../runs/gridplayer/out_example_still.pgm"   # the yes-rate of each pixel, as a grey
+  play :img, frames: "../../runs/gridplayer/frames/", out: "../../runs/gridplayer/out_example/", sweeps: 10, warm: :yes, seed: 1
+end

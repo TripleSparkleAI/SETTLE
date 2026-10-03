@@ -1,0 +1,26 @@
+# Kanerva's sparse distributed memory, built out of p-bits, with a soft cut-off.
+# 256 address things, 2000 hidden hard locations with random addresses, 256 data things.
+# softness 0 is classic hard SDM; higher softness blurs the edge of each hard location's Hamming ball.
+model :mind do
+  softsdm :hard, word-size: 256, hard-locations: 2000, activation-probability: 0.05, softness: 0
+  hard.write :cat
+  hard.write :dog
+  hard.write :note, "meet at the harbour at nine"
+  hard.write :owl
+
+  softsdm :soft, word-size: 256, hard-locations: 2000, activation-probability: 0.05, softness: 0.25, seed: 2
+  soft.write :cat
+  soft.write :dog
+  soft.write :note, "meet at the harbour at nine"
+  soft.write :owl
+end
+
+run :mind do
+  hard.read read-address: :cat, address-noise: 0.2, seed: 1     # hold cat at 20% address-noise, fire, vote, feed back
+  hard.read read-address: :note, address-noise: 0.1, seed: 2    # the text comes back letter for letter
+  soft.read read-address: :cat, address-noise: 0.2, seed: 1     # the same with a blurred cut-off
+  soft.read read-address: :cat, address-noise: 0.2, seed: 1, mode: :settle   # data things pull back on the hard locations
+  hard.read seed: 3                             # pure noise: where does it go?
+  hard.read read-address: :zebra, address-noise: 0.0, seed: 4   # never written: it cannot come back as :zebra, it falls into the nearest stored valley
+  soft.attend read-address: :cat, address-noise: 0.2            # the attention limit, computed outside the sampler
+end

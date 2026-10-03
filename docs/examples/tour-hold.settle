@@ -1,0 +1,12 @@
+# Holding a thing fixes it at one value; the others respond.
+model :pair do
+  thing :a
+  thing :b
+  a.pulls :b, by: 1
+end
+
+run :pair do
+  hold :a, :no                     # a is fixed at no
+  settle 20_000, seed: 1
+  show
+end

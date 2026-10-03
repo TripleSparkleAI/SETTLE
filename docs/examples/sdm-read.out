@@ -1,0 +1,4 @@
+read :s from read-address :cat with 10% address-noise via addresses (2 iterated reads, 22 of 1000 hard locations activated): :cat +1.00  :owl -0.16  :dog -0.08  -> :cat
+read :s from read-address :dog with 10% address-noise via pulls (2 iterated reads, 26 of 1000 hard locations activated): :dog +1.00  :cat -0.08  :owl +0.02  -> :dog
+read :s from read-address :zebra with 0% address-noise via addresses (1 iterated reads, 13 of 1000 hard locations activated): :cat -0.08  :dog -0.06  :owl -0.02  -> nothing clear (closest :cat at -0.08)
+read :s from pure noise via addresses (2 iterated reads, 26 of 1000 hard locations activated): :owl +1.00  :cat -0.16  :dog +0.02  -> :owl

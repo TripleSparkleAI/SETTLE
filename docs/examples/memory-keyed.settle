@@ -1,0 +1,13 @@
+# keyed text: the key both finds the memory and reads it; the text is not kept in the model
+model :mind do
+  memory :m, size: 512
+  m.remember :cat
+  m.save :note, "meet at the harbour at nine", key: "blue heron"
+  m.remember :dog
+end
+
+run :mind do
+  m.recall key: "blue heron", seed: 3   # the right key
+  m.recall key: "red heron", seed: 3    # a wrong key reads nothing
+  m.recall read-address: :note, seed: 3          # a keyed pattern is not public, so :note is not on the scoreboard
+end

@@ -1,0 +1,11 @@
+# A square with one weighted diagonal, and a triangle with a target it cannot reach.
+model :p do
+  maxcut :sq, edges: "a-b b-c c-d d-a a-c:2"   # a-c has weight 2
+  maxcut :tri, edges: "a-b b-c c-a", target: 3
+end
+
+run :p do
+  anneal_each 1_000, seed: 2
+  sq.solution    # the two sides, the cut, and the brute-force best
+  tri.solution   # a triangle's best cut is 2, so a target of 3 is not reached
+end

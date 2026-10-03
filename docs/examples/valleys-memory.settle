@@ -1,0 +1,13 @@
+# the valleys of a small memory: stored patterns, their mirror images, and fakes
+model :mind do
+  memory :m, size: 16                 # things m_0 .. m_15
+  m.remember :cat
+  m.remember :dog
+  m.remember :owl
+  thing :m_0, leans: :yes, by: 0.05   # a tiny lean, so no two valleys have exactly the same energy
+end
+
+run :mind do
+  valleys show: 8                     # exact
+  survey starts: 400, seed: 1, show: 4
+end

@@ -1,0 +1,22 @@
+Data for the coded family (src/coded.rs, lane SDMCODED, 2026-09-30).
+
+coded_train_austen.txt
+  What: the first 60,000 characters of the body of Pride and Prejudice by Jane Austen (public domain),
+  starting after "Chapter I.]" (the text begins "It is a truth universally acknowledged").
+  Source file: Project Gutenberg #1342, https://www.gutenberg.org/cache/epub/1342/pg1342.txt,
+  fetched 2026-07-22, 772,386 bytes, sha256 74f2665d6e6925fc2c17dec644bec9e87df478a0f1836822125e8acbb3777806
+  (recorded in experiments/track4/sparsestar-proper/corpora_ring1/PROVENANCE.md).
+  Cleaning: curly quotes to straight, dashes to '-', accented letters to plain, other non-ASCII dropped,
+  every run of whitespace to one space. Output sha256 3a7b113b4e5e54a7db94b087b3288bf8fcdc8319e0353614dbebb407f58028f0.
+  Use: the ONLY text the static English model (order-0 and order-1 byte counts) is built from.
+
+coded_test_doyle.txt
+  What: the first 12,000 characters of "A Scandal in Bohemia" in The Adventures of Sherlock Holmes by
+  Arthur Conan Doyle (public domain), starting "To Sherlock Holmes she is always".
+  Source file: Project Gutenberg #1661, https://www.gutenberg.org/cache/epub/1661/pg1661.txt,
+  fetched 2026-07-22, 607,606 bytes, sha256 922e2a12ccb43a4c9544c260b2166c6ad2097aeb5957faeee113f173bb857cd0.
+  Cleaning: as above. Output sha256 a845960bfface27122f405ec2b1a14749be0e8069625bd69bf68d393904596bd.
+  Use: the test passages. A different author and book from the training text, so the compression
+  ratio is out of sample.
+
+The Project Gutenberg header and licence text are not included; only the public-domain works are.

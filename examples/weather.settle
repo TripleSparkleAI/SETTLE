@@ -1,0 +1,20 @@
+# the grass is wet: was it the rain or the sprinkler?
+model :weather do
+  thing :rain,      leans: :no, by: 1       # rain is usually not happening
+  thing :sprinkler, leans: :no, by: 0.5     # the sprinkler is usually off
+  thing :wet_grass
+
+  rain.pushes :sprinkler, by: 0.5           # nobody waters in the rain
+  rain.pulls  :wet_grass, by: 1.5           # rain wets the grass
+  sprinkler.pulls :wet_grass, by: 1
+end
+
+run :weather do
+  hold :wet_grass, :yes                     # we saw it: the grass is wet
+  settle 40_000, temperature: 1, seed: 1
+  show
+  ask :rain
+  ask :rain, and: :sprinkler
+  ask :rain, or: :sprinkler
+  ask :sprinkler, and_not: :rain
+end

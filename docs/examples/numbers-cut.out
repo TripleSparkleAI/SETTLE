@@ -1,0 +1,13 @@
+solve: cut 2 springs between the solved numbers and the others
+solve: 2 numbers by drifting 50000 steps (time 2500) at temperature 1
+drifted: 50000 steps of 2 numbers, step 0.05, time 2500, temperature 1; averaged the last 49000 (<time> ms)
+  x          settled     0.1584 ± 0.0196   exact     0.2000   off -0.0416
+  y          settled     0.6109 ± 0.0140   exact     0.6000   off +0.0109
+solved: largest error 0.0416, relative error 6.802%, largest error 2.1 standard errors; drift <time> ms against exact elimination <time> ms
+  covariance of the settled numbers:
+  x            0.6163  -0.1881
+  y           -0.1881   0.4176
+  inverse from the spread (covariance / temperature, step-corrected)  |  exact inverse:
+  x            0.5902  -0.1894  |    0.6000  -0.2000
+  y           -0.1892   0.3910  |   -0.2000   0.4000
+spread: inverse from the spread against the exact inverse, relative error 2.60% step-corrected, 3.79% raw

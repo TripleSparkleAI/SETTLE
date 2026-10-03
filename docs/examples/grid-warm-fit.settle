@@ -1,0 +1,10 @@
+# Fit the first frame's leans cold, then fit each later frame warm from the frame before.
+model :film do
+  grid :img, width: 24, height: 16, smooth: 0.42   # a strong pull, where the closed-form leans fall short
+end
+run :film do
+  # cold fit on frame 1 (4 x 60 sweeps), then 1 warm iteration of 60 sweeps per frame, carrying the correction
+  play :img, frames: "data/grid-frames/", sweeps: 60, correct: :tap, read: :soft, fit: 4, fit_sweeps: 60, warm_fit: 1, warm_from: :correction, seed: 5
+  # the same with a smaller first warm step and a cut detector that refits cold when a frame changes a lot
+  play :img, frames: "data/grid-frames/", sweeps: 60, correct: :tap, read: :soft, fit: 4, fit_sweeps: 60, warm_fit: 2, warm_fit_sweeps: 30, warm_step: 0.5, cut: 0.16, seed: 5
+end

@@ -1,0 +1,12 @@
+# Fit a line y = w1 x + bias to 30 noisy points. The loss is the energy, so at temperature 1 the cloud of
+# positions is the Bayesian posterior over (w1, bias); ask prints it beside the exact posterior.
+model :line do
+  data "data/descend-line.csv"
+  test "data/descend-line-test.csv"
+  loss :least_squares, noise: 0.5, prior: 10
+end
+run :line do
+  descend 200_000, step: 0.004, temperature: 1, seed: 1, keep: 200
+  ask
+  score
+end

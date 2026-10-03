@@ -1,0 +1,2 @@
+solve: 2 numbers by drifting 1000 steps (time 100) at temperature 1
+did not settle: step 0.1 is too large for the stiffest spring (stiffness 40.0990); the drift blew up at step 28; keep step below 0.0499

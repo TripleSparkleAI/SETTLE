@@ -1,0 +1,4 @@
+model :m do
+  thing :a
+run :m do
+end

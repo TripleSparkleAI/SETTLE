@@ -1,0 +1,7 @@
+c: sent 128 bits (64 message bits), the channel flipped 7
+c settled from received: REFUSED, 5 checks still broken
+c settled with block4 moves: CODEWORD, the sent codeword; 0 bits differ from what was sent
+c settled with block2 moves: CODEWORD, the sent codeword; 0 bits differ from what was sent
+c settled with single moves: REFUSED, 2 checks still broken
+c averaged at T 1 (block4): CODEWORD, the sent codeword; 0 bits differ from what was sent
+c averaged at T 1 (block4): CODEWORD, the sent codeword; 0 bits differ from what was sent

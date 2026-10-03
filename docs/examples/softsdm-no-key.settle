@@ -1,0 +1,5 @@
+# softsdm has no keyed write; a trailing key: is refused.
+model :mind do
+  softsdm :s, word-size: 64, hard-locations: 200
+  s.write :diary, "secret", key: "blue heron"
+end

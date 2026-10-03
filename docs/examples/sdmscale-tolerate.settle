@@ -1,0 +1,25 @@
+# tolerate-noise: picks the activation radius for read-addresses with that much address-noise, instead of the activation radius activation-probability: gives.
+# Both memories hold the same 31 patterns; each is read from three different cats at 30% address-noise.
+model :default do
+  sdmscale :k, word-size: 128, hard-locations: 20_000                # activation-probability: 0.001 gives activation radius 47
+  k.put :cat
+  k.fill 30
+end
+
+model :tolerant do
+  sdmscale :k, word-size: 128, hard-locations: 20_000, tolerate-noise: 0.3 # the activation radius chosen for 30% address-noise
+  k.put :cat
+  k.fill 30
+end
+
+run :default do
+  k.read read-address: :cat, address-noise: 0.3, seed: 1
+  k.read read-address: :cat, address-noise: 0.3, seed: 2
+  k.read read-address: :cat, address-noise: 0.3, seed: 3
+end
+
+run :tolerant do
+  k.read read-address: :cat, address-noise: 0.3, seed: 1
+  k.read read-address: :cat, address-noise: 0.3, seed: 2
+  k.read read-address: :cat, address-noise: 0.3, seed: 3
+end

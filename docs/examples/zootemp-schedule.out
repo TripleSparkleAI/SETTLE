@@ -1,0 +1,6 @@
+annealed: 400 sweeps, calmest energy found -3.000
+best (energy -3.000): a yes, b yes, c no, d yes, e no
+annealed on a schedule: 400 sweeps in 1 walk(s), temperature 10 to 0.05; calmest visited -3.000, calmest end state -3.000
+best (energy -3.000): a yes, b yes, c no, d yes, e no
+annealed on a schedule: 400 sweeps in 4 walk(s), temperature 2 to 0.05; calmest visited -3.000, calmest end state -3.000
+best (energy -3.000): a yes, b yes, c no, d yes, e no

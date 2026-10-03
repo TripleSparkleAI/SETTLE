@@ -1,0 +1,16 @@
+# seat six guests at two tables (yes = table A, no = table B); rivals push apart, friends pull together
+model :party do
+  thing :ada, :bo, :cy, :dee, :eli, :fay
+  ada.pushes :bo,  by: 3     # old rivals
+  cy.pushes  :dee, by: 3
+  eli.pushes :fay, by: 3
+  ada.pulls  :cy,  by: 1     # friends
+  bo.pulls   :eli, by: 1
+  dee.pulls  :fay, by: 1
+  ada.pushes :fay, by: 1     # a small grudge
+end
+
+run :party do
+  anneal 5_000, seed: 3
+  best
+end

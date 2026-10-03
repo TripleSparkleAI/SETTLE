@@ -1,0 +1,10 @@
+descended: 2000 steps of 2 parameters (springs), gradient descent, step 0.1, temperature 0, every row; kept 1800 (<time> ms)
+  energy at the end -1.3500
+  x          mean     1.4000 ± 0.0000   spread 0.0000   posterior mean     1.4000  spread 0.8944
+  y          mean     0.2000 ± 0.0000   spread 0.0000   posterior mean     0.2000  spread 1.0954
+ask: 2 parameters; largest error 3.48e-9 against the exact answer; temperature 0, so the cloud has no spread
+descended: 100000 steps of 2 parameters (springs), Langevin, step 0.02, temperature 1, every row; kept 90000 (<time> ms)
+  energy at the end -1.1006
+  x          mean     1.4207 ± 0.0270   spread 0.8825   posterior mean     1.4000  spread 0.8944
+  y          mean     0.2267 ± 0.0425   spread 1.0829   posterior mean     0.2000  spread 1.0954
+ask: 2 parameters; largest mean error 0.0267 (0.8 standard errors) against the exact posterior mean; spreads are step-corrected, and the cloud's covariance is 2.72% off the posterior's (temperature 1)

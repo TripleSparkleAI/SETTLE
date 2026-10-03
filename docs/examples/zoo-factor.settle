@@ -1,0 +1,11 @@
+# Factor 15 with the default encoding, and 21 with the column encoding.
+model :p do
+  factor :f, number: 15
+  factor :g, number: 21, encoding: :columns
+end
+
+run :p do
+  anneal_each 2_000, seed: 1
+  f.solution   # p x q, checked by multiplying
+  g.solution
+end

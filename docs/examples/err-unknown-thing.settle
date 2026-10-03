@@ -1,0 +1,4 @@
+model :m do
+  thing :a
+  a.pulls :b, by: 1                # :b was never declared
+end

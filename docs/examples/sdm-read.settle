@@ -1,0 +1,14 @@
+# A Kanerva memory of 128 data things and 1,000 hard locations.
+model :mind do
+  sdm :s, word-size: 128, hard-locations: 1_000   # the activation radius defaults to the one that wakes about 2% of hard locations
+  s.write :cat                          # three random patterns, each named by a symbol
+  s.write :dog
+  s.write :owl
+end
+
+run :mind do
+  s.read read-address: :cat, address-noise: 0.1, seed: 1                # Kanerva's read by addresses, from cat at 10% address-noise
+  s.read read-address: :dog, address-noise: 0.1, via: :pulls, seed: 2   # the zero-temperature read of the pulls
+  s.read read-address: :zebra, address-noise: 0, seed: 3                # a pattern that was never written
+  s.read seed: 4                                        # start from pure noise
+end

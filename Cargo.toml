@@ -1,0 +1,12 @@
+[package]
+name = "settle"
+version = "0.1.0"
+edition = "2021"
+description = "SETTLE: a toy language where a program is springs and running it means letting it settle"
+
+[dependencies]
+# KANERVA, the sparse distributed memory toolbox: every SDM algorithm the statements use lives there.
+kanerva = { git = "https://github.com/triplesparkle/KANERVA" }
+
+[profile.release]
+opt-level = 3

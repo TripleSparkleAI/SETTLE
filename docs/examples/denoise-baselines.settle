@@ -1,0 +1,11 @@
+# Two baselines for a denoiser: sample the model's own things directly, and draw independent coins.
+model :glyphs do
+  examples :train, "data/denoise-glyphs.txt"          # declares the things p0 .. p15
+  p0.pulls :p1, by: 1                                  # hand-set pulls along the top row, so the model
+  p1.pulls :p2, by: 1                                  # has some structure for `sample` to settle into
+  p2.pulls :p3, by: 1
+end
+run :glyphs do
+  sample :train, 8, sweeps: 200, seed: 3, out: "denoise-baselines-direct.pgm"
+  coins :train, 8, seed: 4, out: "denoise-baselines-coins.pgm", rows: "denoise-baselines-coins.txt"
+end

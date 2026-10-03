@@ -1,0 +1,2 @@
+play :img: 3 frames, 80 sweeps, warm, rb, tap, cluster: median PSNR 13.64 dB (worst 12.06), <time> frames/s settling, <time> frames/s with file work
+play :img: 3 frames, 80 sweeps, warm, rb, tap, cluster: median PSNR 18.54 dB (worst 15.20), <time> frames/s settling, <time> frames/s with file work; fit 8 x 80 sweeps, cluster, median grey residual 0.15422 -> 0.14304, <time> s fitting

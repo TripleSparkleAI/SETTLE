@@ -1,0 +1,9 @@
+# Temperature 0: plain gradient descent. With every row in each step it reaches the exact least-squares answer.
+model :line do
+  data "data/descend-line.csv"
+  loss :least_squares, noise: 0.5, prior: 10
+end
+run :line do
+  descend 3_000, step: 0.004
+  ask :w1, :bias
+end

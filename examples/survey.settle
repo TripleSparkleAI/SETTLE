@@ -1,0 +1,41 @@
+# The shape of a settle landscape: how many valleys, how wide, how regular.
+
+# A random landscape: every pair of 18 things pulls or pushes by a random amount.
+model :glass do
+  landscape :random, size: 18, seed: 1
+end
+
+run :glass do
+  valleys show: 6                                                   # exact: all 2^18 arrangements visited
+  survey starts: 2000, sweeps: 50, temperature: 0.05, seed: 1, show: 4   # sampled: shake from random starts
+end
+
+# A regular landscape: a wrapped 12x12 grid where neighbours pull together.
+model :sheet do
+  landscape :grid, width: 12, height: 12
+end
+
+run :sheet do
+  survey starts: 200, sweeps: 1000, temperature: 0.05, seed: 2, show: 4
+end
+
+# A designed landscape: three memories in 20 things. Valleys are labelled stored, mirror or fake.
+model :mind do
+  memory :m, size: 20
+  m.remember :cat
+  m.remember :dog
+  m.remember :owl
+end
+
+run :mind do
+  valleys show: 10
+end
+
+# A code landscape: codewords of 12 bits under 8 random 3-bit parity checks are the calmest valleys.
+model :code do
+  landscape :code, bits: 12, checks: 8, seed: 1
+end
+
+run :code do
+  valleys show: 6
+end

@@ -1,0 +1,10 @@
+c: sent 128 bits (64 message bits), the channel flipped 6
+c settled from received: REFUSED, 3 checks still broken
+c settled from received: CODEWORD, the sent codeword; 0 bits differ from what was sent
+c settled from received: REFUSED, 8 checks still broken
+c by belief propagation: CODEWORD, the sent codeword; 0 bits differ from what was sent
+c: sent 128 bits (64 message bits), the channel flipped 15
+c by belief propagation: REFUSED, 64 checks still broken
+w: sent 64 bits (32 message bits), the channel flipped 1
+w settled from received: REFUSED, 3 checks still broken
+w by belief propagation: CODEWORD, the sent codeword; 0 bits differ from what was sent

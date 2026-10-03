@@ -1,0 +1,15 @@
+# a held thing is folded into its neighbours' leans; valleys and survey then vary only the free things
+model :weather do
+  thing :rain,      leans: :no, by: 1
+  thing :sprinkler, leans: :no, by: 0.5
+  thing :wet_grass
+  rain.pushes :sprinkler, by: 0.5
+  rain.pulls  :wet_grass, by: 1.5
+  sprinkler.pulls :wet_grass, by: 1
+end
+
+run :weather do
+  valleys                          # all 3 things free
+  hold :wet_grass, :yes
+  valleys                          # 2 free things
+end

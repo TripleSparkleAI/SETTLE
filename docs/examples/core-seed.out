@@ -1,0 +1,11 @@
+settled: 1000 samples of 2 things at temperature 1
+ask :a, and: :b: yes 39.9% of 1000 samples
+settled: 1000 samples of 2 things at temperature 1
+ask :a, and: :b: yes 42.1% of 1000 samples
+settled: 1000 samples of 2 things at temperature 1
+ask :a, and: :b: yes 39.9% of 1000 samples
+settled: 1000 samples of 2 things at temperature 3
+ask :a, and: :b: yes 34.3% of 1000 samples
+settled: 1000 samples of 2 things at temperature 3
+settled: 1000 samples of 2 things at temperature 1
+ask :a, and: :b: yes 39.9% of 1000 samples

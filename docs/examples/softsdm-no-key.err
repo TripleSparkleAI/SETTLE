@@ -1,0 +1,1 @@
+line 4: write takes a symbol, and optionally text: s.write :note, "some text"

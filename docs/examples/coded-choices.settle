@@ -1,0 +1,21 @@
+# The same text through each compressor and each code, one memory per choice.
+model :mind do
+  memory :a, size: 256
+  memory :b, size: 256
+  memory :c, size: 512                  # rep3 keeps only a third of its things for the frame
+  memory :d, size: 256
+  memory :e, size: 256
+  a.save_coded :note, "under the third stone", compress: :none, code: :none
+  b.save_coded :note, "under the third stone", compress: :lz, code: :hamming74
+  c.save_coded :note, "under the third stone", compress: :ac, code: :rep3
+  d.save_coded :note, "under the third stone", compress: :ac, code: :ldpc          # rate 0.5
+  e.save_coded :note, "under the third stone", compress: :ac, code: :ldpc, rate: 0.75
+end
+run :mind do
+  # each read-address is the stored pattern with 5% of its things flipped
+  a.recall_coded read-address: :note, address-noise: 0.05, knows: :all, seed: 1
+  b.recall_coded read-address: :note, address-noise: 0.05, knows: :all, seed: 1
+  c.recall_coded read-address: :note, address-noise: 0.05, knows: :all, seed: 1
+  d.recall_coded read-address: :note, address-noise: 0.05, knows: :all, seed: 1
+  e.recall_coded read-address: :note, address-noise: 0.05, knows: :all, seed: 1
+end

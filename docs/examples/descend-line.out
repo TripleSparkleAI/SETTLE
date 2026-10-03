@@ -1,0 +1,12 @@
+data: 30 examples of 1 feature
+test: 200 test examples of 1 feature
+descended: 200000 steps of 2 parameters (least squares), Langevin, step 0.004, temperature 1, every row; kept 180000 (<time> ms)
+  loss at the end 0.6344 per example, energy 19.0459
+  w1         mean     1.5048 ± 0.0003   spread 0.0794   posterior mean     1.5042  spread 0.0795
+  bias       mean     0.4123 ± 0.0005   spread 0.0952   posterior mean     0.4118  spread 0.0950
+ask: 2 parameters; largest mean error 0.0005 (2.0 standard errors) against the exact posterior mean; spreads are step-corrected, and the cloud's covariance is 0.49% off the posterior's (temperature 1)
+score on 200 test rows:
+  last   rmse 0.5192   nll 0.7650   inside the 95% interval 95.0%
+  mean   rmse 0.4978   nll 0.7214   inside the 95% interval 94.5%
+  cloud  rmse 0.4987   nll 0.7306   inside the 95% interval 96.0%
+score: last = the final position, mean = the averaged parameters, the cloud averages 200 snapshots' predictions; doubt is what the snapshots disagree on (nats)

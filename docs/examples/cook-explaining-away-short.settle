@@ -1,0 +1,16 @@
+# The alarm rang. Then an earthquake was reported.
+model :alarm do
+  thing :burglary,   leans: :no, by: 1   # rare
+  thing :earthquake, leans: :no, by: 1   # rare
+  thing :alarm,      leans: :no, by: 1   # quiet
+  burglary.pulls   :alarm, by: 1.5   # sets it off
+  earthquake.pulls :alarm, by: 1.5   # this too
+  burglary.pushes  :earthquake, by: 1  # competes
+end
+
+run :alarm do
+  hold :alarm, :yes        # we hear the alarm
+  hold :earthquake, :yes   # the radio reports one
+  settle 40_000, seed: 1
+  ask :burglary            # was it a burglary?
+end

@@ -1,0 +1,13 @@
+# One received word, decoded by the one-thing settle and by the moves that carry a bit's checks with it.
+model :line do
+  ldpc :c, bits: 128, rate: 0.5, strength: 4.6
+end
+run :line do
+  c.transmit flip: 0.08, seed: 5
+  c.decode seed: 2                         # ldpcsettle: one thing at a time, 400 sweeps
+  c.decode_moves seed: 2                   # blocks of 4 bits from one check (the default)
+  c.decode_moves block: 2, seed: 2         # blocks of 2
+  c.decode_moves mover: :single, seed: 2   # one code bit with its checks' helpers
+  c.decode_nishimori seed: 3               # stay at temperature 1 and average each bit
+  c.decode_nishimori sweeps: 600, seed: 3
+end

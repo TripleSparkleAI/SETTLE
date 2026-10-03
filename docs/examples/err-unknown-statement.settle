@@ -1,0 +1,7 @@
+model :m do
+  thing :a
+end
+
+run :m do
+  shake 100                        # no family knows `shake`
+end

@@ -1,0 +1,19 @@
+# Kanerva's sparse distributed memory: 256 data things and 2000 hidden hard locations.
+# The bit-counters live only in the pulls between hard locations and data things; each hard location's
+# address is fixed by the seed and used to decide which hard locations take a write.
+model :mind do
+  sdm :s, word-size: 256, hard-locations: 2000          # activation radius defaults to 112: about 2% of hard locations wake
+  s.write :cat
+  s.write :dog
+  s.write :owl
+  s.write :note, "meet at nine"
+end
+
+run :mind do
+  s.read read-address: :cat, address-noise: 0.2, seed: 1              # Kanerva's read, iterated to a fixed point
+  s.read read-address: :cat, address-noise: 0.2, via: :pulls, seed: 1 # the same memory read by the pulls alone
+  s.read read-address: :note, address-noise: 0.15, seed: 2            # the text comes back
+  s.read read-address: :owl, address-noise: 0.4, seed: 3              # too far: SDM basins are narrow
+  s.read seed: 4                                      # pure noise wakes random hard locations
+  s.read read-address: :zebra, address-noise: 0.0, seed: 5            # never written, so it is not recalled
+end

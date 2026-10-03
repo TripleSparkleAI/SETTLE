@@ -1,0 +1,13 @@
+# The same model sampled at a low and a high temperature.
+model :pair do
+  thing :a, leans: :yes, by: 1
+  thing :b
+  a.pulls :b, by: 1
+end
+
+run :pair do
+  settle 20_000, temperature: 0.25, seed: 1   # cold: the calm arrangement dominates
+  ask :a, and: :b
+  settle 20_000, temperature: 4, seed: 1      # hot: close to a fair coin for each thing
+  ask :a, and: :b
+end

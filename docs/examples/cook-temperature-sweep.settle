@@ -1,0 +1,21 @@
+# How strongly a chain of six things agrees, at four temperatures.
+model :chain do
+  thing :a, :b, :c, :d, :e, :f
+  a.pulls :b, by: 1
+  b.pulls :c, by: 1
+  c.pulls :d, by: 1
+  d.pulls :e, by: 1
+  e.pulls :f, by: 1
+end
+
+run :chain do
+  hold :a, :yes                      # pin one end
+  settle 20_000, temperature: 0.5, seed: 1
+  ask :f                             # how often the far end follows
+  settle 20_000, temperature: 1, seed: 1
+  ask :f
+  settle 20_000, temperature: 2, seed: 1
+  ask :f
+  settle 20_000, temperature: 4, seed: 1
+  ask :f
+end

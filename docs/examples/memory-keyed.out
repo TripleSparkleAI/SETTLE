@@ -1,0 +1,3 @@
+recall :m with a key after 30 sweeps (agreement with the key's read-address +0.50): text "meet at the harbour at nine"
+recall :m with a key after 30 sweeps (agreement with the key's read-address +0.01): nothing readable
+recall :m from read-address :note with 30% address-noise after 30 sweeps: :dog -0.12  :cat +0.05  -> nothing clear (closest :dog at -0.12)

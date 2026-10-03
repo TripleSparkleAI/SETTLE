@@ -1,0 +1,5 @@
+solve: 2 numbers by drifting 200000 steps (time 10000) at temperature 1
+drifted: 200000 steps of 2 numbers, step 0.05, time 10000, temperature 1; averaged the last 180000 (<time> ms)
+  a          settled     0.2101 ± 0.0099   exact     0.2000   off +0.0101
+  b          settled     0.6000 ± 0.0081   exact     0.6000   off +0.0000
+solved: largest error 0.0101, relative error 1.596%, largest error 1.0 standard errors; drift <time> ms against exact elimination <time> ms

@@ -1,0 +1,9 @@
+# Fit the leans by settling the grid itself before each frame is played.
+model :film do
+  grid :img, width: 24, height: 16, smooth: 0.42   # a strong pull, where the TAP leans overshoot
+end
+run :film do
+  play :img, frames: "data/grid-frames/", sweeps: 80, correct: :tap, read: :rb, update: :cluster, seed: 5, quiet: :yes
+  # the same play with 8 fit iterations of 80 sweeps each; the fit chain uses update: :cluster too
+  play :img, frames: "data/grid-frames/", sweeps: 80, correct: :tap, read: :rb, update: :cluster, fit: 8, fit_sweeps: 80, seed: 5, quiet: :yes
+end

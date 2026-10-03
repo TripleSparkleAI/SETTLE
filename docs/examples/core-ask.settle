@@ -1,0 +1,18 @@
+# the four ask combinators, applied left to right
+model :m do
+  thing :a, leans: :yes, by: 0.5
+  thing :b, leans: :no,  by: 0.5
+  thing :c
+  a.pulls :c, by: 1
+end
+
+run :m do
+  settle 5_000, seed: 3
+  ask :a                          # a
+  ask :a, and: :b                 # a and b
+  ask :a, or: :b                  # a or b
+  ask :a, and_not: :b             # a and not b
+  ask :a, or_not: :b              # a or not b
+  ask :a, and: :c, or: :b         # (a and c) or b
+  ask :a, and: :b, and: :c        # a key may repeat
+end

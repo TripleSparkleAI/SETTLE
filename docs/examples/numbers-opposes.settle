@@ -1,0 +1,12 @@
+# opposes pulls one number toward minus the other. At temperature 0 the drift
+# is plain relaxation and lands on the exact answer.
+model :pair do
+  number :u, :v
+  u.opposes :v, by: 1        # energy 1/2 (u + v)^2
+  u.leans_to 2.0, by: 1      # energy 1/2 (u - 2)^2
+end
+
+run :pair do
+  drift 20_000, step: 0.1, temperature: 0
+  means
+end

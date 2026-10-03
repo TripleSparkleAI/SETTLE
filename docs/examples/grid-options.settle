@@ -1,0 +1,11 @@
+# Other inversions, update rules, copies, keep, and a cold start.
+model :film do
+  grid :img, width: 24, height: 16, smooth: 0.3
+end
+run :film do
+  play :img, frames: "data/grid-frames/", sweeps: 20, correct: :bethe, read: :rb, seed: 4, quiet: :yes
+  play :img, frames: "data/grid-frames/", sweeps: 20, correct: :tap, update: :checker, read: :rb, seed: 4, quiet: :yes
+  play :img, frames: "data/grid-frames/", sweeps: 20, correct: :tap, update: :metro, read: :rb, seed: 4, quiet: :yes
+  play :img, frames: "data/grid-frames/", sweeps: 20, correct: :tap, update: :cluster, read: :rb, seed: 4, quiet: :yes
+  play :img, frames: "data/grid-frames/", sweeps: 10, copies: 4, keep: 0.5, warm: :no, correct: :tap, seed: 4, quiet: :yes
+end

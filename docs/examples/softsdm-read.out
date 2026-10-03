@@ -1,0 +1,5 @@
+read :s from read-address :cat with 20% address-noise (pass, softness 0.25, 3 rounds, best overlap by round +1.00 +1.00 +1.00): :cat +1.00  :note +0.06  :dog -0.08  -> :cat
+read :s from read-address :note with 20% address-noise (pass, softness 0.25, 3 rounds, best overlap by round +1.00 +1.00 +1.00): :note +1.00  :cat +0.06  :dog -0.11  -> :note
+  text: "at nine"
+read :s from read-address :dog with 20% address-noise (settle, softness 0.25, 3 rounds, best overlap by round +0.83 +0.83 +0.83): :dog +0.83  :owl +0.19  :cat +0.09  -> nothing clear (closest :dog at +0.83)
+read :s from pure noise (pass, softness 0.25, 3 rounds, best overlap by round +0.55 +0.55 +0.55): :dog +0.55  :owl +0.47  :cat +0.38  -> nothing clear (closest :dog at +0.55)

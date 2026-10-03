@@ -1,0 +1,4 @@
+# Every row must have one cell per thing named in over:.
+model :m do
+  examples :d, over: "a b c", rows: "110 01"
+end

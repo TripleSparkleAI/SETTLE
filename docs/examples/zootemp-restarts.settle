@@ -1,0 +1,13 @@
+# Factor 899 = 29 x 31 with the column encoding, on one budget of 20,000 sweeps, two ways.
+model :p do
+  factor :f, number: 899, encoding: :columns
+end
+
+run :p do
+  anneal_schedule 20_000, temperature: 0.65, seed: 5                # one long walk
+  f.solution   # judged on the calmest arrangement the walk visited
+  f.final      # judged on where the walk came to rest
+  anneal_schedule 20_000, temperature: 0.65, restarts: 20, seed: 5  # 20 walks of 1,000 sweeps
+  f.solution   # the calmest arrangement any of the 20 walks visited
+  f.final      # the calmest of the 20 end states
+end

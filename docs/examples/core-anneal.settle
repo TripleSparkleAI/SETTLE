@@ -1,0 +1,16 @@
+# five things in a ring that all push their neighbours: no arrangement satisfies every push
+model :ring do
+  thing :a, :b, :c, :d, :e
+  thing :b, leans: :yes, by: 0.2      # declaring :b again only adds a lean
+  a.pushes :b, by: 1
+  b.pushes :c, by: 1
+  c.pushes :d, by: 1
+  d.pushes :e, by: 1
+  e.pushes :a, by: 1
+  a.pulls :c, by: 0.3
+end
+
+run :ring do
+  anneal 4_000, seed: 5               # cool from 10x to 1/20 of the temperature
+  best                                # the calmest arrangement visited
+end

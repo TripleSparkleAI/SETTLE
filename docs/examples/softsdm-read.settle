@@ -1,0 +1,15 @@
+# A soft Kanerva memory: 128 address things, 1,000 hard location p-bits, 128 data things.
+model :mind do
+  softsdm :s, word-size: 128, hard-locations: 1_000, activation-probability: 0.05, softness: 0.25   # about 5% of hard locations are activated
+  s.write :cat                                   # a random pattern
+  s.write :dog
+  s.write :owl
+  s.write :note, "at nine"                       # 7 bytes of text, masked by the name
+end
+
+run :mind do
+  s.read read-address: :cat, address-noise: 0.2, seed: 1                 # the one-way pass, three rounds
+  s.read read-address: :note, address-noise: 0.2, seed: 2                # text comes back letter for letter
+  s.read read-address: :dog, address-noise: 0.2, mode: :settle, seed: 3  # the joint settle with feedback
+  s.read seed: 4                                         # from pure noise
+end

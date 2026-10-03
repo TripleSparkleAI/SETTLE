@@ -1,0 +1,13 @@
+# Text in the open and text under a key, in one Kanerva memory.
+model :mind do
+  sdm :s, word-size: 128, hard-locations: 1_000
+  s.write :cat                                     # a random pattern
+  s.write :note, "at nine"                         # 7 bytes = 56 bits, masked by the name :note
+  s.write :diary, "the mat", key: "blue heron"     # turned by the key; the text is not kept in the model
+end
+
+run :mind do
+  s.read read-address: :note, address-noise: 0.1, seed: 1   # recall the note and print its text
+  s.read key: "blue heron"                  # start from the key's read-address and read the keyed text
+  s.read key: "red heron"                   # a wrong key reads nothing
+end

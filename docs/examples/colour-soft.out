@@ -1,0 +1,2 @@
+play_colour :film: 3 frames, 20 sweeps, warm, soft, tap: median PSNR R 33.78 G 34.31 B 41.34 overall 35.48 dB (worst overall 34.87), <time> frames/s settling
+play_colour :film: 3 frames, 20 sweeps, warm, soft, tap, scored against another shot: median PSNR R 7.65 G 11.19 B 7.08 overall 8.31 dB (worst overall 8.17), <time> frames/s settling

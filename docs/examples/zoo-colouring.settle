@@ -1,0 +1,11 @@
+# A triangle needs three colours. Two colourings of the same triangle share one model.
+model :p do
+  colouring :three, colours: 3, edges: "a-b b-c c-a"
+  colouring :two, colours: 2, edges: "a-b b-c c-a"
+end
+
+run :p do
+  anneal_each 1_000, seed: 1   # each puzzle keeps its own calmest block
+  three.solution               # three colours: a proper colouring exists
+  two.solution                 # two colours: no proper colouring exists
+end

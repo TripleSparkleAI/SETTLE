@@ -1,0 +1,4 @@
+settled: 20000 samples of 2 things at temperature 0.25
+ask :a, and: :b: yes 100.0% of 20000 samples
+settled: 20000 samples of 2 things at temperature 4
+ask :a, and: :b: yes 39.3% of 20000 samples

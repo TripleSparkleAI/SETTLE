@@ -1,0 +1,8 @@
+data: 200 examples of 2 features
+test: 400 test examples of 2 features
+descended: 4000 steps of 33 parameters (net, 8 hidden, 2 classes), Adam, step 0.01, temperature 0, batches of 20; kept 3600 (<time> ms)
+  loss at the end 0.0442 per example, energy 17.9443
+score on 400 test rows:
+  last   accuracy 98.25%   nll 0.0497   calibration error 0.0262   doubt 0.0000
+  mean   accuracy 99.25%   nll 0.0570   calibration error 0.0430   doubt 0.0000
+score: last = the final position, mean = the averaged parameters, no snapshots were kept (keep: 0), so there is no cloud row

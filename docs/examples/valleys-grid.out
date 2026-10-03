@@ -1,0 +1,13 @@
+valleys (exact, all 4096 arrangements of 12 free things): 4 valleys, 4 of them in mirror pairs, calmest energy -17.000
+  energy   -17.000  basin  31.45% #########                      000000000000
+  energy   -17.000  basin  31.45% #########                      111111111111
+  energy   -11.000  basin   4.71% #                              110011001100
+  energy   -11.000  basin   4.71% #                              001100110011
+  steepest descent stops on a flat saddle from 27.69% of arrangements
+valleys (exact, all 4096 arrangements of 12 free things): 6 valleys, 6 of them in mirror pairs, calmest energy -24.000
+  energy   -24.000  basin  29.88% #########                      000000000000
+  energy   -24.000  basin  29.88% #########                      111111111111
+  energy   -12.000  basin   2.86% #                              110011001100
+  energy   -12.000  basin   2.86% #                              001100110011
+  ... 2 more valleys
+  steepest descent stops on a flat saddle from 29.10% of arrangements

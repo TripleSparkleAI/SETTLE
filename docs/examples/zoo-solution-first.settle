@@ -1,0 +1,8 @@
+# x.solution reads the calmest arrangement of an anneal, so it needs one first.
+model :p do
+  factor :f, number: 15
+end
+
+run :p do
+  f.solution   # no anneal has run yet
+end

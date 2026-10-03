@@ -1,0 +1,4 @@
+drifted: 20000 steps of 2 numbers, step 0.1, time 2000, temperature 0; averaged the last 18000 (<time> ms)
+  u          mean     2.0000 ± 0.0000   exact     2.0000   off -0.0000
+  v          mean    -2.0000 ± 0.0000   exact    -2.0000   off +0.0000
+means: largest error 0.0000, relative error 0.000% (exact by Gaussian elimination), largest error 8.7 standard errors

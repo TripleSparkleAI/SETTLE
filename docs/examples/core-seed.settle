@@ -1,0 +1,22 @@
+# what seed: and temperature: keep for later statements in the same run block
+model :pair do
+  thing :a, :b
+  a.pulls :b, by: 1
+end
+
+run :pair do
+  settle 1_000                  # seed 0x5eed (24301) and temperature 1, the defaults
+  ask :a, and: :b
+  settle 1_000                  # the generator continues, so this differs
+  ask :a, and: :b
+  settle 1_000, seed: 24301     # a fresh generator with the default seed repeats the first settle
+  ask :a, and: :b
+  settle 1_000, temperature: 3  # temperature 3 stays for the rest of this block
+  ask :a, and: :b
+  settle 1_000                  # still at temperature 3
+end
+
+run :pair do
+  settle 1_000                  # a new run block starts again from seed 0x5eed and temperature 1
+  ask :a, and: :b
+end

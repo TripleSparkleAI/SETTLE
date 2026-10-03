@@ -1,0 +1,15 @@
+# a run import refuses a file written for a model with different pulls
+model :one do
+  thing :a, :b
+  a.pulls :b, by: 1
+  export "out/one.json"
+end
+
+model :two do
+  thing :a, :b
+  a.pushes :b, by: 1
+end
+
+run :two do
+  import "out/one.json"
+end

@@ -1,0 +1,8 @@
+settled: 20000 samples of 3 things at temperature 1
+  rain           ################### 64.2%
+  sprinkler      ################### 63.0%
+  wet_grass      ############################## 100.0%  (held)
+ask :rain: yes 64.2% of 20000 samples
+ask :rain, and: :sprinkler: yes 31.6% of 20000 samples
+ask :rain, or: :sprinkler: yes 95.6% of 20000 samples
+ask :sprinkler, and_not: :rain: yes 31.4% of 20000 samples

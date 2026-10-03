@@ -1,0 +1,19 @@
+# Compress, then error-code, then mask, then store; read back by shaking and the reverse pipeline.
+# The decoder checks a CRC-16 and refuses rather than printing garbage.
+model :mind do
+  memory :m, size: 512
+  m.remember :cat
+  m.remember :dog
+  m.save_coded :note, "meet at the harbour at nine, bring the red lantern and the map", compress: :ac, code: :none
+  m.save_coded :safe, "the key is under the third stone by the gate", compress: :ac, code: :ldpc, rate: 0.75
+  sdm :s, word-size: 512, hard-locations: 2000
+  s.save_coded :memo, "the train leaves at six from the north platform", compress: :ac, code: :hamming74
+end
+
+run :mind do
+  m.recall_coded read-address: :note, address-noise: 0.2, seed: 1                 # the read-address knows only the name
+  m.recall_coded read-address: :safe, address-noise: 0.3, knows: :all, seed: 2    # the memory.rs convention
+  s.recall_coded read-address: :memo, address-noise: 0.1, knows: :all, seed: 3
+  m.recall_coded read-address: :ghost, seed: 4                             # never saved: refused
+  s.recall_coded read-address: :memo, knows: :all, codebook_seed: 2, code: :ldpc, seed: 5   # wrong codebook: refused
+end

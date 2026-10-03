@@ -1,0 +1,3 @@
+c: sent 8 bits (4 message bits), the channel flipped 1
+annealed: 200 sweeps, calmest energy found -70.592
+best (energy -70.592): c_b0 yes, c_b1 no, c_b2 yes, c_b3 yes, c_b4 yes, c_b5 yes, c_b6 no, c_b7 yes, c_x0 yes, c_x1 no, c_x2 yes, c_x3 yes, c_x4 yes, c_x5 yes, c_x6 yes, c_x7 yes, c_x8 no, c_x9 yes, c_x10 yes, c_x11 yes, c_x12 yes, c_x13 yes, c_x14 no, c_x15 yes, c_x16 no, c_x17 yes, c_x18 yes, c_x19 yes, c_x20 yes, c_x21 yes, c_x22 no, c_x23 yes, c_x24 yes, c_x25 yes, c_x26 yes, c_x27 yes

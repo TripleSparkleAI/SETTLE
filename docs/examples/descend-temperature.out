@@ -1,0 +1,6 @@
+data: 30 examples of 1 feature
+descended: 200000 steps of 2 parameters (least squares), Langevin, step 0.004, temperature 2, every row; kept 180000 (<time> ms)
+  loss at the end 0.7109 per example, energy 21.3415
+  w1         mean     1.5050 ± 0.0004   spread 0.1123   posterior mean     1.5042  spread 0.0795
+  bias       mean     0.4125 ± 0.0007   spread 0.1347   posterior mean     0.4118  spread 0.0950
+ask: 2 parameters; largest mean error 0.0007 (2.0 standard errors) against the exact posterior mean; spreads are step-corrected, and the cloud's covariance is 100.39% off the posterior's (temperature 2)

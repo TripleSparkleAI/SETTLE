@@ -1,0 +1,3 @@
+save_coded :memo in :s: 21 bytes -> 70 payload bits (ac) + 24 header -> code ldpc0.750 (rate 0.750) over 256 things
+recall_coded :s read-address :memo (knows the whole pattern, 5% address-noise) after the address read: text "bring the red lantern"
+recall_coded :s read-address :memo (knows the whole pattern, 5% address-noise) after the pulls read: text "bring the red lantern"

@@ -1,0 +1,27 @@
+# The alarm rang. Was it a burglary? Then we learn there was an earthquake.
+model :alarm do
+  thing :burglary,   leans: :no, by: 1      # burglaries are unusual
+  thing :earthquake, leans: :no, by: 1      # so are earthquakes
+  thing :alarm,      leans: :no, by: 1      # the alarm is usually quiet
+  burglary.pulls   :alarm, by: 1.5          # either cause sets it off
+  earthquake.pulls :alarm, by: 1.5
+  burglary.pushes  :earthquake, by: 1       # one cause is enough: the two compete to explain the alarm
+end
+
+run :alarm do
+  settle 40_000, seed: 1
+  ask :burglary                             # before we hear anything
+end
+
+run :alarm do
+  hold :alarm, :yes                         # we hear the alarm
+  settle 40_000, seed: 1
+  ask :burglary
+end
+
+run :alarm do
+  hold :alarm, :yes
+  hold :earthquake, :yes                    # and then the radio reports an earthquake
+  settle 40_000, seed: 1
+  ask :burglary                             # the earthquake explains the alarm away
+end

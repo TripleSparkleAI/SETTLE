@@ -1,0 +1,7 @@
+# Play a folder of three 24 x 16 frames with the default options.
+model :film do
+  grid :img, width: 24, height: 16, smooth: 0.2
+end
+run :film do
+  play :img, frames: "data/grid-frames/", out: "out/grid-play/", sweeps: 20, seed: 2
+end

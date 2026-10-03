@@ -1,0 +1,7 @@
+# A loss with examples needs data.
+model :fit do
+  loss :logistic
+end
+run :fit do
+  descend 1_000
+end

@@ -1,0 +1,17 @@
+# Longer anneals, stiffer penalties and harder channels. A failed decode is a refusal, never a guess.
+model :line do
+  ldpc :c, bits: 128, rate: 0.5, strength: 4.6, codebook_seed: 7   # a stiffer penalty, a different matrix
+  ldpc :w, bits: 64, rate: 0.5, strength: 0.5                      # a penalty too weak to hold the checks
+end
+run :line do
+  c.transmit flip: 0.06, seed: 2
+  c.decode seed: 2                                   # 400 sweeps from the received word: not enough
+  c.decode sweeps: 3000, seed: 2                     # a longer anneal finds the sent codeword
+  c.decode sweeps: 100, hot: 2, cold: 0.1, seed: 2   # a short anneal on a different schedule
+  c.decode_bp
+  c.transmit flip: 0.15, seed: 2                     # the same seed: the same message, more flips
+  c.decode_bp                                        # belief propagation gives up after 50 rounds
+  w.transmit flip: 0.05, seed: 1
+  w.decode seed: 2                                   # the received word is calmer than any codeword
+  w.decode_bp                                        # belief propagation does not use the strength
+end

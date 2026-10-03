@@ -1,0 +1,6 @@
+# A name can be written only once in a memory.
+model :mind do
+  sdm :s, word-size: 64, hard-locations: 200
+  s.write :cat
+  s.write :cat   # refused: :cat is already in :s
+end

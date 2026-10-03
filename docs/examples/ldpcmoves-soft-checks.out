@@ -1,0 +1,3 @@
+c: sent 64 bits (32 message bits), the channel flipped 1
+c averaged at T 1 (block4): REFUSED, 3 checks still broken
+c settled with block4 moves: CODEWORD, the sent codeword; 0 bits differ from what was sent

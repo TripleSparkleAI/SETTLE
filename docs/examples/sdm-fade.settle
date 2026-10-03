@@ -1,0 +1,27 @@
+# Fade: every write first multiplies all bit-counters by the fade, so older patterns weaken.
+# Two memories hold the same five patterns, one with a gentle fade and one with a strong fade.
+model :gentle do
+  sdm :s, word-size: 128, hard-locations: 1_000, fade: 0.9   # the oldest pattern keeps 0.9^4 = 0.66 of its weight
+  s.write :first
+  s.write :second
+  s.write :third
+  s.write :fourth
+  s.write :fifth
+end
+
+model :strong do
+  sdm :s, word-size: 128, hard-locations: 1_000, fade: 0.5   # the oldest pattern keeps 0.5^4 = 0.06 of its weight
+  s.write :first
+  s.write :second
+  s.write :third
+  s.write :fourth
+  s.write :fifth
+end
+
+run :gentle do
+  s.read read-address: :first, address-noise: 0.1, seed: 1   # the oldest pattern still comes back
+end
+
+run :strong do
+  s.read read-address: :first, address-noise: 0.1, seed: 1   # the newest pattern outvotes the oldest
+end

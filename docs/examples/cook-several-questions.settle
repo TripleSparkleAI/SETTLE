@@ -1,0 +1,17 @@
+# One settle answers many questions: each ask counts over the same samples.
+model :weather do
+  thing :rain,      leans: :no, by: 1
+  thing :sprinkler, leans: :no, by: 0.5
+  thing :wet_grass
+  rain.pushes :sprinkler, by: 0.5
+  rain.pulls  :wet_grass, by: 1.5
+  sprinkler.pulls :wet_grass, by: 1
+end
+
+run :weather do
+  settle 40_000, seed: 1
+  ask :wet_grass                             # P(wet grass)
+  ask :rain, and: :wet_grass                 # P(rain and wet grass)
+  ask :rain, and_not: :wet_grass             # P(rain and dry grass)
+  ask :rain, or: :sprinkler, and: :wet_grass # P((rain or sprinkler) and wet grass)
+end

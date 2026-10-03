@@ -1,0 +1,9 @@
+# show reads the samples of the last settle; an anneal does not make any
+model :m do
+  thing :a
+end
+
+run :m do
+  anneal 100
+  show
+end

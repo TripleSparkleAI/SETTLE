@@ -1,0 +1,10 @@
+# Samples written as a rows file can be read back as examples.
+model :glyphs do
+  examples :train, "data/denoise-glyphs.txt"
+  denoiser :d, steps: 2, hidden: 8
+end
+run :glyphs do
+  d.train :train, rounds: 60, batch: 8, seed: 1, leans: :zero   # the stack is sized by the examples here
+  d.generate 6, sweeps: 20, seed: 3, rows: "denoise-rows-samples.txt"
+  examples :made, "denoise-rows-samples.txt"            # the rows file uses the examples format
+end

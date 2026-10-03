@@ -1,0 +1,8 @@
+# x.final reads the run's last arrangement, so something must have run first.
+model :p do
+  factor :f, number: 15
+end
+
+run :p do
+  f.final   # no anneal or settle has run yet
+end

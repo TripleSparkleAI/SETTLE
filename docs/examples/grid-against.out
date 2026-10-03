@@ -1,0 +1,6 @@
+play :img: 3 frames, 40 sweeps, warm, soft, tap: median PSNR 36.98 dB (worst 36.82), <time> frames/s settling, <time> frames/s with file work
+  f0.pgm  PSNR 8.91 dB  <time> ms
+  f1.pgm  PSNR 8.78 dB  <time> ms
+  f2.pgm  PSNR 8.59 dB  <time> ms
+play :img: 3 frames, 40 sweeps, warm, soft, tap: median PSNR 8.78 dB (worst 8.59), <time> frames/s settling, <time> frames/s with file work
+  (scored against another folder: the negative control)

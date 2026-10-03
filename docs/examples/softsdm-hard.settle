@@ -1,0 +1,29 @@
+# Softness 0 is classic hard SDM: a hard location is activated exactly when the read-address is within the activation radius.
+# Softness 2 blurs the edge of that ball, so far hard locations are activated too and the vote gets noisy.
+model :hard do
+  softsdm :s, word-size: 128, hard-locations: 1_000, softness: 0
+  s.write :cat
+  s.write :dog
+  s.write :owl
+  s.write :fox
+  s.write :bee
+  s.write :elk
+end
+
+model :blurred do
+  softsdm :s, word-size: 128, hard-locations: 1_000, softness: 2   # same activated count on average, softer edge
+  s.write :cat
+  s.write :dog
+  s.write :owl
+  s.write :fox
+  s.write :bee
+  s.write :elk
+end
+
+run :hard do
+  s.read read-address: :cat, address-noise: 0.2, seed: 1
+end
+
+run :blurred do
+  s.read read-address: :cat, address-noise: 0.2, seed: 1
+end

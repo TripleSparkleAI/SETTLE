@@ -1,0 +1,11 @@
+# a max-cut graph: every edge pushes its two ends apart, and no thing leans
+model :square do
+  thing :a, :b, :c, :d
+  a.pushes :b, by: 1
+  b.pushes :c, by: 1
+  c.pushes :d, by: 1
+  d.pushes :a, by: 1
+  a.pushes :c, by: 2          # a heavier diagonal
+  export "out/square.gset", as: :gset
+  export "out/square.dimacs", as: :dimacs
+end

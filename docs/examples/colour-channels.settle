@@ -1,0 +1,9 @@
+# Each channel is an ordinary grid: its leans can be set and its yes-rates written like any grid's.
+model :film do
+  colour :film, width: 24, height: 16, smooth: 0.1
+  film_g.lean_from "data/grid-frames/f0.pgm"   # the green channel leans toward a greyscale picture
+end
+run :film do
+  settle 200, seed: 3
+  film_g.show_as "colour-channels-green.pgm"
+end

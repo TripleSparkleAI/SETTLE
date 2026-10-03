@@ -1,0 +1,11 @@
+# text saved in a memory comes back letter for letter from a noisy read-address
+model :mind do
+  memory :m, size: 512
+  m.remember :cat
+  m.save :note, "meet at the harbour at nine"   # 27 bytes use 216 of the 512 things
+  m.remember :dog
+end
+
+run :mind do
+  m.recall read-address: :note, address-noise: 0.25, seed: 7
+end

@@ -1,0 +1,11 @@
+# The same net at temperature 1 with four walkers: the cloud of 4 x 50 snapshots predicts by averaging, and
+# its doubt (how much the snapshots disagree) is what one walker at temperature 0 cannot give.
+model :ringnet do
+  data "data/descend-rings.csv"
+  test "data/descend-rings-test.csv"
+  loss :net, hidden: 8, classes: 2, prior: 3
+end
+run :ringnet do
+  descend 10_000, step: 0.002, temperature: 1, walkers: 4, keep: 50, seed: 3
+  score
+end

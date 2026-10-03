@@ -1,0 +1,3 @@
+examples :train from data/denoise-glyphs.txt, 24 in all, over 16 things
+sampled the model directly over :train (200 sweeps from a random start, 16 things settling): 8 samples, yes-rate 0.570 (:train 0.333); nearest :train row: median 5 of 16 pixels differ, 0 exact copies; wrote denoise-baselines-direct.pgm
+coins at the pixel rates of :train: 8 samples, yes-rate 0.297 (:train 0.333); nearest :train row: median 4 of 16 pixels differ, 0 exact copies; wrote denoise-baselines-coins.txt; wrote denoise-baselines-coins.pgm

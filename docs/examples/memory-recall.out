@@ -1,0 +1,4 @@
+recall :m from read-address :cat with 30% address-noise after 30 sweeps: :cat +1.00  :owl -0.09  :dog -0.07  -> :cat
+recall :m from read-address :dog with 45% address-noise after 30 sweeps: :owl +1.00  :cat -0.09  :dog +0.02  -> :owl
+recall :m from read-address :zebra with 0% address-noise after 30 sweeps: :cat -1.00  :owl +0.09  :dog +0.07  -> :cat (its mirror image)
+recall :m from pure noise after 30 sweeps: :dog +0.52  :owl +0.50  :cat +0.41  -> nothing clear (closest :dog at +0.52)

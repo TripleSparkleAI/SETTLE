@@ -1,0 +1,10 @@
+data: 200 examples of 2 features
+test: 400 test examples of 2 features
+descended: 10000 steps of 33 parameters (net, 8 hidden, 2 classes), Langevin, step 0.002, temperature 1, every row, 4 walkers; kept 36000 (<time> ms)
+  loss at the end 0.0459 per example, energy 27.1953
+score on 400 test rows:
+  last   accuracy 99.00%   nll 0.0502   calibration error 0.0318   doubt 0.0000
+  mean   accuracy 50.00%   nll 4.1967   calibration error 0.4979   doubt 0.0000
+  cloud  accuracy 99.75%   nll 0.0561   calibration error 0.0464   doubt 0.0369
+score: last = the final position, mean = the averaged parameters, the cloud averages 200 snapshots' predictions; doubt is what the snapshots disagree on (nats)
+  the 4 walkers of a net settle in different valleys (its hidden things can swap places), so averaging their parameters mixes valleys; average predictions, as the cloud row does

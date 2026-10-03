@@ -1,0 +1,9 @@
+# At the default strength, broken checks are cheap at temperature 1, so the bitwise average is not a codeword.
+model :line do
+  ldpc :c, bits: 64, rate: 0.5            # strength: 2
+end
+run :line do
+  c.transmit flip: 0.05, seed: 1
+  c.decode_nishimori seed: 3              # refused: the majority breaks 3 checks
+  c.decode_moves seed: 2                  # the anneal cools to 0.05, where the checks are stiff
+end

@@ -1,0 +1,8 @@
+# valleys refuses more than 24 free things; survey has no limit
+model :big do
+  landscape :grid, width: 5, height: 5    # 25 things, wrapped into a torus
+end
+
+run :big do
+  valleys
+end

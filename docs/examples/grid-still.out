@@ -1,0 +1,3 @@
+settled: 400 samples of 384 things at temperature 1
+show_as :img -> grid-still-rate.pgm (rate), PSNR 26.78 dB against the leans' picture
+show_as :img -> grid-still-last.pgm (last), PSNR 6.41 dB against the leans' picture

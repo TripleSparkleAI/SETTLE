@@ -1,0 +1,18 @@
+data: 200 examples of 2 features
+test: 400 test examples of 2 features
+data: 200 examples of 2 features
+test: 400 test examples of 2 features
+descended: 5000 steps of 3 parameters (logistic, 2 classes), gradient descent, step 0.01, temperature 0, every row; kept 4500 (<time> ms)
+  loss at the end 0.6931 per example, energy 138.6151
+score on 400 test rows:
+  last   accuracy 48.25%   nll 0.6928   calibration error 0.0223   doubt 0.0000
+  mean   accuracy 48.25%   nll 0.6928   calibration error 0.0223   doubt 0.0000
+  cloud  accuracy 48.25%   nll 0.6928   calibration error 0.0223   doubt 0.0000
+score: last = the final position, mean = the averaged parameters, the cloud is 50 snapshots of the path at temperature 0, not a posterior
+descended: 20000 steps of 33 parameters (net, 8 hidden, 2 classes), Langevin, step 0.005, temperature 0.05 cooling to 0, batches of 20; kept 18000 (<time> ms)
+  loss at the end 0.0299 per example, energy 16.9513
+score on 400 test rows:
+  last   accuracy 99.50%   nll 0.0357   calibration error 0.0264   doubt 0.0000
+  mean   accuracy 99.75%   nll 0.0337   calibration error 0.0263   doubt 0.0000
+  cloud  accuracy 99.50%   nll 0.0360   calibration error 0.0286   doubt 0.0025
+score: last = the final position, mean = the averaged parameters, the cloud averages 50 snapshots' predictions; doubt is what the snapshots disagree on (nats)

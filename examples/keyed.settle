@@ -1,0 +1,16 @@
+# A key names a turn of the cube: a sign flip on every thing plus a shuffle of which thing holds
+# which bit. The note's text is not written anywhere; only the turned pattern lives in the pulls.
+# With the key you know the padding, so the key both finds the memory and reads it.
+# This is a toy, not cryptography: the key is hashed to 64 bits and can be guessed offline.
+model :mind do
+  memory :m, size: 512
+  m.remember :cat
+  m.save :note, "meet at the harbour at nine", key: "blue heron"
+  m.remember :dog
+end
+
+run :mind do
+  m.recall key: "blue heron", seed: 1    # the right key finds and reads the note
+  m.recall key: "red heron", seed: 1     # a wrong key finds nothing readable
+  m.recall seed: 2                       # a stranger shaking from noise sees a valley, not the text
+end

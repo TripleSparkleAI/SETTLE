@@ -1,0 +1,17 @@
+# Graph colouring as settling: one thing per (node, colour). Each node is pushed toward exactly one colour,
+# and each edge pushes its two ends away from sharing a colour.
+model :map do
+  colouring :g, colours: 3, edges: "wa-nt wa-sa nt-sa nt-qld sa-qld sa-nsw sa-vic qld-nsw nsw-vic"
+end
+model :triangle do
+  colouring :g, colours: 2, edges: "a-b b-c c-a"      # impossible: an odd cycle needs 3 colours
+end
+
+run :map do
+  anneal 5_000, seed: 1
+  g.solution
+end
+run :triangle do
+  anneal 5_000, seed: 1
+  g.solution                                          # must say NOT PROPER
+end

@@ -1,0 +1,4 @@
+attend :s from read-address :cat with 20% address-noise (softness 0.5, fitted softmax inverse temperature 1.5 on cosine):
+  mean-field read of this machine          :cat +1.00  :dog -0.08  -> :cat
+  kernel read, infinitely many locations   :cat +1.00  :dog -0.08  -> :cat
+  softmax attention                        :cat +1.00  :dog -0.08  -> :cat

@@ -1,0 +1,5 @@
+examples :train from data/learn-same.txt, 4 in all, over 4 things
+examples :test from data/learn-same.txt, 4 in all, over 4 things
+shuffled the 2 label columns of :train across 4 rows
+learned :train by exact gradients over 400 rounds of 4 rows: 4 visible, 4 hidden, 16 pulls, <time>s; exact log-likelihood per example -1.3877
+classify :test by settling 200 sweeps with 2 inputs held: 2 of 4 right (50.0%); exact one-hot readout 50.0%; chance 50.0%

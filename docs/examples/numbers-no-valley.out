@@ -1,0 +1,2 @@
+solve: 2 numbers by drifting 2000 steps (time 100) at temperature 1
+did not settle: the springs have no valley (not positive definite; the stiffness fails at :b); the drift blew up at step 565

@@ -1,0 +1,13 @@
+# Two things that tend to agree, and one that leans towards yes.
+model :pair do
+  thing :a, leans: :yes, by: 0.5   # a prefers yes a little
+  thing :b                         # b has no preference of its own
+  a.pulls :b, by: 1                # a and b prefer to agree
+end
+
+run :pair do
+  settle 20_000, seed: 1           # draw 20,000 arrangements
+  show                             # how often each thing was yes
+  ask :b                           # the chance that b is yes
+  ask :a, and: :b                  # the chance that both are yes
+end

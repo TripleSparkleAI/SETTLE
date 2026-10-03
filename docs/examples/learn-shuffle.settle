@@ -1,0 +1,13 @@
+# The negative control: scramble which labels go with which row of the training set,
+# learn from the scrambled rows, then classify the unscrambled rows.
+model :agree do
+  examples :train, "data/learn-same.txt"
+  examples :test, "data/learn-same.txt"
+  hidden 4
+end
+
+run :agree do
+  shuffle :train, labels: "l_same l_diff", seed: 2   # moves the label pairs between rows
+  learn :train, method: :exact, rounds: 400, rate: 0.5, seed: 1
+  classify :test, labels: "l_*", sweeps: 200, seed: 2
+end

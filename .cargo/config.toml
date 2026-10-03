@@ -1,0 +1,3 @@
+# a private KANERVA repository is fetched with the git CLI, so it uses your git credentials
+[net]
+git-fetch-with-cli = true

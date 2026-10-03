@@ -1,0 +1,7 @@
+# A decode needs a received word.
+model :line do
+  ldpc :c, bits: 64
+end
+run :line do
+  c.decode seed: 2
+end

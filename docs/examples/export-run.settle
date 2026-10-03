@@ -1,0 +1,28 @@
+# export a run's held things and temperature, then restore them in another run of an identical model
+model :weather do
+  thing :rain,      leans: :no, by: 1
+  thing :sprinkler, leans: :no, by: 0.5
+  thing :wet_grass
+  rain.pushes :sprinkler, by: 0.5
+  rain.pulls  :wet_grass, by: 1.5
+  sprinkler.pulls :wet_grass, by: 1
+end
+
+run :weather do
+  hold :wet_grass, :yes
+  settle 2_000, temperature: 0.8, seed: 1
+  export "out/w.json"                     # carries held :wet_grass and temperature 0.8
+  export "out/rates.json", as: :moments   # yes-rates and pair averages of this settle
+  anneal 500, seed: 2
+  export "out/best.json", as: :best       # the calmest arrangement of this anneal
+end
+
+model :copy do
+  import "out/w.json"                     # model import: things, leans and pulls only
+end
+
+run :copy do
+  import "out/w.json"                     # run import: held things and temperature
+  settle 2_000, seed: 1                   # the same run as above, so the same rates
+  show
+end

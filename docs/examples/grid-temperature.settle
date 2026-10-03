@@ -1,0 +1,11 @@
+# Temperature and sharpening in play, then show_as reads the counts play leaves behind.
+model :film do
+  grid :img, width: 24, height: 16, smooth: 0.2
+end
+run :film do
+  play :img, frames: "data/grid-frames/", sweeps: 40, correct: :tap, seed: 8, quiet: :yes
+  # at temperature 2 every input is halved, so the greys wash toward 0.5; by: 2 doubles the atanh part, which partly compensates
+  play :img, frames: "data/grid-frames/", sweeps: 40, correct: :tap, temperature: 2, seed: 8, quiet: :yes
+  play :img, frames: "data/grid-frames/", sweeps: 40, correct: :tap, temperature: 2, by: 2, seed: 8, quiet: :yes
+  img.show_as "grid-temperature-last-frame.pgm"   # the last frame's yes-rates (no lean_from, so no PSNR)
+end

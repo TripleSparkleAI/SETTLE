@@ -1,0 +1,12 @@
+# lean_from inside a run changes the leans for the rest of that run.
+model :film do
+  grid :img, width: 24, height: 16, smooth: 0.2
+end
+run :film do
+  img.lean_from "data/grid-frames/f1.pgm", correct: :no   # leans without the neighbour term
+  settle 400, seed: 7
+  img.show_as "grid-lean-run-a.pgm"
+  img.lean_from "data/grid-frames/f1.pgm", by: 1.5        # mean-field leans, sharpened by 1.5
+  settle 400, seed: 7
+  img.show_as "grid-lean-run-b.pgm"
+end

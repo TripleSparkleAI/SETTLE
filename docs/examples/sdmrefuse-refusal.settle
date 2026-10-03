@@ -1,0 +1,9 @@
+# The refusal threshold and the nearest-neighbour ceiling for a few memory sizes and loads. No memory is built.
+model :m do
+end
+run :m do
+  refusal                                        # 1000 patterns of 256 bits, level 0.01
+  refusal load: 3000                             # more patterns: a tighter threshold
+  refusal word-size: 64, load: 10, level: 0.001       # short patterns and a stricter level
+  refusal word-size: 1024, load: 100_000              # long patterns hold many more
+end

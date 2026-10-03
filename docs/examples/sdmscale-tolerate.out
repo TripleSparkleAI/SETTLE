@@ -1,0 +1,6 @@
+read :k from read-address :cat with 30% address-noise via addresses (2 iterated reads, 28 of 20000 hard locations activated, 28 holding bit-counters): -> nothing clear (overlap with :cat +0.17)
+read :k from read-address :cat with 30% address-noise via addresses (4 iterated reads, 51 of 20000 hard locations activated, 51 holding bit-counters): -> nothing clear (overlap with :cat +0.12)
+read :k from read-address :cat with 30% address-noise via addresses (2 iterated reads, 32 of 20000 hard locations activated, 32 holding bit-counters): -> :cat
+read :k from read-address :cat with 30% address-noise via addresses (6 iterated reads, 169 of 20000 hard locations activated, 169 holding bit-counters): -> nothing clear (overlap with :cat +0.00)
+read :k from read-address :cat with 30% address-noise via addresses (3 iterated reads, 168 of 20000 hard locations activated, 168 holding bit-counters): -> :cat
+read :k from read-address :cat with 30% address-noise via addresses (4 iterated reads, 168 of 20000 hard locations activated, 168 holding bit-counters): -> :cat

@@ -1,0 +1,25 @@
+# Five things in a ring that all push their neighbours. Each run block starts a fresh run.
+model :ring do
+  thing :a, :b, :c, :d, :e
+  a.pushes :b, by: 1
+  b.pushes :c, by: 1
+  c.pushes :d, by: 1
+  d.pushes :e, by: 1
+  e.pushes :a, by: 1
+end
+
+run :ring do
+  anneal 400, seed: 5             # the core anneal
+  best
+end
+
+run :ring do
+  anneal_schedule 400, seed: 5    # the default schedule: the same walk, draw for draw
+  best
+end
+
+run :ring do
+  # from 4 x 0.5 = 2 down to 0.1 x 0.5 = 0.05, in 4 walks of 100 sweeps
+  anneal_schedule 400, temperature: 0.5, hot: 4, cold: 0.1, restarts: 4, seed: 5
+  best
+end

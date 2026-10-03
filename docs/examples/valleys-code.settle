@@ -1,0 +1,8 @@
+# a code landscape: 8 data bits, 4 parity checks of 3 bits, one helper thing per check
+model :code do
+  landscape :code, bits: 8, checks: 4, seed: 1   # things d0 .. d7 and x0 .. x3
+end
+
+run :code do
+  valleys show: 16                               # each valley is labelled codeword or not
+end

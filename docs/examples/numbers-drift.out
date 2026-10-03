@@ -1,0 +1,11 @@
+drifted: 200000 steps of 2 numbers, step 0.05, time 10000, temperature 1; averaged the last 180000 (<time> ms)
+  x          mean     0.6101 ± 0.0049   exact     0.6000   off +0.0101
+  y          mean    -0.1900 ± 0.0090   exact    -0.2000   off +0.0100
+means: largest error 0.0101, relative error 2.245% (exact by Gaussian elimination), largest error 2.1 standard errors
+  covariance of the settled numbers:
+  x            0.4280   0.1983
+  y            0.1983   0.6325
+  inverse from the spread (covariance / temperature, step-corrected)  |  exact inverse:
+  x            0.4008   0.1991  |    0.4000   0.2000
+  y            0.1992   0.6058  |    0.2000   0.6000
+spread: inverse from the spread against the exact inverse, relative error 0.77% step-corrected, 5.54% raw

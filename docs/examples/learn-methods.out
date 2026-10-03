@@ -1,0 +1,6 @@
+examples :d inline: 4 rows added, 4 in all, over 3 things
+examples :d inline: 4 rows added, 4 in all, over 3 things
+examples :d inline: 4 rows added, 4 in all, over 3 things
+learned :d by exact gradients over 200 rounds of 4 rows: 3 visible, 0 hidden, 3 pulls, <time>s; exact log-likelihood per example -0.7112
+learned :d by pseudo-likelihood over 200 rounds of 4 rows: 3 visible, 0 hidden, 3 pulls, <time>s; exact log-likelihood per example -0.7101
+learned :d by persistent contrastive divergence over 200 rounds of 4 rows: 3 visible, 0 hidden, 3 pulls, <time>s; exact log-likelihood per example -0.7876

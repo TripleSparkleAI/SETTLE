@@ -1,0 +1,10 @@
+# A coded note in a Kanerva sdm, read by both of the sdm's reads.
+model :mind do
+  sdm :s, word-size: 256, hard-locations: 600
+  s.write :cat
+  s.save_coded :memo, "bring the red lantern", code: :ldpc, rate: 0.75
+end
+run :mind do
+  s.recall_coded read-address: :memo, address-noise: 0.05, knows: :all, seed: 1                # the address read (default)
+  s.recall_coded read-address: :memo, address-noise: 0.05, knows: :all, via: :pulls, seed: 1   # the pulls read
+end

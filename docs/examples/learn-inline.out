@@ -1,0 +1,3 @@
+examples :d inline: 4 rows added, 4 in all, over 3 things
+examples :d inline: 2 rows added, 6 in all, over 3 things
+learned :d by contrastive divergence over 200 rounds of 6 rows: 3 visible, 0 hidden, 3 pulls, <time>s; exact log-likelihood per example -1.4288

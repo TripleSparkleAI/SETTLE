@@ -1,0 +1,20 @@
+# Two rings of points: a linear piece cannot split them, a net with 8 hidden things can. The net is settled
+# hot and cooled to 0 (annealing), in batches of 20 rows.
+model :rings do
+  data "data/descend-rings.csv"
+  test "data/descend-rings-test.csv"
+  loss :logistic
+end
+model :ringnet do
+  data "data/descend-rings.csv"
+  test "data/descend-rings-test.csv"
+  loss :net, hidden: 8, classes: 2, prior: 3
+end
+run :rings do
+  descend 5_000, step: 0.01
+  score
+end
+run :ringnet do
+  descend 20_000, step: 0.005, temperature: 0.05, cool_to: 0, batch: 20, seed: 2
+  score
+end

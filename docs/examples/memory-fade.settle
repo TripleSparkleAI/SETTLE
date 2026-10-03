@@ -1,0 +1,23 @@
+# with fade, each new memory weakens the older ones, so the oldest of twelve is lost
+model :fading do
+  memory :m, size: 256, fade: 0.6
+  m.remember :p0
+  m.remember :p1
+  m.remember :p2
+  m.remember :p3
+  m.remember :p4
+  m.remember :p5
+  m.remember :p6
+  m.remember :p7
+  m.remember :p8
+  m.remember :p9
+  m.remember :p10
+  m.remember :p11
+end
+
+run :fading do
+  m.recall read-address: :p11, address-noise: 0.3, seed: 1   # the newest is found
+  m.recall read-address: :p0, address-noise: 0.3, seed: 1    # the oldest is not
+  m.remember :p12                            # storing inside a run changes the model too
+  m.recall read-address: :p12, address-noise: 0.3, seed: 1
+end

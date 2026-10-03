@@ -1,0 +1,8 @@
+annealed on a schedule: 20000 sweeps in 1 walk(s), temperature 6.5 to 0.0325; calmest visited -70.500, calmest end state -69.500
+factor :f: 899 = 29 x 31: VALID (checked by multiplying)
+  (:f judged on the end state, not on the best visited)
+factor :f: NOT VALID for 899: 21 x 55 = 1155, not 899
+annealed on a schedule: 20000 sweeps in 20 walk(s), temperature 6.5 to 0.0325; calmest visited -70.500, calmest end state -70.500
+factor :f: 899 = 29 x 31: VALID (checked by multiplying)
+  (:f judged on the end state, not on the best visited)
+factor :f: 899 = 29 x 31: VALID (checked by multiplying)

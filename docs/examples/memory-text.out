@@ -1,0 +1,2 @@
+recall :m from read-address :note with 25% address-noise after 30 sweeps: :note +1.00  :dog +0.03  :cat +0.02  -> :note
+  text: "meet at the harbour at nine"

@@ -1,0 +1,7 @@
+annealed each: 1000 sweeps, calmest energy found -7.250; per puzzle :three -5.250, :two -2.000
+  (:three judged on its own calmest arrangement from anneal_each)
+  a 3, b 1, c 2
+colouring :three with 3 colours: PROPER (checked edge by edge, not by energy)
+  (:two judged on its own calmest arrangement from anneal_each)
+  a 2, b 1, c -
+colouring :two with 2 colours: NOT PROPER: node c has no colour

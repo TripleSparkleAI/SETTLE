@@ -1,0 +1,7 @@
+# play_colour takes the fit options but not the warm-fit options of play.
+model :film do
+  colour :film, width: 24, height: 16, smooth: 0.1
+end
+run :film do
+  play_colour :film, frames: "data/colour-frames/", sweeps: 20, fit: 2, warm_fit: 1
+end

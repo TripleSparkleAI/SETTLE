@@ -1,0 +1,17 @@
+# Max-cut as settling: one thing per node (yes side or no side); every edge pushes its two ends apart,
+# so the calmest arrangement cuts as much edge weight as possible. Small graphs are checked by brute force.
+model :ring do
+  maxcut :g, edges: "a-b b-c c-d d-e e-f f-a a-d:2"
+end
+model :triangle do
+  maxcut :g, edges: "a-b b-c c-a", target: 3          # the best a triangle allows is 2
+end
+
+run :ring do
+  anneal 2_000, seed: 1
+  g.solution
+end
+run :triangle do
+  anneal 2_000, seed: 1
+  g.solution                                          # must say NOT REACHED
+end

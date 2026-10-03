@@ -1,0 +1,10 @@
+save_coded :note in :a: 21 bytes -> 168 payload bits (none) + 24 header -> code none (rate 1.000) over 256 things
+save_coded :note in :b: 21 bytes -> 104 payload bits (lz) + 24 header -> code hamming74 (rate 0.562) over 256 things
+save_coded :note in :c: 21 bytes -> 66 payload bits (ac) + 24 header -> code rep3 (rate 0.332) over 512 things
+save_coded :note in :d: 21 bytes -> 66 payload bits (ac) + 24 header -> code ldpc0.500 (rate 0.500) over 256 things
+save_coded :note in :e: 21 bytes -> 66 payload bits (ac) + 24 header -> code ldpc0.750 (rate 0.750) over 256 things
+recall_coded :a read-address :note (knows the whole pattern, 5% address-noise) after 30 sweeps: text "under the third stone"
+recall_coded :b read-address :note (knows the whole pattern, 5% address-noise) after 30 sweeps: text "under the third stone"
+recall_coded :c read-address :note (knows the whole pattern, 5% address-noise) after 30 sweeps: text "under the third stone"
+recall_coded :d read-address :note (knows the whole pattern, 5% address-noise) after 30 sweeps: text "under the third stone"
+recall_coded :e read-address :note (knows the whole pattern, 5% address-noise) after 30 sweeps: text "under the third stone"

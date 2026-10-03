@@ -1,0 +1,9 @@
+# TRACK-C's predicted recall for a memory of 20,000 hard locations of 256 bits. No memory is built.
+model :m do
+end
+run :m do
+  contenttrack hard-locations: 20_000, load: 300, samples: 20                # a light load at 30% address-noise
+  contenttrack hard-locations: 20_000, load: 300, address-noise: 0.4, samples: 20   # more address-noise in the read-address
+  contenttrack hard-locations: 20_000, load: 2_000, samples: 10              # a heavier load
+  contenttrack hard-locations: 20_000, load: 2_000, samples: 10, block: 1    # the same load, block read
+end

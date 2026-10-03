@@ -1,0 +1,7 @@
+exported :ising (3 things, 3 pulls) to out/weather.json
+exported :qubo (3 things, 3 pulls) to out/weather.qubo.json
+imported 3 things and 3 pulls from out/weather.json
+annealed: 500 sweeps, calmest energy found -3.500
+best (energy -3.500): rain no, sprinkler no, wet_grass no
+annealed: 500 sweeps, calmest energy found -3.500
+best (energy -3.500): rain no, sprinkler no, wet_grass no

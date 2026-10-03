@@ -1,0 +1,5 @@
+annealed each: 2000 sweeps, calmest energy found -66.000; per puzzle :f -54.000, :g -12.000
+  (:f judged on its own calmest arrangement from anneal_each)
+factor :f: 15 = 3 x 5: VALID (checked by multiplying)
+  (:g judged on its own calmest arrangement from anneal_each)
+factor :g: 21 = 3 x 7: VALID (checked by multiplying)

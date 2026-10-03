@@ -1,0 +1,1 @@
+line 7: refused: the matrix is not symmetric (row 1 column 2 is 1, row 2 column 1 is 0). Springs pull both ways equally, so only a symmetric matrix is a set of springs; for a general A, solve A^T A x = A^T b instead

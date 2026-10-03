@@ -1,0 +1,9 @@
+# Inline examples: name the things with over:, give each row as a string of 1 and 0.
+model :pairs do
+  examples :d, over: "a b c", rows: "110 110 001 001"
+end
+
+run :pairs do
+  examples :d, rows: "111 000"                                     # add two more rows in the run
+  learn :d, rounds: 200, rate: 0.1, sweeps: 1, batch: 2, seed: 1   # contrastive divergence, the default
+end

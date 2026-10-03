@@ -1,0 +1,7 @@
+model :m do
+  thing :a
+end
+
+run :m do
+  settle 100, sweeps: 5            # settle takes temperature: and seed: only
+end

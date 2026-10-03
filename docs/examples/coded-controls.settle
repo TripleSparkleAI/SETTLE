@@ -1,0 +1,12 @@
+# Recalls that decode with the wrong settings are refused, never printed as text.
+model :mind do
+  memory :m, size: 256
+  m.save_coded :note, "meet at nine", code: :ldpc
+end
+run :mind do
+  m.recall_coded read-address: :note, knows: :all, seed: 1                      # the settings it was saved with
+  m.recall_coded read-address: :note, knows: :all, codebook_seed: 2, seed: 1    # a different LDPC matrix
+  m.recall_coded read-address: :note, knows: :all, code: :hamming74, seed: 1    # a different code
+  m.recall_coded read-address: :note, knows: :all, compress: :lz, seed: 1       # a different compressor
+  m.recall_coded read-address: :note, knows: :all, address-noise: 0.97, seed: 1        # a read-address near the mirror image
+end

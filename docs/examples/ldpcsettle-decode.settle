@@ -1,0 +1,14 @@
+# A 64-bit LDPC code built as springs, sent through a channel that flips 5% of bits, then decoded.
+model :line do
+  ldpc :c, bits: 64, rate: 0.5                  # the chain gadget (the default), strength 2
+  ldpc :s, bits: 64, rate: 0.5, gadget: :sum    # the same code with the sum gadget
+end
+run :line do
+  c.transmit flip: 0.05, seed: 1      # a random message, encoded and sent
+  c.decode seed: 2                    # anneal from the received word, temperature 1 down to 0.05
+  c.decode start: :random, seed: 3    # anneal from noise, temperature 10 down to 0.05
+  c.decode_bp                         # belief propagation on the same received word
+  s.transmit flip: 0.05, seed: 1      # the same message and the same flips
+  s.decode seed: 2
+  s.decode start: :random, seed: 3    # the sum gadget does not find a codeword from noise here
+end

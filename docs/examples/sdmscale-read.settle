@@ -1,0 +1,13 @@
+# A Kanerva memory whose bit-counters live outside the pulls: one byte each, in a flat array.
+model :big do
+  sdmscale :k, word-size: 128, hard-locations: 20_000   # activation-probability: 0.001 gives activation radius 47
+  k.put :cat                                  # a named random pattern
+  k.put :dog
+  k.fill 300                                  # 300 more random patterns, as load
+end
+
+run :big do
+  k.read read-address: :cat, address-noise: 0.1, seed: 1                 # Kanerva's read by addresses
+  k.read read-address: :dog, address-noise: 0.1, via: :pulls, seed: 2    # hard locations woken by what they hold
+  k.read read-address: :zebra, address-noise: 0, seed: 3                 # a name that was never put
+end

@@ -1,0 +1,10 @@
+# One still picture on a 24 x 16 grid of p-bits.
+model :film do
+  grid :img, width: 24, height: 16, smooth: 0.2   # 384 things img_0_0 .. img_23_15, each pulls its neighbours by 0.2
+  img.lean_from "data/grid-frames/f0.pgm"          # leans aim each pixel's yes-rate at the picture's grey
+end
+run :film do
+  settle 400, seed: 1                   # sample the grid with the core settle statement
+  img.show_as "grid-still-rate.pgm"     # write each pixel's yes-rate as a grey level
+  img.show_as "grid-still-last.pgm", from: :last   # write the last arrangement: black or white only
+end

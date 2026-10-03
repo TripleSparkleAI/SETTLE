@@ -1,0 +1,9 @@
+# wake: chooses how the pulls read wakes hard locations, so it needs via: :pulls.
+model :big do
+  sdmscale :k, word-size: 64, hard-locations: 1_000
+  k.put :cat
+end
+
+run :big do
+  k.read read-address: :cat, wake: :top
+end

@@ -1,0 +1,8 @@
+model :m do
+  chain :x, length: 6, by: 0.8     # x1 .. x6, each pulling the next by 0.8
+end
+
+run :m do
+  settle 20_000, seed: 1
+  x.ends                           # how often x1 and x6 agree
+end

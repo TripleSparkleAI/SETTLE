@@ -1,0 +1,5 @@
+# a plain text note needs 8 things per byte; 9 bytes do not fit in 64 things
+model :mind do
+  memory :m, size: 64
+  m.save :note, "nine byte"
+end

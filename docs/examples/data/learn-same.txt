@@ -1,0 +1,7 @@
+# Two input bits and a one-hot label: l_same is on when the bits agree,
+# l_diff when they differ. The first line that is not a comment names the things.
+x1 x2 l_same l_diff
+0 0 1 0
+0 1 0 1
+1 0 0 1
+1 1 1 0   # a comment may follow a row

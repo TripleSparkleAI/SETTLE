@@ -1,0 +1,4 @@
+  f0.pgm  PSNR 17.72 dB  <time> ms
+  f1.pgm  PSNR 18.27 dB  <time> ms
+  f2.pgm  PSNR 16.60 dB  <time> ms
+play :img: 3 frames, 20 sweeps, warm, bits: median PSNR 17.72 dB (worst 16.60), <time> frames/s settling, <time> frames/s with file work

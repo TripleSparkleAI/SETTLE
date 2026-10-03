@@ -1,0 +1,12 @@
+# the recall options: how long to shake, how hot, and where the randomness starts
+model :mind do
+  memory :m, size: 128                                    # 128 free things m_0 .. m_127
+  m.remember :cat
+end
+
+run :mind do
+  m.remember :dog                                         # a run block can store too; this changes the model
+  m.recall read-address: :cat, address-noise: 0.2, sweeps: 0, seed: 5     # no shaking: the noisy read-address as it is
+  m.recall read-address: :cat, address-noise: 0.2, sweeps: 5, seed: 5     # 5 sweeps at the default temperature 0.1
+  m.recall read-address: :cat, address-noise: 0.2, temperature: 5, seed: 5   # too hot: the pattern melts
+end

@@ -1,0 +1,6 @@
+data: 30 examples of 1 feature
+descended: 3000 steps of 2 parameters (least squares), gradient descent, step 0.004, temperature 0, every row; kept 2700 (<time> ms)
+  loss at the end 0.5579 per example, energy 16.7504
+  w1         mean     1.5042 ± 0.0000   spread 0.0000   posterior mean     1.5042  spread 0.0795
+  bias       mean     0.4118 ± 0.0000   spread 0.0000   posterior mean     0.4118  spread 0.0950
+ask: 2 parameters; largest error 4.15e-14 against the exact answer; temperature 0, so the cloud has no spread

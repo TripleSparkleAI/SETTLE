@@ -1,0 +1,20 @@
+# Denoising from coins: three clean 3x3 glyphs (plus, cross, ring), ten copies each. A chain of four small
+# machines learns to undo a little bit-flip noise per step; generation starts from pure coin noise and each
+# machine settles with the noisier picture held. Add out: "sheet.pgm" or rows: "samples.txt" to generate
+# to see the pictures. The nearest-row report counts samples identical to a training row: for three glyphs
+# that is the goal, for real data it is a copy.
+
+model :glyphs do
+  examples :train, over: "tl tm tr ml mm mr bl bm br"
+  examples :train, rows: "010111010 101010101 111101111 010111010 101010101 111101111 010111010 101010101 111101111 010111010"
+  examples :train, rows: "101010101 111101111 010111010 101010101 111101111 010111010 101010101 111101111 010111010 101010101"
+  examples :train, rows: "111101111 010111010 101010101 111101111 010111010 101010101 111101111 010111010 101010101 111101111"
+  denoiser :d, steps: 4, hidden: 8, over: :train, width: 3
+end
+
+run :glyphs do
+  d.generate 200, sweeps: 50, seed: 1      # untrained: random pulls, the negative control
+  d.train :train, rounds: 150, rate: 0.1, seed: 1
+  d.generate 200, sweeps: 50, seed: 2
+  coins :train, 200, seed: 3               # every pixel alone at its rate: a smear, not a glyph
+end

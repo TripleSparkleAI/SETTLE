@@ -1,0 +1,20 @@
+# The same four rows fitted three ways, one model for each method, so each fit starts from zero.
+model :ex do
+  examples :d, over: "a b c", rows: "110 110 001 001"
+end
+model :ps do
+  examples :d, over: "a b c", rows: "110 110 001 001"
+end
+model :pe do
+  examples :d, over: "a b c", rows: "110 110 001 001"
+end
+
+run :ex do
+  learn :d, method: :exact, rounds: 200, rate: 0.1, seed: 1
+end
+run :ps do
+  learn :d, method: :pseudo, rounds: 200, rate: 0.1, seed: 1
+end
+run :pe do
+  learn :d, method: :persistent, rounds: 200, rate: 0.1, batch: 4, sweeps: 2, seed: 1
+end

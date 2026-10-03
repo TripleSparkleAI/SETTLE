@@ -1,0 +1,14 @@
+# save_coded also works in a run block, and each store has its own read options.
+model :mind do
+  memory :m, size: 256
+  sdm :s, word-size: 256, hard-locations: 600
+end
+run :mind do
+  m.save_coded :note, "meet at nine", code: :rep3     # stored in the model, like a model-block save
+  m.recall_coded read-address: :note, address-noise: 0.1, sweeps: 10, temperature: 0.05, seed: 1   # a memory takes sweeps: and temperature:
+  s.save_coded :memo, "meet at nine", compress: :lz
+  s.recall_coded read-address: :memo, address-noise: 0.1, iterated-reads: 3, seed: 1                   # an sdm takes iterated-reads: and via:
+end
+run :mind do
+  m.recall_coded read-address: :note, address-noise: 0.1, seed: 2     # the note saved in the first run block is still there
+end

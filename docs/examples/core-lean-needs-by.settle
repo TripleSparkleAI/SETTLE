@@ -1,0 +1,3 @@
+model :m do
+  thing :a, leans: :yes          # a lean needs a strength
+end

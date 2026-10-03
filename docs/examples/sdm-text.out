@@ -1,0 +1,4 @@
+read :s from read-address :note with 10% address-noise via addresses (2 iterated reads, 14 of 1000 hard locations activated): :note +1.00  :cat +0.06  -> :note
+  text: "at nine"
+read :s from a key via addresses (2 iterated reads, 29 of 1000 hard locations activated): text "the mat"
+read :s from a key via addresses (3 iterated reads, 22 of 1000 hard locations activated): nothing readable

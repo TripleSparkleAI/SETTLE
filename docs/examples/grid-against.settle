@@ -1,0 +1,8 @@
+# The negative control: score the output against frames it was never given.
+model :film do
+  grid :img, width: 24, height: 16, smooth: 0.1
+end
+run :film do
+  play :img, frames: "data/grid-frames/", sweeps: 40, read: :soft, correct: :tap, seed: 6, quiet: :yes
+  play :img, frames: "data/grid-frames/", sweeps: 40, read: :soft, correct: :tap, seed: 6, against: "data/grid-other/"
+end

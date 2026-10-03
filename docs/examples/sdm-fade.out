@@ -1,0 +1,2 @@
+read :s from read-address :first with 10% address-noise via addresses (2 iterated reads, 22 of 1000 hard locations activated): :first +1.00  :fifth +0.16  :fourth +0.14  -> :first
+read :s from read-address :first with 10% address-noise via addresses (2 iterated reads, 32 of 1000 hard locations activated): :fifth +1.00  :first +0.16  :second -0.09  -> :fifth

@@ -1,0 +1,8 @@
+# a ring of 8 things, each pulling the next: the only valleys are all-yes and all-no
+model :ring do
+  landscape :ring, size: 8        # things r0 .. r7
+end
+
+run :ring do
+  valleys                         # exact: visits all 2^8 arrangements
+end

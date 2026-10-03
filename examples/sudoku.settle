@@ -1,0 +1,25 @@
+# Sudoku as settling: one thing per (cell, digit). Every cell, and every digit in every row, column and box,
+# is pushed toward "exactly one yes"; each given digit leans toward yes. The calmest arrangement is the solution.
+# Each puzzle gets its own model: puzzles sharing a model share the anneal's "calmest so far", which costs them.
+model :small do
+  sudoku :s, size: 4, given: "1... .4.. ..4. ...1"
+end
+model :easy do
+  sudoku :s, size: 9, given: "53..7.... 6..195... .98....6. 8...6...3 4..8.3..1 7...2...6 .6....28. ...419..5 ....8..79"
+end
+model :broken do
+  sudoku :s, size: 4, given: "1.1. .... .... ...."    # two 1s in row 1: no valid grid exists
+end
+
+run :small do
+  anneal 2_000, seed: 1
+  s.solution                                        # checked rule by rule, never by energy
+end
+run :easy do
+  anneal 50_000, seed: 1                            # 94% of seeds solve it at this length (see the report)
+  s.solution
+end
+run :broken do
+  anneal 2_000, seed: 1
+  s.solution                                        # must say NOT VALID
+end

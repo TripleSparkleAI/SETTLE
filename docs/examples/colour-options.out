@@ -1,0 +1,2 @@
+play_colour :film: 3 frames, 2 copies x 10 sweeps, cold, bits, checker: median PSNR R 16.22 G 16.08 B 19.26 overall 16.98 dB (worst overall 16.81) (coin-noise law at no pulls: R 16.58 G 16.58 B 19.13), <time> frames/s settling
+play_colour :film: 3 frames, 20 sweeps, warm, rb, bethe: median PSNR R 30.30 G 29.92 B 37.48 overall 31.50 dB (worst overall 31.22), <time> frames/s settling

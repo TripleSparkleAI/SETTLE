@@ -1,0 +1,10 @@
+# Learn "do the two bits agree?" from a file, with four hidden things, then classify.
+model :agree do
+  examples :train, "data/learn-same.txt"   # reads the header line and four rows
+  hidden 4                                 # hidden_0 .. hidden_3, pulled only by visible things
+end
+
+run :agree do
+  learn :train, method: :exact, rounds: 400, rate: 0.5, seed: 1
+  classify :train, labels: "l_*", sweeps: 200, seed: 2   # hold x1 and x2, settle, read the labels
+end

@@ -1,0 +1,21 @@
+valleys (exact, all 65536 arrangements of 16 free things): 8 valleys, 8 of them in mirror pairs, calmest energy -7.800
+  energy    -7.675  basin  19.05% ######                         1101010001111000  stored :owl
+  energy    -7.575  basin  17.19% #####                          0010101110000111  mirror of :owl
+  energy    -7.800  basin  15.78% #####                          1100011001000000  mirror of :cat
+  energy    -7.700  basin  15.56% #####                          0011100110111111  stored :cat
+  energy    -6.675  basin  13.06% ####                           1111001010010001  stored :dog
+  energy    -6.575  basin  10.94% ###                            0000110101101110  mirror of :dog
+  energy    -7.300  basin   4.23% #                              1101011001010000  fake (best overlap -0.75)
+  energy    -7.200  basin   4.19% #                              0010100110101111  fake (best overlap +0.75)
+survey: 400 starts, 50 sweeps at temperature 0.05 then a quench: 6 valleys found (0 seen once; Chao1 estimate 6)
+  calmest found: energy -7.800, reached from 15.8% of starts
+  #1   energy    -7.700  basin  19.75% ######                         0011100110111111  mirror of #4  stored :cat
+  #2   energy    -7.675  basin  18.50% ######                         1101010001111000  mirror of #3  stored :owl
+  #3   energy    -7.575  basin  17.75% #####                          0010101110000111  mirror of #2  mirror of :owl
+  #4   energy    -7.800  basin  15.75% #####                          1100011001000000  mirror of #1  mirror of :cat
+  overlaps among the top valleys (+1 same, -1 mirror, 0 unrelated):
+    +1.00 -0.38 +0.38 -1.00
+    -0.38 +1.00 -1.00 +0.38
+    +0.38 -1.00 +1.00 -0.38
+    -1.00 +0.38 -0.38 +1.00
+  kinds: mirror 47.5% of starts (3 valleys) · stored 52.5% of starts (3 valleys)

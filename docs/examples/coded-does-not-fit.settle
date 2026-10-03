@@ -1,0 +1,5 @@
+# A 64-thing memory with a Hamming code carries 4 x 9 = 36 frame bits: 24 header bits and 12 payload bits.
+model :mind do
+  memory :m, size: 64
+  m.save_coded :note, "meet at the harbour at nine"
+end

@@ -1,0 +1,5 @@
+examples :train from data/denoise-glyphs.txt, 24 in all, over 16 things
+denoiser :d: 2 steps, 8 hidden things per step
+trained :d on :train (24 rows, 16 pixels): 2 machines of 8 hidden, 60 rounds, noise per step 0.250/0.500, <time>s
+generated from :d (trained, 2 steps x 20 sweeps): 6 samples, yes-rate 0.438 (:train 0.333); nearest :train row: median 1.5 of 16 pixels differ, 1 exact copies; wrote denoise-rows-samples.txt
+examples :made from denoise-rows-samples.txt, 6 in all, over 16 things

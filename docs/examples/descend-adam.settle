@@ -1,0 +1,10 @@
+# Adam on the rings net, minibatches of 20: a point, no cloud of its own.
+model :ringnet do
+  data "data/descend-rings.csv"
+  test "data/descend-rings-test.csv"
+  loss :net, hidden: 8, classes: 2, prior: 3
+end
+run :ringnet do
+  descend 4_000, step: 0.01, method: :adam, batch: 20, keep: 0
+  score
+end

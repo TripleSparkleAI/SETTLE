@@ -1,0 +1,5 @@
+# A picture must have the grid's width and height.
+model :film do
+  grid :img, width: 24, height: 16
+  img.lean_from "data/grid-small.pgm"
+end

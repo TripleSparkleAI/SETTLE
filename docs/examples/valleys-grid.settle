@@ -1,0 +1,16 @@
+# a 4 x 3 grid where every thing pulls its neighbours by 1, open and wrapped into a torus
+model :open do
+  landscape :grid, width: 4, height: 3, wrap: :no   # things g0 .. g11, row by row
+end
+
+model :torus do
+  landscape :grid, width: 4, height: 3              # wrap: :yes is the default
+end
+
+run :open do
+  valleys show: 4
+end
+
+run :torus do
+  valleys show: 4
+end

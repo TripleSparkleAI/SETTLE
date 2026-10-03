@@ -1,0 +1,12 @@
+# classify on a test set with a row that has both labels on. That row is skipped.
+# decay: shrinks the pulls a little each step; temperature: sets the run's temperature.
+model :agree do
+  examples :train, "data/learn-same.txt"
+  examples :test, over: "x1 x2 l_same l_diff", rows: "0010 0101 1001 1110 1111"
+  hidden 4
+end
+
+run :agree do
+  learn :train, method: :exact, rounds: 400, rate: 0.5, decay: 0.001, seed: 1
+  classify :test, labels: "l_same l_diff", sweeps: 200, temperature: 1.5, seed: 2
+end

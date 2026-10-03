@@ -1,0 +1,9 @@
+# A step too large for the stiffest spring makes the drift overshoot and blow up.
+# solve names the largest safe step.
+model :stiff do
+  number :p, :q
+end
+
+run :stiff do
+  solve :p, :q, matrix: "40 1; 1 30", target: "1 1", step: 0.1, steps: 1_000
+end

@@ -1,0 +1,8 @@
+# A matrix that is not symmetric is not a set of springs, so solve refuses it.
+model :lin do
+  number :a, :b
+end
+
+run :lin do
+  solve :a, :b, matrix: "2 1; 0 3", target: "1 2"
+end

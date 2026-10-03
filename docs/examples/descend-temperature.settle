@@ -1,0 +1,10 @@
+# The negative control: the same line at temperature 2. The mean is still the posterior mean, but the cloud is
+# twice as wide as the posterior (in variance), and ask says so.
+model :line do
+  data "data/descend-line.csv"
+  loss :least_squares, noise: 0.5, prior: 10
+end
+run :line do
+  descend 200_000, step: 0.004, temperature: 2, seed: 1
+  ask
+end

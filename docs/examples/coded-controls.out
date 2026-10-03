@@ -1,0 +1,6 @@
+save_coded :note in :m: 12 bytes -> 44 payload bits (ac) + 24 header -> code ldpc0.500 (rate 0.500) over 256 things
+recall_coded :m read-address :note (knows the whole pattern, 0% address-noise) after 30 sweeps: text "meet at nine"
+recall_coded :m read-address :note (knows the whole pattern, 0% address-noise) after 30 sweeps: refused (as stored: the code did not converge; as its mirror image: the code did not converge)
+recall_coded :m read-address :note (knows the whole pattern, 0% address-noise) after 30 sweeps: refused (as stored: the check failed; as its mirror image: the check failed)
+recall_coded :m read-address :note (knows the whole pattern, 0% address-noise) after 30 sweeps: refused (as stored: the payload does not decode; as its mirror image: the code did not converge)
+recall_coded :m read-address :note (knows the whole pattern, 97% address-noise) after 30 sweeps: text "meet at nine" (from its mirror image)

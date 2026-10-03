@@ -1,0 +1,7 @@
+# Play three 24 x 16 colour frames on three grids of p-bits, one per channel.
+model :film do
+  colour :film, width: 24, height: 16, smooth: 0.1   # grids film_r, film_g, film_b, 384 things each
+end
+run :film do
+  play_colour :film, frames: "data/colour-frames/", out: "out/colour-play/", sweeps: 20, seed: 1
+end

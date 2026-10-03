@@ -1,0 +1,15 @@
+# A model block may be opened again; its statements add to the same model.
+model :m do
+  thing :a
+end
+
+model :m do
+  thing :b
+  a.pulls :b, by: 2
+end
+
+run :m do
+  hold :a, :yes
+  settle 10_000, seed: 1
+  show
+end

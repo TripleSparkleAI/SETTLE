@@ -1,0 +1,18 @@
+valleys (exact, all 4096 arrangements of 12 free things): 16 valleys, 0 of them in mirror pairs, calmest energy -8.000
+  energy    -8.000  basin   7.20% ##                             000000000000  codeword
+  energy    -8.000  basin   6.01% ##                             010000100100  codeword
+  energy    -8.000  basin   3.78% #                              100100011010  codeword
+  energy    -8.000  basin   3.20% #                              110100111110  codeword
+  energy    -8.000  basin   2.95% #                              001101011011  codeword
+  energy    -8.000  basin   2.83% #                              010111001101  codeword
+  energy    -8.000  basin   2.83% #                              000111101101  codeword
+  energy    -8.000  basin   2.69% #                              011010010111  codeword
+  energy    -8.000  basin   2.66% #                              011101111111  codeword
+  energy    -8.000  basin   2.47% #                              101001001011  codeword
+  energy    -8.000  basin   2.39% #                              001010110111  codeword
+  energy    -8.000  basin   2.39% #                              111110001111  codeword
+  energy    -8.000  basin   2.17% #                              101110101111  codeword
+  energy    -8.000  basin   2.12% #                              111001101111  codeword
+  energy    -8.000  basin   2.03% #                              110011011111  codeword
+  energy    -8.000  basin   1.93% #                              100011111111  codeword
+  steepest descent stops on a flat saddle from 50.34% of arrangements

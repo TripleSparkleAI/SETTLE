@@ -1,0 +1,8 @@
+# Adam has no temperature, so asking for one is refused.
+model :line do
+  data "data/descend-line.csv"
+  loss :least_squares
+end
+run :line do
+  descend 1_000, method: :adam, temperature: 1
+end

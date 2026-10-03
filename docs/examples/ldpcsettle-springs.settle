@@ -1,0 +1,9 @@
+# The code's things and pulls are part of the model, so the core anneal can run them too.
+model :line do
+  ldpc :c, bits: 8, rate: 0.5          # 8 code bits c_b0 .. c_b7 and their helper things c_x0 ...
+end
+run :line do
+  c.transmit flip: 0.1, seed: 1        # also puts the channel leans on c_b0 .. c_b7
+  anneal 200, seed: 1
+  best
+end

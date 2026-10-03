@@ -1,0 +1,16 @@
+# Each run block starts from the same default seed, so these two runs print the same numbers.
+model :coin do
+  thing :c
+end
+
+run :coin do
+  settle 1_000
+  ask :c
+end
+
+run :coin do
+  settle 1_000
+  ask :c
+  settle 1_000, seed: 2            # a different seed gives a different sample
+  ask :c
+end

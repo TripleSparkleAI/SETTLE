@@ -1,0 +1,2 @@
+read :s from read-address :cat with 20% address-noise (pass, softness 0, 3 rounds, best overlap by round +1.00 +1.00 +1.00): :cat +1.00  :bee -0.02  :fox -0.06  -> :cat
+read :s from read-address :cat with 20% address-noise (pass, softness 2, 3 rounds, best overlap by round +0.39 +0.47 +0.44): :fox +0.44  :bee +0.33  :cat +0.31  -> nothing clear (closest :fox at +0.44)

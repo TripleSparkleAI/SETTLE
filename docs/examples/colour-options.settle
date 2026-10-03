@@ -1,0 +1,10 @@
+# The grid options work per channel: copies, keep, a cold start, another update rule, a fit.
+model :film do
+  colour :film, width: 24, height: 16, smooth: 0.1
+end
+run :film do
+  # 2 copies of 10 sweeps, counting the last half of each copy's sweeps: 2 x 5 = 10 samples per pixel
+  play_colour :film, frames: "data/colour-frames/", sweeps: 10, copies: 2, keep: 0.5, warm: :no, update: :checker, seed: 3, quiet: :yes
+  # Bethe leans refined by a 2-iteration fit per channel and frame, read Rao-Blackwellised
+  play_colour :film, frames: "data/colour-frames/", sweeps: 20, read: :rb, correct: :bethe, fit: 2, fit_sweeps: 20, seed: 3, quiet: :yes
+end

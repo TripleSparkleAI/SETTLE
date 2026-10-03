@@ -1,0 +1,12 @@
+# An LDPC code written as springs: parity checks are helper things and penalties in the pulls.
+# The received word leans each code bit; settling finds the calmest codeword, or refuses.
+model :line do
+  ldpc :c, bits: 128, rate: 0.5, gadget: :chain, strength: 4.6, codebook_seed: 1
+end
+
+run :line do
+  c.transmit flip: 0.02, seed: 7
+  c.decode start: :received, sweeps: 2000, seed: 1     # settle from what arrived
+  c.decode start: :random, sweeps: 2000, seed: 2       # anneal from noise instead
+  c.decode_bp                                          # belief propagation on the same code
+end

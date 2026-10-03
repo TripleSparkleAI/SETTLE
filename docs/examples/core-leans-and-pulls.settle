@@ -1,0 +1,13 @@
+# leans and pulls add up when they are declared more than once
+model :m do
+  thing :a, :b, :c, leans: :yes, by: 0.5   # one lean given to three things at once
+  thing :a, leans: :no, by: 1              # a's lean is now 0.5 - 1 = -0.5
+  a.pulls :b, by: 2
+  b.pushes :a, by: 1.5                     # the same pair: the pull is now 2 - 1.5 = 0.5
+  b.pushes :c, by: 1
+end
+
+run :m do
+  settle 20_000, seed: 2
+  show
+end

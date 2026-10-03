@@ -1,0 +1,25 @@
+# write one model as Ising and as QUBO data, then read the Ising file back into a second model
+model :weather do
+  thing :rain,      leans: :no, by: 1
+  thing :sprinkler, leans: :no, by: 0.5
+  thing :wet_grass
+  rain.pushes :sprinkler, by: 0.5
+  rain.pulls  :wet_grass, by: 1.5
+  sprinkler.pulls :wet_grass, by: 1
+  export "out/weather.json"                        # as: :ising is the default
+  export "out/weather.qubo.json", as: :qubo        # the 0/1 form with its energy constant
+end
+
+model :copy do
+  import "out/weather.json"                        # the same things, leans and pulls
+end
+
+run :weather do
+  anneal 500, seed: 2
+  best
+end
+
+run :copy do
+  anneal 500, seed: 2                              # the same model and seed give the same result
+  best
+end

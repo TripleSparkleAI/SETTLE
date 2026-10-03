@@ -1,0 +1,14 @@
+# three random patterns stored in the pulls of 256 things, then recalled from noisy read-addresses
+model :mind do
+  memory :m, size: 256          # adds 256 free things m_0 .. m_255
+  m.remember :cat               # a random pattern named :cat
+  m.remember :dog
+  m.remember :owl
+end
+
+run :mind do
+  m.recall read-address: :cat, address-noise: 0.3, seed: 1    # 30% of :cat's bits flipped, then 30 sweeps at temperature 0.1
+  m.recall read-address: :dog, address-noise: 0.45, seed: 2   # a heavier scramble: this read-address rolls into :owl
+  m.recall read-address: :zebra, address-noise: 0, seed: 3    # never stored: its pattern is not a valley
+  m.recall seed: 4                            # start from pure noise
+end

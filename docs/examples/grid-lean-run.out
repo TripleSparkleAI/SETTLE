@@ -1,0 +1,4 @@
+settled: 400 samples of 384 things at temperature 1
+show_as :img -> grid-lean-run-a.pgm (rate), PSNR 17.52 dB against the leans' picture
+settled: 400 samples of 384 things at temperature 1
+show_as :img -> grid-lean-run-b.pgm (rate), PSNR 20.44 dB against the leans' picture

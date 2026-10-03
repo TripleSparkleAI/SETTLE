@@ -1,0 +1,9 @@
+# a random landscape of 12 things, measured exactly and then by sampling
+model :glass do
+  landscape :random, size: 12, seed: 1, field: 0.3   # random pulls, and small random leans
+end
+
+run :glass do
+  valleys show: 4                                     # the 4 valleys with the largest basins
+  survey starts: 300, sweeps: 20, temperature: 0.05, seed: 1, show: 3
+end

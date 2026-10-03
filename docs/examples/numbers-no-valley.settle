@@ -1,0 +1,9 @@
+# A symmetric matrix that is not positive definite has no valley. The drift runs,
+# and the result is reported as not settled.
+model :lin do
+  number :a, :b
+end
+
+run :lin do
+  solve :a, :b, matrix: "1 2; 2 1", target: "1 1", steps: 2_000, step: 0.05
+end

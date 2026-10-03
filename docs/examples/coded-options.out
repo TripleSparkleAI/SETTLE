@@ -1,0 +1,5 @@
+save_coded :note in :m: 12 bytes -> 44 payload bits (ac) + 24 header -> code rep3 (rate 0.332) over 256 things
+recall_coded :m read-address :note (knows only the name, 10% address-noise) after 10 sweeps: text "meet at nine"
+save_coded :memo in :s: 12 bytes -> 57 payload bits (lz) + 24 header -> code hamming74 (rate 0.562) over 256 things
+recall_coded :s read-address :memo (knows only the name, 10% address-noise) after the address read: text "meet at nine"
+recall_coded :m read-address :note (knows only the name, 10% address-noise) after 30 sweeps: text "meet at nine"

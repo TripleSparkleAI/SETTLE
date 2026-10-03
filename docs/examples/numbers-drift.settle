@@ -1,0 +1,14 @@
+# Two numbers joined by springs. Their energy is lowest where A x = b with
+# A = [[3, -1], [-1, 2]] and b = [2, -1].
+model :bowl do
+  number :x, :y
+  x.springs :y, by: 1        # energy 1/2 (x - y)^2
+  x.leans_to 1.0, by: 2      # energy 2/2 (x - 1)^2
+  y.leans_to -1.0, by: 1     # energy 1/2 (y + 1)^2
+end
+
+run :bowl do
+  drift 200_000, step: 0.05, seed: 1  # noisy settling from x = y = 0
+  means                               # the averages against an exact solve
+  spread                              # the covariance and the inverse matrix it gives
+end

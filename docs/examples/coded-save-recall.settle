@@ -1,0 +1,11 @@
+# Store a compressed, error-coded note in a Hopfield memory, then read it back.
+model :mind do
+  memory :m, size: 256                  # 256 things
+  m.remember :cat                       # a plain random pattern shares the memory
+  m.save_coded :note, "meet at the harbour at nine"   # defaults: compress: :ac, code: :hamming74
+end
+run :mind do
+  m.recall_coded read-address: :note, address-noise: 0.1, seed: 1              # the read-address knows only the name
+  m.recall_coded read-address: :note, address-noise: 0.3, knows: :all, seed: 2 # the read-address is the stored pattern, 30% flipped
+  m.recall_coded read-address: :ghost, seed: 3                          # never saved: refused
+end

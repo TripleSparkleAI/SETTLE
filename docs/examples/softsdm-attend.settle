@@ -1,0 +1,12 @@
+# Three reads computed outside the sampler: the mean field of this machine,
+# the kernel for infinitely many hard locations, and softmax attention fitted to that kernel.
+model :mind do
+  softsdm :s, word-size: 128, hard-locations: 1_000, softness: 0.5
+  s.write :cat
+  s.write :dog
+  s.write :owl
+end
+
+run :mind do
+  s.attend read-address: :cat, address-noise: 0.2, seed: 1   # three rounds of each read from one scrambled cat
+end

@@ -1,0 +1,17 @@
+# Factoring as settling: bits of p and q, one helper thing per product of two bits (held to that product by a
+# penalty), and a pull toward (N - p x q) squared being zero. Pairwise pulls only, so the helpers are needed.
+model :semiprime do
+  factor :f, number: 143
+end
+model :prime do
+  factor :f, number: 127                               # prime: no answer exists
+end
+
+run :semiprime do
+  anneal 10_000, temperature: 1158, seed: 1            # temperature = largest pull / 10, so the start is hot
+  f.solution
+end
+run :prime do
+  anneal 10_000, temperature: 1024, seed: 1
+  f.solution                                           # must say NOT VALID
+end

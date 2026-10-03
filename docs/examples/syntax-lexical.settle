@@ -1,0 +1,12 @@
+# A comment runs from # to the end of the line.
+model :lexical do                  # a block opens with `model :name do`
+  thing :first_thing, :second      # symbols start with a colon
+  thing :second, leans: :no, by: 0.25
+  first_thing.pulls :second, by: 1_000   # underscores may separate digits
+  first_thing.pushes :second, by: 999.5  # a second pull on the same pair adds to the first
+end
+
+run :lexical do
+  settle 1_000, temperature: 1.5, seed: 7
+  show
+end
