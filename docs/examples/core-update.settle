@@ -1,0 +1,17 @@
+# Two update rules, one answer: Gibbs and Metropolised Gibbs settle to the same yes-rates.
+model :weather do
+  thing :rain,      leans: :no, by: 1
+  thing :sprinkler, leans: :no, by: 0.5
+  thing :wet_grass
+  rain.pushes :sprinkler, by: 0.5
+  rain.pulls  :wet_grass, by: 1.5
+  sprinkler.pulls :wet_grass, by: 1
+end
+
+run :weather do
+  hold :wet_grass, :yes
+  settle 20_000, seed: 1                    # Metropolised Gibbs, the default rule: propose the other value,
+  ask :rain                                 # accept with min(1, exp(-2 s I / T))
+  settle 20_000, seed: 1, update: :gibbs    # Gibbs, the default until 2026-10-06
+  ask :rain
+end

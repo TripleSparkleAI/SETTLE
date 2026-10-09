@@ -1,7 +1,7 @@
 # The core family
 
 The core family declares things, leans and pulls, and runs the sampler. Every other family builds on the model
-these statements create. Source: `src/core.rs`, with the model and the sampler in `src/model.rs`. The meaning of
+these statements create. Source: `src/words/core.rs`, with the model and the sampler in `src/engine/model.rs`. The meaning of
 energy, temperature, sweeps and samples is set out in [Semantics](../04-semantics.md); this page gives each
 statement's exact form.
 
@@ -69,14 +69,15 @@ Output:
 ```text output=core-leans-and-pulls
 settled: 20000 samples of 3 things at temperature 1
   a              ######### 29.4%
-  b              ############## 45.3%
-  c              ################### 64.5%
+  b              ############## 46.0%
+  c              ################### 63.7%
 ```
 
 **Errors:**
 
 - `:yes cannot be a thing name` (and the same for `:no`)
-- `unexpected <token> in thing` (something other than a symbol or a comma before the keywords)
+- `` unexpected `<token>` in thing; things are named by symbols, like `thing :rain, :sprinkler` `` (something other
+  than a symbol or a comma before the keywords)
 - `` thing does not take `<key>:` ``
 - `use `leans:` and `by:` together`
 - `expected :yes or :no` (the value of `leans:`)
@@ -167,7 +168,7 @@ starts with no holds. The statement must have exactly this shape; any other shap
 **Form:**
 
 ```text
-settle N, temperature: 1, seed: 24301
+settle N, temperature: 1, seed: 24301, update: :metro
 ```
 
 **Arguments:**
@@ -177,14 +178,58 @@ settle N, temperature: 1, seed: 24301
 | `N` | whole number | required | Number of samples to record (one per sweep). |
 | `temperature:` | number above zero | the run's current temperature (1 at the start of a run block) | Sets the run's temperature, for this and later statements. |
 | `seed:` | whole number | the run's current generator (seeded 24301 at the start of a run block) | Replaces the run's random generator with one seeded by this number. |
+| `update:` | `:metro` or `:gibbs` | the run's current rule (`:metro` at the start of a run block; `:gibbs` until 2026-10-06) | The rule each sweep updates a thing by. |
 
 **What it does:** starts every free thing at a random value, runs `max(1, N / 10)` burn-in sweeps that are not
 recorded, then runs `N` sweeps and records the arrangement after each. Each sweep updates every free thing once
-in a fresh random order with the Gibbs rule. The recorded samples replace those of any earlier `settle` in the
+in a fresh random order with the run's update rule. The recorded samples replace those of any earlier `settle` in the
 block. If `(things) x N` is more than 20,000,000, only per-thing yes-counts are kept, so `ask` refuses
 afterwards. Full detail: [Semantics](../04-semantics.md#settling).
 
-`temperature:` and `seed:` change the run state, so they also apply to later statements in the same run block.
+`temperature:`, `seed:` and `update:` change the run state, so they also apply to later statements in the same run
+block.
+
+The two update rules leave the same distribution in place and differ in how fast a chain forgets where it was.
+`:gibbs` (the p-bit rule) draws the thing afresh, yes with probability `(1 + tanh(I / T)) / 2`. `:metro`
+(Metropolised Gibbs) proposes the other value and accepts it with probability `min(1, exp(-2 s I / T))`, so it
+changes a thing at least as often. On four small models measured against exact enumeration, 300 seeds each, the
+squared error of the yes-rates under `:metro` was 0.15 to 0.47 times the error under `:gibbs` at the same number
+of sweeps, with no model worse (`examples/core_update_measure.rs`, `runs/settleperfect/`). `:metro` is
+the default since 2026-10-06 (chosen on that measurement); write `update: :gibbs`
+for the old default. Every statement that sweeps through the run follows the run's rule: `anneal`, `anneal_each`,
+`anneal_schedule`, memory's recall, learn's classify, valleys' survey and denoise's direct sample. The samplers a
+family owns (learn's training, the denoise machines, ldpc, the grid's `play`) keep their own rules. On factoring 899 with
+20 restarts, 40 seeds, the calmest visited arrangement was the answer on 32 seeds under `:metro` against 30 under
+`:gibbs`, and the calmest end state on 21 against 26 (`runs/newdefaults/restarts_899_out.txt`).
+
+```settle example=core-update
+# Two update rules, one answer: Gibbs and Metropolised Gibbs settle to the same yes-rates.
+model :weather do
+  thing :rain,      leans: :no, by: 1
+  thing :sprinkler, leans: :no, by: 0.5
+  thing :wet_grass
+  rain.pushes :sprinkler, by: 0.5
+  rain.pulls  :wet_grass, by: 1.5
+  sprinkler.pulls :wet_grass, by: 1
+end
+
+run :weather do
+  hold :wet_grass, :yes
+  settle 20_000, seed: 1                    # Metropolised Gibbs, the default rule: propose the other value,
+  ask :rain                                 # accept with min(1, exp(-2 s I / T))
+  settle 20_000, seed: 1, update: :gibbs    # Gibbs, the default until 2026-10-06
+  ask :rain
+end
+```
+
+Output (the exact answer is 63.8%):
+
+```text output=core-update
+settled: 20000 samples of 3 things at temperature 1
+ask :rain: yes 63.9% of 20000 samples
+settled: 20000 samples of 3 things at temperature 1
+ask :rain: yes 64.2% of 20000 samples
+```
 
 **Output:**
 
@@ -221,13 +266,13 @@ Output:
 
 ```text output=core-weather
 settled: 20000 samples of 3 things at temperature 1
-  rain           ################### 64.2%
-  sprinkler      ################### 63.0%
+  rain           ################### 63.9%
+  sprinkler      ################### 63.7%
   wet_grass      ############################## 100.0%  (held)
-ask :rain: yes 64.2% of 20000 samples
-ask :rain, and: :sprinkler: yes 31.6% of 20000 samples
-ask :rain, or: :sprinkler: yes 95.6% of 20000 samples
-ask :sprinkler, and_not: :rain: yes 31.4% of 20000 samples
+ask :rain: yes 63.9% of 20000 samples
+ask :rain, and: :sprinkler: yes 31.8% of 20000 samples
+ask :rain, or: :sprinkler: yes 95.7% of 20000 samples
+ask :sprinkler, and_not: :rain: yes 31.9% of 20000 samples
 ```
 
 The next example shows what `seed:` and `temperature:` keep for later statements:
@@ -261,16 +306,16 @@ Output:
 
 ```text output=core-seed
 settled: 1000 samples of 2 things at temperature 1
-ask :a, and: :b: yes 39.9% of 1000 samples
+ask :a, and: :b: yes 35.0% of 1000 samples
 settled: 1000 samples of 2 things at temperature 1
-ask :a, and: :b: yes 42.1% of 1000 samples
+ask :a, and: :b: yes 47.0% of 1000 samples
 settled: 1000 samples of 2 things at temperature 1
-ask :a, and: :b: yes 39.9% of 1000 samples
+ask :a, and: :b: yes 35.0% of 1000 samples
 settled: 1000 samples of 2 things at temperature 3
-ask :a, and: :b: yes 34.3% of 1000 samples
+ask :a, and: :b: yes 33.2% of 1000 samples
 settled: 1000 samples of 2 things at temperature 3
 settled: 1000 samples of 2 things at temperature 1
-ask :a, and: :b: yes 39.9% of 1000 samples
+ask :a, and: :b: yes 35.0% of 1000 samples
 ```
 
 **Errors:**
@@ -278,6 +323,8 @@ ask :a, and: :b: yes 39.9% of 1000 samples
 - `` settle does not take `<key>:` ``
 - `temperature must be above zero`
 - `a number was expected`
+- `` settle takes a whole number of sweeps, 1 or more, like `settle 10_000`; got <N> ``
+- `` `update:` takes :gibbs or :metro ``
 
 ## `anneal`
 
@@ -286,7 +333,7 @@ ask :a, and: :b: yes 39.9% of 1000 samples
 **Form:**
 
 ```text
-anneal N, temperature: 1, seed: 24301
+anneal N, temperature: 1, seed: 24301, update: :metro
 ```
 
 **Arguments:**
@@ -296,6 +343,7 @@ anneal N, temperature: 1, seed: 24301
 | `N` | whole number | required | Number of sweeps. |
 | `temperature:` | number above zero | the run's current temperature | Sets the run's temperature `T`; the schedule runs from `10 T` to `T / 20`. |
 | `seed:` | whole number | the run's current generator | Replaces the run's random generator. |
+| `update:` | `:metro` or `:gibbs` | the run's current rule (`:metro` at the start of a run block) | The rule each sweep updates a thing by (see `settle`). |
 
 **What it does:** starts from a random arrangement (held things held) and runs `N` sweeps, sweep `k` at
 temperature `10 T x 0.005^(k / (N - 1))`. After every sweep it computes the energy and keeps the lowest-energy
@@ -335,11 +383,12 @@ Output:
 
 ```text output=core-anneal
 annealed: 4000 sweeps, calmest energy found -3.500
-best (energy -3.500): a no, b yes, c no, d yes, e no
+best (energy -3.500): a no, b yes, c no, d no, e yes
 ```
 
 **Errors:** as for `settle`: `` anneal does not take `<key>:` ``, `temperature must be above zero`,
-`a number was expected`.
+`a number was expected`, `` anneal takes a whole number of sweeps, 1 or more, like `anneal 10_000`; got <N> ``,
+`` `update:` takes :gibbs or :metro ``.
 
 ## `show`
 
@@ -464,13 +513,13 @@ Output:
 
 ```text output=core-ask
 settled: 5000 samples of 3 things at temperature 1
-ask :a: yes 71.3% of 5000 samples
-ask :a, and: :b: yes 19.0% of 5000 samples
-ask :a, or: :b: yes 79.3% of 5000 samples
+ask :a: yes 72.2% of 5000 samples
+ask :a, and: :b: yes 19.7% of 5000 samples
+ask :a, or: :b: yes 79.5% of 5000 samples
 ask :a, and_not: :b: yes 52.4% of 5000 samples
-ask :a, or_not: :b: yes 92.1% of 5000 samples
-ask :a, and: :c, or: :b: yes 73.1% of 5000 samples
-ask :a, and: :b, and: :c: yes 16.8% of 5000 samples
+ask :a, or_not: :b: yes 92.7% of 5000 samples
+ask :a, and: :c, or: :b: yes 72.7% of 5000 samples
+ask :a, and: :b, and: :c: yes 17.8% of 5000 samples
 ```
 
 **Errors:**

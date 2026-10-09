@@ -9,7 +9,7 @@ kinds of test landscape into a model: random pulls, a grid, a ring and a parity 
 When a model has a memory from [the memory family](memory.md), or a code landscape, both statements label each
 valley: a stored pattern, a mirror image of one, a fake, a codeword, or not a codeword.
 
-The source is `src/valleys.rs`. The measurements are in `experiments/thermosim/runs/valleymap/REPORT_VALLEYMAP.md`.
+The source is `src/valleys.rs`. The measurements are in `SETTLE/runs/valleymap/REPORT_VALLEYMAP.md`.
 For example, a landscape of 20 things with random pulls has about 58 valleys on average, where a table of the same
 energies shuffled at random has about 49,900.
 
@@ -269,15 +269,15 @@ valleys (exact, all 4096 arrangements of 12 free things): 14 valleys, 6 of them 
   energy    -8.128  basin  14.87% ####                           000110101001
   energy    -7.289  basin  11.82% ####                           100000010100
   ... 10 more valleys
-survey: 300 starts, 20 sweeps at temperature 0.05 then a quench: 11 valleys found (1 seen once; Chao1 estimate 11)
-  calmest found: energy -9.657, reached from 23.0% of starts
-  #1   energy    -9.657  basin  23.00% #######                        111001010110  mirror of #4
-  #2   energy    -7.328  basin  20.67% ######                         011111111010
-  #3   energy    -7.289  basin  16.67% #####                          100000010100
+survey: 300 starts, 20 sweeps at temperature 0.05 then a quench: 11 valleys found (0 seen once; Chao1 estimate 11)
+  calmest found: energy -9.657, reached from 19.3% of starts
+  #1   energy    -7.328  basin  21.33% ######                         011111111010
+  #2   energy    -9.657  basin  19.33% ######                         111001010110  mirror of #4
+  #3   energy    -7.289  basin  17.67% #####                          100000010100
   overlaps among the top valleys (+1 same, -1 mirror, 0 unrelated):
-    +1.00 +0.00 +0.33
-    +0.00 +1.00 -0.67
-    +0.33 -0.67 +1.00
+    +1.00 +0.00 -0.67
+    +0.00 +1.00 +0.33
+    -0.67 +0.33 +1.00
 ```
 
 **Example:** in a code landscape every codeword is a valley at the lowest energy.
@@ -468,17 +468,17 @@ valleys (exact, all 65536 arrangements of 16 free things): 8 valleys, 8 of them 
   energy    -7.300  basin   4.23% #                              1101011001010000  fake (best overlap -0.75)
   energy    -7.200  basin   4.19% #                              0010100110101111  fake (best overlap +0.75)
 survey: 400 starts, 50 sweeps at temperature 0.05 then a quench: 6 valleys found (0 seen once; Chao1 estimate 6)
-  calmest found: energy -7.800, reached from 15.8% of starts
-  #1   energy    -7.700  basin  19.75% ######                         0011100110111111  mirror of #4  stored :cat
-  #2   energy    -7.675  basin  18.50% ######                         1101010001111000  mirror of #3  stored :owl
-  #3   energy    -7.575  basin  17.75% #####                          0010101110000111  mirror of #2  mirror of :owl
-  #4   energy    -7.800  basin  15.75% #####                          1100011001000000  mirror of #1  mirror of :cat
+  calmest found: energy -7.800, reached from 18.2% of starts
+  #1   energy    -7.700  basin  18.75% ######                         0011100110111111  mirror of #3  stored :cat
+  #2   energy    -6.675  basin  18.75% ######                         1111001010010001  mirror of #6  stored :dog
+  #3   energy    -7.800  basin  18.25% #####                          1100011001000000  mirror of #1  mirror of :cat
+  #4   energy    -7.675  basin  15.25% #####                          1101010001111000  mirror of #5  stored :owl
   overlaps among the top valleys (+1 same, -1 mirror, 0 unrelated):
-    +1.00 -0.38 +0.38 -1.00
-    -0.38 +1.00 -1.00 +0.38
-    +0.38 -1.00 +1.00 -0.38
-    -1.00 +0.38 -0.38 +1.00
-  kinds: mirror 47.5% of starts (3 valleys) · stored 52.5% of starts (3 valleys)
+    +1.00 -0.12 -1.00 -0.38
+    -0.12 +1.00 +0.12 +0.00
+    -1.00 +0.12 +1.00 +0.38
+    -0.38 +0.00 +0.38 +1.00
+  kinds: mirror 47.2% of starts (3 valleys) · stored 52.8% of starts (3 valleys)
 ```
 
 The tiny lean on `m_0` gives every valley a different energy. Without it, a pattern and its mirror image have the

@@ -1,2 +1,2 @@
 settled: 200 samples of 1152 things at temperature 1
-show_as :film_g -> colour-channels-green.pgm (rate), PSNR 28.97 dB against the leans' picture
+show_as :film_g -> colour-channels-green.pgm (rate), PSNR 33.95 dB against the leans' picture

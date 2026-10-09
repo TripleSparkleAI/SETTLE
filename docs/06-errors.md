@@ -6,23 +6,46 @@ block errors and dispatch errors. Each family's own errors are listed at the end
 
 ## How an error is reported
 
-The interpreter stops at the first error. It prints nothing the program would have printed; it prints one line
-to standard error and exits with status 2:
+The interpreter stops at the first error. It prints nothing the program would have printed; it prints the
+message to standard error and exits with status 2. The `settle` command adds the program line the error points
+at, with a caret under the place and its column:
 
 ```text
-settle: line N: <message>
+settle: line 5: settle does not take `sed:`; did you mean `seed:`?
+   5 |   settle 100, sed: 1
+     |               ^^^^ column 15
 ```
+
+The first line is always `settle: line N: <message>`. The column is found from the message (`lex::locate`): the
+first thing the message quotes in backticks that appears on that line, then the first `:symbol` it names; when
+the message quotes neither, the caret underlines the whole statement. A message that runs over several lines (the
+list of known statements) prints its first line, the excerpt, then the rest.
 
 `N` is the 1-based line number in the program file. For an unclosed block, `N` is the line where the block was
 opened. When the file cannot be read at all, the message is `settle: cannot read <path>: <reason>` and has no
-line number. When the library is used directly (`Interp::exec`), the error is a `SettleError` holding the text
-after `settle: `.
+line number. Two command-line mistakes are refused before any program is read, also with status 2:
+`settle: unknown option <arg> (see settle --help)` and `settle: one program at a time; got <n> arguments (see
+settle --help)` ([Install and run](01-install-and-run.md#the-command-line)), and `settle --json` with no program is
+refused with `settle: --json needs a program (see settle --help)`. With `--json`, a program's error is printed as
+a JSON object on standard output instead: its message, and the `line`, `column` and `width` the caret would mark.
+When the library is used directly (`Interp::exec`), the error is a `SettleError` holding the text after
+`settle: `, with no excerpt.
+
+## Suggestions
+
+Three errors suggest a correction when one is close: an unknown keyword (``did you mean `seed:`?``), an unknown
+thing (`did you mean :sprinkler?`), and a line no family knows (``Did you mean `settle`?``, or, for a statement
+written in the wrong kind of block, `` `settle` is a run statement; put it inside `run :name do ... end`. ``).
+"Close" is at most one edit for a word of up to five letters and at most a third of the length for a longer
+word, with a swap of two neighbouring letters counted as one edit and `-` and `_` counted as the same character
+(so `warm-fit:` is pointed to `warm_fit:`). An edit never replaces the whole of the shorter word, so `:b` is not
+corrected to `:a`. When no keyword is close, the keyword error lists every keyword the statement takes instead.
 
 The examples on this page show that text, as the test in `tests/docs_examples.rs` records it.
 
 ## Lexical errors
 
-These come from `src/lex.rs`, before a line is interpreted.
+These come from `src/words/lex.rs`, before a line is interpreted.
 
 | Message | Cause |
 |---|---|
@@ -47,7 +70,7 @@ line 6: a string is missing its closing quote
 
 ## Block errors
 
-These come from `src/interp.rs`.
+These come from `src/words/interp.rs`.
 
 | Message | Cause |
 |---|---|
@@ -83,9 +106,13 @@ If no statement family claims a line, the error names the block kind and lists e
 registered families accept in that kind of block, one per line, from their help text:
 
 ```text
-no statement family knows this line inside a model. Known:
+no statement family knows this line inside a model.<hint> Known:
     <every model statement form>
 ```
+
+The hint is empty, or `` Did you mean `<verb>`? `` when the line's verb (`dance` in `dance :a`, `read` in
+`s.read ...`) is close to a verb of that block kind, or `` `<verb>` is a run statement; put it inside `run :name
+do ... end`. `` (and the same for model) when the verb belongs to the other kind of block.
 
 The list is long and grows with every family, so the example below shows its full current text. Check the
 statement's spelling and shape first: a statement with the right name but the wrong shape (for example
@@ -104,8 +131,8 @@ end
 ```text error=err-unknown-statement
 line 6: no statement family knows this line inside a run. Known:
     hold :a, :yes
-    settle 10_000, temperature: 1, seed: 1
-    anneal 4_000, seed: 1
+    settle 10_000, temperature: 1, seed: 1, update: :metro   (or :gibbs)
+    anneal 4_000, seed: 1, update: :metro   (or :gibbs)
     show   /   best
     ask :a, and: :b, or_not: :c
     m.remember :cat   /   m.save :note, "some text"
@@ -113,8 +140,8 @@ line 6: no statement family knows this line inside a run. Known:
     m.recall key: "secret"   (the key finds the memory and reads it)
     img.lean_from "frame.pgm", by: 1, correct: :yes
     img.show_as "out.pgm", from: :rate
-    play :img, frames: "dir/", out: "dir2/", against: "other/", sweeps: 10, warm: :yes, read: :bits|:soft|:rb, keep: 1, correct: :tap|:bethe, copies: 8, update: :gibbs|:checker|:metro|:metro_checker|:cluster, fit: 8, fit_sweeps: 200, fit_update: :cluster, warm_fit: 1, warm_fit_sweeps: 400, warm_from: :leans|:correction, warm_step: 1, cut: 0.25, seed: 1, quiet: :no
-    anneal_each 10_000, seed: 1   (each puzzle keeps its own calmest arrangement)
+    play :img, frames: "dir/", out: "dir2/", against: "other/", sweeps: 10, warm: :yes, read: :bits|:soft|:rb, keep: 1, correct: :tap|:mean|:bethe, copies: 8, update: :metro_checker|:gibbs|:checker|:metro|:cluster, fit: 8, fit_sweeps: 200, fit_update: :cluster, warm_fit: 1, warm_fit_sweeps: 400, warm_from: :correction|:leans, warm_step: 1, cut: 0.25, seed: 1, quiet: :no
+    anneal_each 10_000, seed: 1, update: :metro|:gibbs   (each puzzle keeps its own calmest arrangement)
     s.solution   (after anneal: decode the calmest arrangement and check it by the rules)
     examples :data, "file.txt"   /   examples :data, rows: "110"
     learn :data, rounds: 200, rate: 0.05, method: :contrastive, sweeps: 1, batch: 50, decay: 0, seed: 1
@@ -146,7 +173,7 @@ line 6: no statement family knows this line inside a run. Known:
     c.decode_moves mover: :block, block: 4, sweeps: 400, seed: 2
     c.decode_nishimori mover: :block, sweeps: 2000, seed: 3
     refusal word-size: 256, load: 3000, level: 0.01   (the travel rule's threshold and the nearest-neighbour ceiling; no memory built)
-    anneal_schedule 100_000, temperature: 2.9, hot: 10, cold: 0.05, restarts: 10, seed: 1
+    anneal_schedule 100_000, temperature: 2.9, hot: 10, cold: 0.05, restarts: 10, seed: 1, update: :metro|:gibbs
     f.final   (judge the end state the walk came to rest in, beside f.solution's best-so-far)
     contenttrack word-size: 256, hard-locations: 100000, load: 3000, address-noise: 0.3, block: 0, samples: 200   (TRACK-C's predicted recall for the content reads; no memory built)
     descend 20_000, step: 0.01, temperature: 1, cool_to: 0, batch: 100, walkers: 4, seed: 1, method: :adam
@@ -155,17 +182,19 @@ line 6: no statement family knows this line inside a run. Known:
 
 ## Argument errors shared by every family
 
-Every family reads its arguments with the same helpers in `src/lex.rs`, so these messages appear across the
+Every family reads its arguments with the same helpers in `src/words/lex.rs`, so these messages appear across the
 language:
 
 | Message | Cause |
 |---|---|
-| `` expected `key: value`, found <token> `` | Something other than `label value` pairs and commas where keyword arguments are expected. The token is printed in its internal form, for example `Ident("x")` or `Num(3.0)`. |
-| `` <statement> does not take `<key>:` `` | A keyword the statement does not accept. |
+| `` expected `key: value`, found `<token>` `` | Something other than `label value` pairs and commas where keyword arguments are expected. The token is quoted as written, for example `` `x` `` or `` `3` ``. |
+| `` <statement> does not take `<key>:`; <hint> `` | A keyword the statement does not accept. The hint is `` did you mean `<key>:`? ``, or `` it takes `<a>:`, `<b>:` and `<c>:` ``, or `` <statement> takes no `key: value` arguments ``. |
 | `a number was expected` | A keyword value that should be a number is not. |
 | `a "quoted" string was expected` | A keyword value that should be a string is not. |
 | `expected :yes or :no` | A keyword value that should be `:yes` or `:no` is not. |
-| `unknown thing :<name> (declare it with: thing :<name>)` | A symbol that should name a declared thing does not. |
+| `unknown thing :<name> (declare it with: thing :<name>)` | A symbol that should name a declared thing does not. When a declared thing is close, the message is `unknown thing :<name>; did you mean :<thing>? (or declare it with: thing :<name>)`. |
+| `<what> takes a whole number from <lo> to <hi>` | A count (sweeps, rounds, samples, a size) that is a fraction or out of range. Where a count has no upper limit the message is `<what> takes a whole number of <lo> or more; got <value>`. No family truncates a count: `show: 2.5` is refused, not read as 2. |
+| `` `<statement>` is a KANERVA statement, and this SETTLE was built without the `sdm` feature; build it with the feature on (the default): cargo build --release --features sdm `` | An sdm-family statement (`memory`, `sdm`, `softsdm`, `sdmscale` in a model; `refusal`, `contenttrack` in a run) in a SETTLE built with `--no-default-features`. |
 
 ```settle example=err-bad-keyword
 model :m do
@@ -173,12 +202,12 @@ model :m do
 end
 
 run :m do
-  settle 100, sweeps: 5            # settle takes temperature: and seed: only
+  settle 100, sweeps: 5            # settle takes temperature:, seed: and update: only
 end
 ```
 
 ```text error=err-bad-keyword
-line 6: settle does not take `sweeps:`
+line 6: settle does not take `sweeps:`; it takes `temperature:`, `seed:` and `update:`
 ```
 
 ```settle example=err-unknown-thing

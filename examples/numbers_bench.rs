@@ -7,6 +7,8 @@
 //! 1/kappa, so the stiffest spring is 1 and the condition number is exactly kappa. Step 0.1, temperature 1.
 //! Error at time t is the average of the positions over the window (t/10, t], against Gaussian elimination.
 
+#![allow(clippy::needless_range_loop)] // index loops mirror the equations they measure
+
 use settle::interp::Interp;
 use settle::numbers::*;
 use settle::rng::Rng;
@@ -414,5 +416,5 @@ fn main() {
         }
     }
     println!("non-symmetric: {} of 20 refused · symmetric indefinite: {} of {} reported solved", refused, nonpd_solved, nonpd_total);
-    println!("\nNEXT -> fill the report: experiments/thermosim/runs/smoothnumbers/REPORT_SMOOTHNUMBERS.md");
+    println!("\nNEXT -> fill the report: SETTLE/runs/smoothnumbers/REPORT_SMOOTHNUMBERS.md");
 }

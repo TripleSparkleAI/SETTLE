@@ -12,6 +12,8 @@
 //! Printed per frame and pooled: 2 tau for bits and for tanh(I), the per-sample variance ratio var(tanh I) / var(s),
 //! and the PSNR each predicts at K = 80 against the frame's own grey (bias not included).
 
+#![allow(clippy::needless_range_loop)] // index loops mirror the equations they measure
+
 use settle::filmsharp::{fit_leans, Sweeper, Update};
 use settle::grid::{leans_for, magnetisations, read_pgm, Invert, Spec};
 use settle::model::Model;

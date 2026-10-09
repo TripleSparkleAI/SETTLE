@@ -34,9 +34,9 @@
 //! There is no burn-in: every sweep counts toward the budget, and `keep:` sets the share of the last sweeps averaged.
 
 use crate::ext::{Claim, Ctx, Ext};
-use crate::filmsharp::{precond_leans, update_opt, Sweeper, Update};
+use crate::filmsharp::{precond_leans, update_opt, Sweeper, Update, DEFAULT_UPDATE};
 use crate::filmwarm::{from_word, warm_opts, WarmFit};
-use crate::lex::{err, kw, kwargs, num, only, text, yes_no, SettleError, Tok};
+use crate::lex::{err, kw, kwargs, num, only, text, yes_no, SettleError, Tok, whole};
 use crate::model::{Model, State};
 use crate::rng::Rng;
 use std::path::Path;
@@ -188,10 +188,15 @@ pub enum Invert {
     Bethe,
 }
 
-/// Read `correct:` (:yes or :mean = mean-field, :tap = TAP, :bethe = Bethe, :no = none; mean-field when absent).
+/// The inversion when a program names none: TAP since 2026-10-06 (lane NEWDEFAULTS; GRIDPLAYER-2 measured it
+/// ahead of mean-field on 20 of 20 exact targets at every pull). `correct: :mean` is the old default.
+pub const DEFAULT_INVERT: Invert = Invert::Tap;
+
+/// Read `correct:` (:yes or :mean = mean-field, :tap = TAP, :bethe = Bethe, :no = none; DEFAULT_INVERT, TAP, when
+/// absent).
 pub fn invert_opt(kv: &[(String, Tok)], ln: usize) -> Result<Invert, SettleError> {
     match kw(kv, "correct") {
-        None => Ok(Invert::Mean),
+        None => Ok(DEFAULT_INVERT),
         Some(Tok::Sym(s)) if s == "tap" => Ok(Invert::Tap),
         Some(Tok::Sym(s)) if s == "bethe" => Ok(Invert::Bethe),
         Some(Tok::Sym(s)) if s == "mean" => Ok(Invert::Mean),
@@ -315,7 +320,7 @@ pub const FIT_FLOOR: f64 = 0.05;
 
 impl Default for PlayOpts {
     fn default() -> Self {
-        PlayOpts { sweeps: 10, warm: true, soft: false, keep: 1.0, by: 1.0, correct: Invert::Mean, copies: 1, rb: false, update: Update::Gibbs, fit: 0, fit_sweeps: 200, fit_update: Update::Gibbs }
+        PlayOpts { sweeps: 10, warm: true, soft: false, keep: 1.0, by: 1.0, correct: DEFAULT_INVERT, copies: 1, rb: false, update: DEFAULT_UPDATE, fit: 0, fit_sweeps: 200, fit_update: DEFAULT_UPDATE }
     }
 }
 
@@ -380,7 +385,9 @@ pub fn play_frame_with(m: &mut Model, st: &mut State, g: &Spec, pic: &Pgm, s: &m
     let mut acc = vec![0.0; n];
     let mut rbacc = vec![0.0; n];
     let mut yes = vec![0u64; n];
-    let plain = o.update == Update::Gibbs && !o.rb;
+    // the plain path is State::sweep, which follows the run's core rule (Metropolised Gibbs by default since
+    // 2026-10-06), so it stands in for the play's `:gibbs` only while the core rule is Gibbs too
+    let plain = o.update == Update::Gibbs && !o.rb && st.update == crate::engine::model::Update::Gibbs;
     let mut sweeper = Sweeper::new(o.update, g, &free);
     for c in 0..k_copies {
         let sc = &mut s[c * len..(c + 1) * len];
@@ -447,7 +454,7 @@ pub fn fit_update_opt(kv: &[(String, Tok)], ln: usize) -> Result<Update, SettleE
 pub fn fit_opts(kv: &[(String, Tok)], ln: usize) -> Result<(usize, usize), SettleError> {
     let fit = kw(kv, "fit").map(|v| num(v, ln)).transpose()?.unwrap_or(0.0);
     let fs = kw(kv, "fit_sweeps").map(|v| num(v, ln)).transpose()?.unwrap_or(200.0);
-    if fit < 0.0 || fit > 1000.0 || fit.fract() != 0.0 {
+    if !(0.0..=1000.0).contains(&fit) || fit.fract() != 0.0 {
         return err(ln, "fit must be a whole number from 0 to 1000");
     }
     if fs < 4.0 || fs.fract() != 0.0 {
@@ -468,19 +475,19 @@ pub fn read_word(o: &PlayOpts) -> &'static str {
 
 pub fn invert_word(i: Invert) -> &'static str {
     match i {
-        Invert::Tap => ", tap",
+        Invert::Tap => "",
         Invert::Bethe => ", bethe",
         Invert::None => ", uncorrected",
-        Invert::Mean => "",
+        Invert::Mean => ", mean",
     }
 }
 
 pub fn update_word(u: Update) -> &'static str {
     match u {
-        Update::Gibbs => "",
+        Update::Gibbs => ", gibbs",
         Update::Checker => ", checker",
         Update::Metro => ", metro",
-        Update::MetroChecker => ", metro_checker",
+        Update::MetroChecker => "",
         Update::Cluster => ", cluster",
     }
 }
@@ -491,7 +498,7 @@ pub fn copies_opt(kv: &[(String, Tok)], ln: usize) -> Result<usize, SettleError>
         None => Ok(1),
         Some(v) => {
             let c = num(v, ln)?;
-            if c < 1.0 || c > 4096.0 || c.fract() != 0.0 {
+            if !(1.0..=4096.0).contains(&c) || c.fract() != 0.0 {
                 return err(ln, "copies must be a whole number from 1 to 4096");
             }
             Ok(c as usize)
@@ -534,7 +541,7 @@ fn play(m: &mut Model, st: &mut State, name: &str, rest: &[Tok], ln: usize, ctx:
     let out_dir = kw(&kv, "out").map(|t| text(t, ln)).transpose()?.map(|p| ctx.path(&p));
     let against = kw(&kv, "against").map(|t| text(t, ln)).transpose()?.map(|p| ctx.path(&p));
     let sweeps = match kw(&kv, "sweeps") {
-        Some(v) => num(v, ln)? as usize,
+        Some(v) => whole(num(v, ln)?, 0.0, f64::INFINITY, "sweeps:", ln)?,
         None => return err(ln, "play needs `sweeps:`"),
     };
     if sweeps == 0 {
@@ -696,7 +703,7 @@ impl Ext for Grid {
             "model: img.lean_from \"frame.pgm\", by: 1, correct: :yes",
             "run: img.lean_from \"frame.pgm\", by: 1, correct: :yes",
             "run: img.show_as \"out.pgm\", from: :rate",
-            "run: play :img, frames: \"dir/\", out: \"dir2/\", against: \"other/\", sweeps: 10, warm: :yes, read: :bits|:soft|:rb, keep: 1, correct: :tap|:bethe, copies: 8, update: :gibbs|:checker|:metro|:metro_checker|:cluster, fit: 8, fit_sweeps: 200, fit_update: :cluster, warm_fit: 1, warm_fit_sweeps: 400, warm_from: :leans|:correction, warm_step: 1, cut: 0.25, seed: 1, quiet: :no",
+            "run: play :img, frames: \"dir/\", out: \"dir2/\", against: \"other/\", sweeps: 10, warm: :yes, read: :bits|:soft|:rb, keep: 1, correct: :tap|:mean|:bethe, copies: 8, update: :metro_checker|:gibbs|:checker|:metro|:cluster, fit: 8, fit_sweeps: 200, fit_update: :cluster, warm_fit: 1, warm_fit_sweeps: 400, warm_from: :correction|:leans, warm_step: 1, cut: 0.25, seed: 1, quiet: :no",
         ]
     }
 
@@ -784,9 +791,11 @@ mod tests {
             let g = load(&m, "img", 1).unwrap();
             let mut st = State::new(100 + seed);
             let mut s = Vec::new();
-            let first = PlayOpts { sweeps: 50, warm: true, soft: true, keep: 1.0, by: 1.0, correct: Invert::Mean, copies: 1, ..PlayOpts::default() };
+            // the measurement below was taken under Gibbs with mean-field leans (the defaults until 2026-10-06), so
+            // both are named here; the default rule mixes faster and narrows the warm start's lead
+            let first = PlayOpts { sweeps: 50, warm: true, soft: true, keep: 1.0, by: 1.0, correct: Invert::Mean, copies: 1, update: Update::Gibbs, fit_update: Update::Gibbs, ..PlayOpts::default() };
             play_frame(&mut m, &mut st, &g, &b, &mut s, &first);
-            let o = PlayOpts { sweeps, warm, soft: true, keep: 1.0, by: 1.0, correct: Invert::Mean, copies: 1, ..PlayOpts::default() };
+            let o = PlayOpts { sweeps, warm, soft: true, keep: 1.0, by: 1.0, correct: Invert::Mean, copies: 1, update: Update::Gibbs, fit_update: Update::Gibbs, ..PlayOpts::default() };
             total += play_frame(&mut m, &mut st, &g, &shifted, &mut s, &o).psnr;
         }
         total / seeds as f64
@@ -867,8 +876,7 @@ run :film do
   img.show_as \"still.pgm\"
   play :img, frames: \"in/\", out: \"out/\", sweeps: 20, warm: :yes, seed: 2
 end";
-        let mut it = Interp::default();
-        it.base_dir = d.clone();
+        let mut it = Interp::in_dir(d.clone());
         let out = it.exec(src).unwrap_or_else(|e| panic!("{}", e));
         assert!(out.iter().any(|l| l.starts_with("show_as :img -> still.pgm (rate), PSNR")), "{:?}", out);
         assert!(out.last().unwrap().starts_with("play :img: 3 frames, 20 sweeps, warm, bits: median PSNR"), "{:?}", out);
@@ -881,8 +889,7 @@ end";
     fn a_picture_of_the_wrong_size_is_refused_by_line() {
         let d = scratch("size");
         write_pgm(&d.join("small.pgm"), &picture(b'a', 8, 8)).unwrap();
-        let mut it = Interp::default();
-        it.base_dir = d;
+        let mut it = Interp::in_dir(d);
         let e = it.exec("model :m do\n  grid :img, width: 9, height: 8\n  img.lean_from \"small.pgm\"\nend").err().unwrap().0;
         assert!(e.starts_with("line 3:") && e.contains("is 8x8 but grid :img is 9x8"), "{}", e);
     }
@@ -1036,8 +1043,7 @@ end";
         }
         let run = |extra: &str| {
             let src = format!("model :f do\n  grid :img, width: 24, height: 16, smooth: 0.1\nend\nrun :f do\n  play :img, frames: \"a/\", sweeps: 200, read: :soft, correct: :tap, seed: 3{}\nend", extra);
-            let mut it = Interp::default();
-            it.base_dir = d.clone();
+            let mut it = Interp::in_dir(d.clone());
             let out = it.exec(&src).unwrap_or_else(|e| panic!("{}", e));
             let line = out.iter().find(|l| l.starts_with("play :img")).unwrap().clone();
             line.split("median PSNR ").nth(1).unwrap().split(' ').next().unwrap().parse::<f64>().unwrap()

@@ -28,6 +28,7 @@
 //!   current interpreter instead of comparing, then rewrites every output=, error= and file= fence in the
 //!   Markdown from those files. It never rewrites an example= fence: the program text is edited by hand.
 //! - One test function, so changing the working directory cannot race another test in this binary.
+//!
 //! </claudes_code_comments>
 
 use settle::interp::Interp;
@@ -161,8 +162,7 @@ fn copy_dir(src: &Path, dst: &Path) {
 /// Ok(printed lines) or Err(error message), timings masked.
 fn run_example(dir: &Path, name: &str) -> Result<String, String> {
     let src = fs::read_to_string(dir.join(format!("{}.settle", name))).unwrap();
-    let mut it = Interp::default();
-    it.base_dir = PathBuf::new();
+    let mut it = Interp::in_dir(PathBuf::new());
     match it.exec(&src) {
         Ok(lines) => Ok(lines.iter().map(|l| mask_times(l)).collect::<Vec<_>>().join("\n")),
         Err(e) => Err(mask_times(&e.0)),

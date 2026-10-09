@@ -1,0 +1,13 @@
+annealed each: 4000 sweeps, calmest energy found -43.750; per puzzle :heart -32.000, :odd -11.750
+  (:heart judged on its own calmest arrangement from anneal_each)
+  .#.#.
+  #####
+  #####
+  .###.
+  ..#..
+nonogram :heart: VALID (every row and column read back against its clue, not by energy)
+  (:odd judged on its own calmest arrangement from anneal_each)
+  #..
+  .#.
+  ...
+nonogram :odd: NOT VALID: row 3 reads [], its clue is [1]

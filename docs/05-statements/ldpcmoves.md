@@ -8,7 +8,7 @@ takes each bit's majority value, instead of annealing.
 
 The source is `src/ldpcmoves.rs`. The statements run on a code declared with `ldpc` and sent with `c.transmit`;
 they have no model statements of their own. The family was measured in
-`experiments/thermosim/runs/ldpcmoves/REPORT_LDPCMOVES.md`: with these moves, a 400-sweep anneal decodes better
+`SETTLE/runs/ldpcmoves/REPORT_LDPCMOVES.md`: with these moves, a 400-sweep anneal decodes better
 than the one-thing ldpcsettle decoder does at 10,000 sweeps, while belief propagation still wins at higher noise.
 
 | Statement | Block | Summary |

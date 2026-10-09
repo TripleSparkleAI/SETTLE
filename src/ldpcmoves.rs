@@ -34,7 +34,7 @@
 
 use crate::ext::{Claim, Ctx, Ext};
 use crate::ldpcsettle::{coded_ldpc, hard_lean, Gadget};
-use crate::lex::{err, kw, kwargs, num, only, SettleError, Tok};
+use crate::lex::{err, kw, kwargs, num, only, SettleError, Tok, whole};
 use crate::model::{Model, State};
 use crate::rng::Rng;
 
@@ -644,7 +644,7 @@ fn decode(m: &Model, st: &mut State, name: &str, rest: &[Tok], ln: usize, ctx: &
     if let Some(v) = kw(&kv, "seed") {
         st.rng = Rng::new(num(v, ln)? as u64);
     }
-    let b = kw(&kv, "block").map(|v| num(v, ln)).transpose()?.unwrap_or(4.0) as usize;
+    let b = whole(kw(&kv, "block").map(|v| num(v, ln)).transpose()?.unwrap_or(4.0), 0.0, f64::INFINITY, "block:", ln)?;
     if !(1..=10).contains(&b) {
         return err(ln, "block must be between 1 and 10");
     }
@@ -656,7 +656,7 @@ fn decode(m: &Model, st: &mut State, name: &str, rest: &[Tok], ln: usize, ctx: &
         },
         None => Mover::Block(b),
     };
-    let sweeps = kw(&kv, "sweeps").map(|v| num(v, ln)).transpose()?.unwrap_or(if nishimori { 2000.0 } else { 400.0 }) as usize;
+    let sweeps = whole(kw(&kv, "sweeps").map(|v| num(v, ln)).transpose()?.unwrap_or(if nishimori { 2000.0 } else { 400.0 }), 0.0, f64::INFINITY, "sweeps:", ln)?;
     if sweeps < 2 {
         return err(ln, "sweeps must be at least 2");
     }
@@ -989,7 +989,7 @@ mod tests {
                 let tv_iid: f64 = pi.iter().zip(&iid).map(|(a, b)| (a - b).abs()).sum::<f64>() / 2.0;
                 assert!(tv < 4.0 * tv_iid && tv < 0.03, "{:?} {:?}: tv {} against independent draws {}", g, mover, tv, tv_iid);
                 // negative control: the same histogram against a different distribution is far off
-                let off: f64 = pi.iter().zip(&hist).map(|(a, b)| (1.0 / pi.len() as f64 - b).abs()).sum::<f64>() / 2.0;
+                let off: f64 = hist.iter().take(pi.len()).map(|b| (1.0 / pi.len() as f64 - b).abs()).sum::<f64>() / 2.0;
                 assert!(off > 0.1 && off > 10.0 * tv, "the test can tell distributions apart: {}", off);
             }
         }

@@ -11,6 +11,8 @@
 //!   precond sampled                 as precond, m from a Gibbs chain, 10 iterations of 2,000 sweeps
 //!   newton sampled                  as newton, C from 400 samples of that chain (lambda 0.1), 5 x 2,000 sweeps
 
+#![allow(clippy::needless_range_loop)] // index loops mirror the equations they measure
+
 use settle::filmsharp::{bethe_leans, newton_fit, newton_leans, precond_fit, precond_leans, secant_fit, Response, Update};
 use settle::grid::{leans_for, Invert, Spec};
 use settle::model::{exact_rates, Model, State};

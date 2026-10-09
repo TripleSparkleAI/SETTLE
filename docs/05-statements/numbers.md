@@ -11,7 +11,7 @@ numbers statements never read or change the run's yes/no state (its held things,
 or samples). A number and a thing may share a name.
 
 The source is `src/numbers.rs`. The measurements are in
-`experiments/thermosim/runs/smoothnumbers/REPORT_SMOOTHNUMBERS.md`.
+`SETTLE/runs/smoothnumbers/REPORT_SMOOTHNUMBERS.md`.
 
 | Statement | Block | Summary |
 |---|---|---|
@@ -108,8 +108,8 @@ with the names as the words.
 
 **Errors:**
 
-- `unexpected <token> in number (write: number :x, :y)` (anything other than symbols and commas; the token is
-  printed in its internal form, like `Ident("x")`)
+- `` unexpected `<token>` in number (write: number :x, :y) `` (anything other than symbols and commas; the token
+  is quoted as written, like `` `x` ``)
 - `number needs at least one name, like: number :x`
 
 ## `x.springs`
@@ -607,7 +607,7 @@ line 7: refused: the matrix is not symmetric (row 1 column 2 is 1, row 2 column 
 **Errors:**
 
 - `solve needs the numbers to solve for, like: solve :x, :y, matrix: "2 1; 1 3", target: "1 2"`
-- `unexpected <token> in solve` (anything other than symbols and commas before the first keyword)
+- `` unexpected `<token>` in solve `` (anything other than symbols and commas before the first keyword)
 - `` solve needs `matrix:` ``
 - `` solve needs `target:` ``
 - `matrix must be <d> by <d> for <d> numbers`
@@ -628,7 +628,7 @@ line 7: refused: the matrix is not symmetric (row 1 column 2 is 1, row 2 column 
   to arrive, so an ill-conditioned system needs a longer `burn:`. The measurements put the solve error at 0.4
   to 0.8% at time 100,000 for sizes 4 to 64 and condition numbers 10 and 1000; plain relaxation at temperature
   0 is about 10^8 times more accurate for the solve alone, and the noise is what makes `spread` possible. See
-  `experiments/thermosim/runs/smoothnumbers/REPORT_SMOOTHNUMBERS.md`.
+  `SETTLE/runs/smoothnumbers/REPORT_SMOOTHNUMBERS.md`.
 - **Cost.** One step costs `d^2` multiply-adds, and the covariance costs about `d^2 / 2` more per kept step.
 - **Temperature 0.** `means` still works, but the standard errors are close to zero, so the count of standard
   errors compares rounding noise. `spread` refuses a drift at temperature 0.

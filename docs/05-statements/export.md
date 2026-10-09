@@ -7,7 +7,7 @@ arrangement of the last anneal. `import` reads an Ising file: in a model block i
 and pulls to the model; in a run block it restores the file's held things and temperature.
 
 The source is `src/export.rs`. The forms, the schema and a cross-check of SETTLE's answers against other samplers
-are in `experiments/thermosim/runs/backends/REPORT_SETTLEBACKENDS.md`.
+are in `SETTLE/runs/backends/REPORT_SETTLEBACKENDS.md`.
 
 Only the yes/no part of a model is exported. Real-valued `number` things, which live in the model's notes, are
 not.
@@ -430,8 +430,8 @@ exported :best (3 things, 3 pulls) to out/best.json
 imported 3 things and 3 pulls from out/w.json
 imported 1 held things and temperature 0.8 from out/w.json
 settled: 2000 samples of 3 things at temperature 0.8
-  rain           ################### 63.7%
-  sprinkler      #################### 65.0%
+  rain           #################### 65.2%
+  sprinkler      ################### 64.5%
   wet_grass      ############################## 100.0%  (held)
 ```
 

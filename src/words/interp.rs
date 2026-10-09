@@ -1,8 +1,9 @@
-//! Blocks (`model :x do ... end`, `run :x do ... end`) and dispatch of each statement to the statement families.
+//! WORDS: blocks (`model :x do ... end`, `run :x do ... end`) and dispatch of each statement line to the statement
+//! families through the registry (`words::registry`).
 
-use crate::ext::{registry, Ctx, Ext};
-use crate::lex::{err, lex, SettleError, Tok};
-use crate::model::{Model, State};
+use crate::engine::model::{Model, State, RUN_SEED};
+use crate::words::lex::{err, lex, suggest, SettleError, Tok};
+use crate::words::registry::{registry, Ctx, Ext};
 use std::collections::HashMap;
 use std::path::PathBuf;
 
@@ -18,7 +19,43 @@ impl Default for Interp {
     }
 }
 
+/// The verb of a statement line: `settle` in `settle 100`, `read` in `s.read ...`.
+fn verb_of(t: &[Tok]) -> Option<&str> {
+    match t {
+        [Tok::Ident(_), Tok::Dot, Tok::Ident(v), ..] => Some(v),
+        [Tok::Ident(v), ..] => Some(v),
+        _ => None,
+    }
+}
+
 impl Interp {
+    /// An interpreter whose relative paths resolve against `dir` (the folder of the program it will run).
+    pub fn in_dir(dir: impl Into<PathBuf>) -> Self {
+        Interp { base_dir: dir.into(), ..Default::default() }
+    }
+
+    /// Every verb the families list for `place` ("model" or "run"), from their `statements()` help lines.
+    fn verbs(&self, place: &str) -> Vec<String> {
+        let mut out: Vec<String> = Vec::new();
+        for e in &self.exts {
+            for s in e.statements() {
+                let Some((places, body)) = s.split_once(": ") else { continue };
+                if !places.split('/').any(|p| p == place) {
+                    continue;
+                }
+                for form in body.split("   /   ") {
+                    let first = form.split_whitespace().next().unwrap_or("");
+                    let word = first.rsplit('.').next().unwrap_or(first);
+                    let word: String = word.chars().take_while(|c| c.is_alphanumeric() || *c == '_').collect();
+                    if !word.is_empty() && !out.contains(&word) {
+                        out.push(word);
+                    }
+                }
+            }
+        }
+        out
+    }
+
     pub fn exec(&mut self, src: &str) -> Result<Vec<String>, SettleError> {
         let mut out = Vec::new();
         let mut block: Option<(bool, String, usize)> = None; // (is_model, name, opening line)
@@ -40,7 +77,7 @@ impl Interp {
                         if !self.models.contains_key(name) {
                             return err(ln, format!("no model :{} to run", name));
                         }
-                        state = Some(State::new(0x5eed));
+                        state = Some(State::new(RUN_SEED));
                     }
                     block = Some((k == "model", name.clone(), ln));
                     continue;
@@ -75,13 +112,27 @@ impl Interp {
                 Some(r) => r?,
                 None => {
                     let place = if is_model { "model" } else { "run" };
+                    let other = if is_model { "run" } else { "model" };
                     let known: Vec<&str> = self
                         .exts
                         .iter()
                         .flat_map(|e| e.statements().iter().copied())
                         .filter_map(|s| s.strip_prefix(&format!("{}: ", place)))
                         .collect();
-                    return err(ln, format!("no statement family knows this line inside a {}. Known:\n    {}", place, known.join("\n    ")));
+                    let hint = match verb_of(&t) {
+                        Some(v) if self.verbs(other).iter().any(|w| w == v) && !self.verbs(place).iter().any(|w| w == v) => {
+                            format!(" `{}` is a {} statement; put it inside `{} :name do ... end`.", v, other, other)
+                        }
+                        Some(v) => {
+                            let verbs = self.verbs(place);
+                            match suggest(v, verbs.iter().map(String::as_str)) {
+                                Some(s) => format!(" Did you mean `{}`?", s),
+                                None => String::new(),
+                            }
+                        }
+                        None => String::new(),
+                    };
+                    return err(ln, format!("no statement family knows this line inside a {}.{} Known:\n    {}", place, hint, known.join("\n    ")));
                 }
             }
         }

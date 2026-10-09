@@ -9,7 +9,7 @@ otherwise it refuses.
 
 The source is `src/ldpcsettle.rs`. The codes are the LDPC codes of the [coded](coded.md) family (`src/coded.rs`),
 so a code declared here with `bits: n` and `rate: R` is the same matrix a coded note uses in an `n`-thing memory
-with `code: :ldpc, rate: R`. The family was measured in `experiments/thermosim/runs/ldpcsettle/REPORT_LDPCSETTLE.md`.
+with `code: :ldpc, rate: R`. The family was measured in `SETTLE/runs/ldpcsettle/REPORT_LDPCSETTLE.md`.
 At 512 bits the one-thing-at-a-time settle loses clearly to belief propagation at 400 sweeps; at 10,000 sweeps it
 reaches belief propagation's result at rate 0.5 and a 1% flip rate. In 12,800 settle decodes it never returned a
 wrong codeword. The [ldpcmoves](ldpcmoves.md) family adds decoders that move several things at once.

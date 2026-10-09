@@ -1,7 +1,7 @@
 # Syntax
 
-This page describes what a SETTLE program may contain, token by token. It is derived from the lexer
-(`src/lex.rs`) and the block handling in the interpreter (`src/interp.rs`). What each statement means is on the
+This page says what a SETTLE program may contain, token by token, as the lexer (`src/words/lex.rs`) and the
+interpreter (`src/words/interp.rs`) read it. What each statement means is on the
 [statement pages](05-statements/README.md).
 
 ## Lines
@@ -28,7 +28,7 @@ There are seven kinds of token.
 | Comma | `,` | |
 | Dot | `.` not followed by a digit | the `.` in `rain.pulls` |
 
-Spaces and tabs separate tokens and are otherwise ignored.
+Spaces and tabs separate tokens; otherwise they are ignored.
 
 ### Words
 
@@ -103,10 +103,11 @@ receiver.verb positional-arguments keyword-arguments
   colon): `rain.pulls`, `img.show_as`, `m.recall`.
 - **Positional arguments** come first: symbols, numbers or strings, separated by commas, in the order the
   statement defines.
-- **Keyword arguments** come last: a label followed by one value token (`by: 2`, `seed: 1`, `as: :ising`). They
-  may be separated by commas. Most statements accept their keywords in any order and refuse keywords they do
-  not know, with the message `` <statement> does not take `<key>:` ``. A keyword retired for one of Kanerva's
-  terms names its replacement instead: `` `cue:` is now `read-address:` (Kanerva's retrieval address) ``. A keyword given twice uses its first value.
+- **Keyword arguments** come last: a label followed by one value token (`by: 2`, `seed: 1`, `as: :ising`),
+  optionally separated by commas. Most statements accept their keywords in any order. A keyword a statement does
+  not know is refused: `` <statement> does not take `<key>:` ``. A keyword retired for one of Kanerva's terms names
+  its replacement: `` `cue:` is now `read-address:` (Kanerva's retrieval address) ``. A keyword given twice keeps
+  its first value.
 
 Values of keyword arguments are single tokens. Where a statement needs a list (rows of bits, a matrix, the edges
 of a graph), the list is written inside one string, and the statement parses the string itself; each statement
@@ -135,8 +136,8 @@ end
 
 ```text output=syntax-lexical
 settled: 1000 samples of 2 things at temperature 1.5
-  first_thing    ############## 45.9%
-  second         ############ 41.3%
+  first_thing    ############## 46.6%
+  second         ############ 41.0%
 ```
 
 The two lines about the pair add up to a pull of 0.5.
@@ -181,7 +182,7 @@ These messages come from the lexer. Each is reported as `line N: <message>`.
 - `a ':' must start a symbol like :rain`
 - `'<text>' is not a number`
 - `unexpected '<character>'` (for a character that starts no token, such as `(` or `=`)
-- `` expected `key: value`, found <token> `` (a keyword argument list that contains something other than labels,
-  values and commas; the token is shown in its internal form, such as `Ident("x")`)
+- `` expected `key: value`, found `<token>` `` (a keyword argument list that contains something other than labels,
+  values and commas; the token is quoted as written, such as `` `x` ``)
 
 The [Errors](06-errors.md) page lists every error, including block errors.

@@ -8,10 +8,10 @@ through the read as a count: how many woken hard locations hold that pattern. It
 predicted distribution and lets them vote. The family's one statement, `contenttrack`, is a calculator that prints
 TRACK-C's predicted recall for a memory size, a load and a address-noise.
 
-The source is `src/sdmtrack.rs`. Most of the file is measurement code with no statement of its own: a reference
+The source is `src/sdmtrack.rs`. The words of this family are parsed by KANERVA (`kanerva::lang`, its keywords in `kanerva/src/words.rs`), the same parser the `kanerva` command uses, so a `.kanerva` file of these lines prints the same under `settle` and `kanerva` (see [the plug](#the-plug) below). Most of the file is measurement code with no statement of its own: a reference
 predictor on a random membership graph, a predictor that also places the hard locations' addresses, a traced top-k
 read of a real store, and combined refusal rules. The measurement program `examples/sdmtrack_measure.rs` uses them.
-The family was measured in `experiments/thermosim/runs/sdmtrack/REPORT_SDMTRACK.md`. There, TRACK-C matched the
+The family was measured in `SETTLE/runs/sdmtrack/REPORT_SDMTRACK.md`. There, TRACK-C matched the
 real store's failure rate to about 0.02 where `p T < 2` (light loads). Above `p T` of about 2 it predicted
 failure far earlier than the real store (mean absolute error about 0.3). The family continues the
 [sdmrefuse](sdmrefuse.md) family, whose predictor covers the address read.
@@ -154,3 +154,12 @@ uses few samples to stay fast; each fraction then moves in steps of 0.05 or 0.1.
 - TRACK-C treats every pattern's count as independent. The report's hypothesis for its pessimism at heavy load is
   that in a real store the other patterns in a woken target hard location lean toward the target, which a count model
   cannot express. The report marks this as not measured.
+
+## The plug
+
+SETTLE does not parse this family itself. Its registry entry is a mount of KANERVA's family (`src/plug.rs`): the
+line goes to `kanerva::lang`, and the typed statement comes back to `src/sdmtrack.rs`, which runs it on the model.
+The `kanerva` command runs the same lines on KANERVA's engine alone, and the test `tests/oneparser_parity.rs` holds
+the two equal: every program KANERVA accepts prints the same lines under both, and every error is the same error.
+`contenttrack` runs under both commands.
+

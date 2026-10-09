@@ -1,0 +1,824 @@
+model :m do
+  sdm :s
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  sdm :s, word-size: 64, hard-locations: 300
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 8
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 0
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 4096, hard-locations: 10000
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, fade: 0
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, fade: 1.5
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, activation-radius: 65
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, colour: 1
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, sed: 1
+end
+# ---- next program
+model :m do
+  sdm :s, size: 64
+end
+# ---- next program
+model :m do
+  sdm :s, locations: 64
+end
+# ---- next program
+model :m do
+  sdm :s, radius: 3
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: :big
+end
+# ---- next program
+model :m do
+  sdm :s word-size: 64
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64,
+end
+# ---- next program
+model :m do
+  sdm :s, word-size
+end
+# ---- next program
+model :m do
+  sdm :s, 64
+end
+# ---- next program
+model :m do
+  sdm s
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  s.write :cat
+  s.write :cat
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  s.write :cat, "hello"
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  s.write :cat, "this text is far too long"
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  s.write :cat, "hi", key: "k"
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  s.write :cat, "hi", key: "k", colour: 1
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  s.write :cat, "hi", key: :k
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  s.write :cat, hi
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  s.write :cat, "hi" key: "k"
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  s.write :cat, "a much longer note", key: "k"
+end
+# ---- next program
+model :m do
+  t.write :cat
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  s.write cat
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300, activation-radius: 0
+  s.write :cat
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  s.write :cat, "hi", key: "k", fade: 1
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  s.write :cat
+  s.write :dog
+  s.write :note, "hey"
+  s.write :d, "secret", key: "k"
+end
+run :m do
+  s.read read-address: :cat, address-noise: 0.1, seed: 1
+  s.read read-address: :note, address-noise: 0.05, seed: 2
+  s.read key: "k"
+  s.read key: "j"
+  s.read seed: 3
+  s.read read-address: :zebra, address-noise: 0
+  s.read read-address: :cat, via: :pulls, seed: 4
+  s.read read-address: :cat, iterated-reads: 1, seed: 5
+  s.read key: "k", address-noise: 0.02, seed: 6
+  s.write :owl
+  s.read read-address: :owl, seed: 7
+  s.read read-address: :d, seed: 8
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  s.write :cat
+  s.write :dog
+  s.write :note, "hey"
+  s.write :d, "secret", key: "k"
+end
+run :m do
+  s.read via: :soft
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  s.write :cat
+  s.write :dog
+  s.write :note, "hey"
+  s.write :d, "secret", key: "k"
+end
+run :m do
+  s.read via: pulls
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  s.write :cat
+  s.write :dog
+  s.write :note, "hey"
+  s.write :d, "secret", key: "k"
+end
+run :m do
+  s.read read-address: :cat, key: "k"
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  s.write :cat
+  s.write :dog
+  s.write :note, "hey"
+  s.write :d, "secret", key: "k"
+end
+run :m do
+  s.read read-address: "cat"
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  s.write :cat
+  s.write :dog
+  s.write :note, "hey"
+  s.write :d, "secret", key: "k"
+end
+run :m do
+  s.read key: :k
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  s.write :cat
+  s.write :dog
+  s.write :note, "hey"
+  s.write :d, "secret", key: "k"
+end
+run :m do
+  s.read read-address: :cat, address-noise: :x
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  s.write :cat
+  s.write :dog
+  s.write :note, "hey"
+  s.write :d, "secret", key: "k"
+end
+run :m do
+  s.read seed: :x
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  s.write :cat
+  s.write :dog
+  s.write :note, "hey"
+  s.write :d, "secret", key: "k"
+end
+run :m do
+  s.read iterated-reads: :x
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  s.write :cat
+  s.write :dog
+  s.write :note, "hey"
+  s.write :d, "secret", key: "k"
+end
+run :m do
+  s.read cue: :cat
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  s.write :cat
+  s.write :dog
+  s.write :note, "hey"
+  s.write :d, "secret", key: "k"
+end
+run :m do
+  s.read damage: 0.1
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  s.write :cat
+  s.write :dog
+  s.write :note, "hey"
+  s.write :d, "secret", key: "k"
+end
+run :m do
+  s.read iterations: 3
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  s.write :cat
+  s.write :dog
+  s.write :note, "hey"
+  s.write :d, "secret", key: "k"
+end
+run :m do
+  s.read read-adress: :cat
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  s.write :cat
+  s.write :dog
+  s.write :note, "hey"
+  s.write :d, "secret", key: "k"
+end
+run :m do
+  s.read :cat
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  s.write :cat
+  s.write :dog
+  s.write :note, "hey"
+  s.write :d, "secret", key: "k"
+end
+run :m do
+  s.read read-address: :cat, address-noise: 0.1 seed: 1
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  s.write :cat
+  s.write :dog
+  s.write :note, "hey"
+  s.write :d, "secret", key: "k"
+end
+run :m do
+  t.read read-address: :cat
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  s.write :cat
+  s.write :dog
+  s.write :note, "hey"
+  s.write :d, "secret", key: "k"
+end
+run :m do
+  s.reed read-address: :cat
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  s.write :cat
+  s.write :dog
+  s.write :note, "hey"
+  s.write :d, "secret", key: "k"
+end
+run :m do
+  s.write :cat
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  s.write :cat
+  s.write :dog
+  s.write :note, "hey"
+  s.write :d, "secret", key: "k"
+end
+run :m do
+  s.write :fox, "x"
+  s.read read-address: :fox, address-noise: 0, seed: 1
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300, fade: 0.9
+  s.write :a
+  s.write :b
+  s.write :c
+end
+run :m do
+  s.read read-address: :a, address-noise: 0.05, seed: 1
+  s.read read-address: :c, address-noise: 0.05, via: :pulls, seed: 1
+end
+# ---- next program
+model :m do
+  softsdm :f, word-size: 64, hard-locations: 200, activation-probability: 0.05, softness: 0.2
+  softsdm :f, word-size: 64, hard-locations: 200, activation-probability: 0.05, softness: 0.2
+end
+# ---- next program
+model :m do
+  softsdm :f, word-size: 4
+end
+# ---- next program
+model :m do
+  softsdm :f, word-size: 64, hard-locations: 0
+end
+# ---- next program
+model :m do
+  softsdm :f, word-size: 64, activation-probability: 1
+end
+# ---- next program
+model :m do
+  softsdm :f, word-size: 64, softness: -1
+end
+# ---- next program
+model :m do
+  softsdm :f, word-size: 64, gain: 0
+end
+# ---- next program
+model :m do
+  softsdm :f, word-size: 64, colour: 1
+end
+# ---- next program
+model :m do
+  softsdm :f, word-size: 64, write-samples: 4
+end
+# ---- next program
+model :m do
+  softsdm :f, word-size: 64, write_samples: 4, hard-locations: 50
+  f.write :cat
+end
+# ---- next program
+model :m do
+  softsdm :f, word-size: 64, fire: 0.1
+end
+# ---- next program
+model :m do
+  softsdm :f, word-size: 64, hard-locations: 200, activation-probability: 0.05, softness: 0.2
+  f.write :cat
+  f.write :cat
+end
+# ---- next program
+model :m do
+  softsdm :f, word-size: 64, hard-locations: 200, activation-probability: 0.05, softness: 0.2
+  f.write :cat, "waytoolongtext"
+end
+# ---- next program
+model :m do
+  softsdm :f, word-size: 64, hard-locations: 200, activation-probability: 0.05, softness: 0.2
+  f.write cat
+end
+# ---- next program
+model :m do
+  softsdm :f, word-size: 64, hard-locations: 200, activation-probability: 0.05, softness: 0.2
+  f.write :cat, "hi", key: "k"
+end
+# ---- next program
+model :m do
+  softsdm :f, word-size: 64, hard-locations: 200, activation-probability: 0.05, softness: 0.2
+  f.write :cat, hi
+end
+# ---- next program
+model :m do
+  softsdm :f, word-size: 64, hard-locations: 200, activation-probability: 0.05, softness: 0.2
+  f.write :cat
+  f.write :dog
+  f.write :note, "hey"
+end
+run :m do
+  f.read read-address: :cat, address-noise: 0.1, seed: 1
+  f.read read-address: :note, address-noise: 0.05, seed: 2, rounds: 2, samples: 8
+  f.read seed: 3
+  f.read read-address: :cat, mode: :settle, burn: 3, samples: 4, seed: 4
+  f.attend read-address: :cat, address-noise: 0.1, rounds: 2, seed: 5
+  f.attend
+  f.write :owl
+  f.read read-address: :owl, address-noise: 0, seed: 6
+end
+# ---- next program
+model :m do
+  softsdm :f, word-size: 64, hard-locations: 200, activation-probability: 0.05, softness: 0.2
+  f.write :cat
+  f.write :dog
+  f.write :note, "hey"
+end
+run :m do
+  f.read mode: :hot
+end
+# ---- next program
+model :m do
+  softsdm :f, word-size: 64, hard-locations: 200, activation-probability: 0.05, softness: 0.2
+  f.write :cat
+  f.write :dog
+  f.write :note, "hey"
+end
+run :m do
+  f.read read-address: :cat, address-noise: 2
+end
+# ---- next program
+model :m do
+  softsdm :f, word-size: 64, hard-locations: 200, activation-probability: 0.05, softness: 0.2
+  f.write :cat
+  f.write :dog
+  f.write :note, "hey"
+end
+run :m do
+  f.read read-address: "cat"
+end
+# ---- next program
+model :m do
+  softsdm :f, word-size: 64, hard-locations: 200, activation-probability: 0.05, softness: 0.2
+  f.write :cat
+  f.write :dog
+  f.write :note, "hey"
+end
+run :m do
+  f.read via: :pulls
+end
+# ---- next program
+model :m do
+  softsdm :f, word-size: 64, hard-locations: 200, activation-probability: 0.05, softness: 0.2
+  f.write :cat
+  f.write :dog
+  f.write :note, "hey"
+end
+run :m do
+  f.attend mode: :pass
+end
+# ---- next program
+model :m do
+  softsdm :f, word-size: 64, hard-locations: 200, activation-probability: 0.05, softness: 0.2
+  f.write :cat
+  f.write :dog
+  f.write :note, "hey"
+end
+run :m do
+  f.attend read-address: :cat, address-noise: -1
+end
+# ---- next program
+model :m do
+  softsdm :f, word-size: 64, hard-locations: 200, activation-probability: 0.05, softness: 0.2
+  f.write :cat
+  f.write :dog
+  f.write :note, "hey"
+end
+run :m do
+  f.read cue: :cat
+end
+# ---- next program
+model :m do
+  sdmscale :k, word-size: 64, hard-locations: 3000, activation-probability: 0.02, seed: 1
+  sdmscale :k, word-size: 64, hard-locations: 3000, activation-probability: 0.02, seed: 1
+end
+# ---- next program
+model :m do
+  sdmscale :k, word-size: 8
+end
+# ---- next program
+model :m do
+  sdmscale :k, word-size: 64, hard-locations: 0
+end
+# ---- next program
+model :m do
+  sdmscale :k, word-size: 64, activation-probability: 0
+end
+# ---- next program
+model :m do
+  sdmscale :k, word-size: 64, hard-locations: 3000, tolerate-noise: 0.5
+end
+# ---- next program
+model :m do
+  sdmscale :k, word-size: 64, hard-locations: 3000, tolerate-noise: 0.2
+  k.put :cat
+end
+# ---- next program
+model :m do
+  sdmscale :k, word-size: 64, activation-radius: 70
+end
+# ---- next program
+model :m do
+  sdmscale :k, word-size: 64, colour: 1
+end
+# ---- next program
+model :m do
+  sdmscale :k, word-size: 64, tolerate: 0.2
+end
+# ---- next program
+model :m do
+  sdmscale :k, word-size: 64, hard-locations: 3000, activation-probability: 0.02, seed: 1
+  k.put :cat
+  k.put :cat
+end
+# ---- next program
+model :m do
+  sdmscale :k, word-size: 64, hard-locations: 3000, activation-probability: 0.02, seed: 1
+  k.fill 10
+  k.fill 10
+end
+# ---- next program
+model :m do
+  sdmscale :k, word-size: 64, hard-locations: 3000, activation-probability: 0.02, seed: 1
+  k.put cat
+end
+# ---- next program
+model :m do
+  sdmscale :k, word-size: 64, hard-locations: 3000, activation-probability: 0.02, seed: 1
+  k.fill :x
+end
+# ---- next program
+model :m do
+  j.put :cat
+end
+# ---- next program
+model :m do
+  sdmscale :k, word-size: 64, hard-locations: 3000, activation-probability: 0.02, seed: 1
+  k.put :cat
+  k.put :dog
+  k.fill 20
+end
+run :m do
+  k.read read-address: :cat, address-noise: 0.1, seed: 1
+  k.read read-address: :dog, address-noise: 0.1, via: :pulls, seed: 2
+  k.read read-address: :cat, address-noise: 0.1, via: :pulls, wake: :density, seed: 3
+  k.read read-address: :cat, address-noise: 0.1, via: :pulls, wake: :top, seed: 4
+  k.read read-address: :zebra, address-noise: 0.0, seed: 5
+  k.read read-address: :zebra, address-noise: 0.3, iterated-reads: 3, seed: 6
+  k.read read-address: :cat
+end
+# ---- next program
+model :m do
+  sdmscale :k, word-size: 64, hard-locations: 3000, activation-probability: 0.02, seed: 1
+  k.put :cat
+  k.put :dog
+  k.fill 20
+end
+run :m do
+  k.read
+end
+# ---- next program
+model :m do
+  sdmscale :k, word-size: 64, hard-locations: 3000, activation-probability: 0.02, seed: 1
+  k.put :cat
+  k.put :dog
+  k.fill 20
+end
+run :m do
+  k.read read-address: :cat, wake: :top
+end
+# ---- next program
+model :m do
+  sdmscale :k, word-size: 64, hard-locations: 3000, activation-probability: 0.02, seed: 1
+  k.put :cat
+  k.put :dog
+  k.fill 20
+end
+run :m do
+  k.read read-address: :cat, via: :pulls, wake: :hot
+end
+# ---- next program
+model :m do
+  sdmscale :k, word-size: 64, hard-locations: 3000, activation-probability: 0.02, seed: 1
+  k.put :cat
+  k.put :dog
+  k.fill 20
+end
+run :m do
+  k.read read-address: :cat, via: :x
+end
+# ---- next program
+model :m do
+  sdmscale :k, word-size: 64, hard-locations: 3000, activation-probability: 0.02, seed: 1
+  k.put :cat
+  k.put :dog
+  k.fill 20
+end
+run :m do
+  k.read read-address: :cat, key: "k"
+end
+# ---- next program
+model :m do
+  sdmscale :k, word-size: 64, hard-locations: 3000, activation-probability: 0.02, seed: 1
+  k.put :cat
+  k.put :dog
+  k.fill 20
+end
+run :m do
+  k.put :owl
+end
+# ---- next program
+model :m do
+  refusal word-size: 64
+end
+# ---- next program
+model :m do
+  contenttrack
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  softsdm :s, word-size: 64, hard-locations: 300
+  s.write :cat
+end
+# ---- next program
+model :m do
+  softsdm :s, word-size: 64, hard-locations: 300
+  sdm :s, word-size: 64, hard-locations: 300
+  s.write :cat
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  sdmscale :s, word-size: 64, hard-locations: 300
+  s.write :cat
+  s.put :dog
+end
+run :m do
+  s.read read-address: :cat, address-noise: 0, seed: 1
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  softsdm :s, word-size: 64, hard-locations: 300
+  s.write :cat
+end
+run :m do
+  s.read read-address: :cat, address-noise: 0, seed: 1
+  s.attend
+end
+# ---- next program
+model :m do
+  sdm :s, word-size: 64, hard-locations: 300
+  s.write :cat
+end
+run :m do
+  s.recall read-address: :cat
+end
+# ---- next program
+model :m do
+  sdm :z, word-size: 16, hard-locations: 1
+end
+run :m do
+  refusal word-size: 64, load: 100, level: 0.05
+  refusal
+  contenttrack word-size: 64, hard-locations: 300, load: 20, samples: 10
+  contenttrack word-size: 64, hard-locations: 300, load: 20, samples: 10, block: 1, address-noise: 0.2
+end
+# ---- next program
+model :m do
+  sdm :z, word-size: 16, hard-locations: 1
+end
+run :m do
+  refusal word-size: 8
+end
+# ---- next program
+model :m do
+  sdm :z, word-size: 16, hard-locations: 1
+end
+run :m do
+  refusal load: 0
+end
+# ---- next program
+model :m do
+  sdm :z, word-size: 16, hard-locations: 1
+end
+run :m do
+  refusal level: 1
+end
+# ---- next program
+model :m do
+  sdm :z, word-size: 16, hard-locations: 1
+end
+run :m do
+  refusal colour: 1
+end
+# ---- next program
+model :m do
+  sdm :z, word-size: 16, hard-locations: 1
+end
+run :m do
+  refusal size: 64
+end
+# ---- next program
+model :m do
+  sdm :z, word-size: 16, hard-locations: 1
+end
+run :m do
+  refusal :x
+end
+# ---- next program
+model :m do
+  sdm :z, word-size: 16, hard-locations: 1
+end
+run :m do
+  refusal word-size: 64 load: 3
+end
+# ---- next program
+model :m do
+  sdm :z, word-size: 16, hard-locations: 1
+end
+run :m do
+  contenttrack word-size: 32
+end
+# ---- next program
+model :m do
+  sdm :z, word-size: 16, hard-locations: 1
+end
+run :m do
+  contenttrack address-noise: 0.5
+end
+# ---- next program
+model :m do
+  sdm :z, word-size: 16, hard-locations: 1
+end
+run :m do
+  contenttrack lode: 3
+end
+# ---- next program
+model :m do
+  sdm :z, word-size: 16, hard-locations: 1
+end
+run :m do
+  contenttrack damage: 0.1
+end
+# ---- next program
+model :m do
+  sdm :z, word-size: 16, hard-locations: 1
+end
+run :m do
+  sdm :s
+end
+# ---- next program
+model :m do
+  sdm :z, word-size: 16, hard-locations: 1
+end
+run :m do
+  softsdm :s
+end
+# ---- next program
+model :m do
+  sdm :z, word-size: 16, hard-locations: 1
+end
+run :m do
+  sdmscale :s
+end

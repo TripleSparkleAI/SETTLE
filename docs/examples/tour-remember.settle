@@ -1,0 +1,12 @@
+# Write three patterns. Read one back from a noisy copy.
+model :mind do
+  sdm :s, word-size: 128, hard-locations: 1_000
+  s.write :cat
+  s.write :dog
+  s.write :owl
+end
+
+run :mind do
+  s.read read-address: :cat, address-noise: 0.2, seed: 1
+  s.read read-address: :zebra, address-noise: 0, seed: 2
+end

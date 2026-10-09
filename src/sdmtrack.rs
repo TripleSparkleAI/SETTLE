@@ -28,10 +28,10 @@
 //!
 //! Every predictor here is KANERVA's (`kanerva::track`), re-exported under its old name. This file keeps
 //! the `contenttrack` statement.
+//!
+//! The statements are parsed by KANERVA (`kanerva::lang`), mounted in the registry by `crate::plug`; the printed
+//! line is computed by `kanerva::lang::say`, so this file holds no statement code of its own.
 
-use crate::ext::{Claim, Ctx, Ext};
-use crate::lex::{err, kw, kwargs, num, only, SettleError, Tok};
-use crate::model::{Model, State};
 
 pub use kanerva::track::{
     block_theta, block_theta_geo, calibrate, census, compound_pmf, compound_pmf_len, fft, flips_estimate, packed, trace_topk, Census,
@@ -49,57 +49,7 @@ use kanerva::store::Store;
 #[cfg(test)]
 use kanerva::theory::ball;
 
-pub struct SdmTrack;
-
-fn stmt(t: &[Tok], ln: usize, ctx: &mut Ctx) -> Result<(), SettleError> {
-    let kv = kwargs(t, ln)?;
-    only(&kv, &["word-size", "hard-locations", "load", "address-noise", "block", "samples"], "contenttrack", ln)?;
-    let get = |k: &str, d: f64| kw(&kv, k).map(|v| num(v, ln)).transpose().map(|x| x.unwrap_or(d));
-    let n = get("word-size", 256.0)? as usize;
-    let m = get("hard-locations", 100_000.0)? as usize;
-    let load = get("load", 1000.0)? as usize;
-    let dmg = get("address-noise", 0.3)?;
-    let block = get("block", 0.0)? != 0.0;
-    let smp = get("samples", 200.0)? as usize;
-    if !(64..=1024).contains(&n) || m < 100 || load < 1 || !(0.0..0.5).contains(&dmg) || smp < 1 {
-        return err(ln, "contenttrack needs word-size 64..1024, hard-locations >= 100, load >= 1, address-noise in [0, 0.5), samples >= 1");
-    }
-    let r = crate::sdm::radius_for(n, (m as f64 * m as f64 / 10.0).powf(-1.0 / 3.0));
-    let c = Content::new(n, m, r);
-    let wake = if block { Wake::Block(block_theta(n, m, r, load, 0.1, 0.01)) } else { Wake::Topk(c.k()) };
-    let f = c.p_converge(wake, dmg, load, smp, false, 1);
-    let p = c.p_converge(wake, dmg, load, smp, true, 1);
-    ctx.say(format!(
-        "contenttrack {} read, {} hard locations of {} bits, activation-radius {}, {} patterns, {:.0}% address-noise: TRACK-C predicts recall {:.3} (fresh) {:.3} (persist) over {} sampled reads",
-        if block { "block" } else { "top-k" },
-        m,
-        n,
-        r,
-        load,
-        100.0 * dmg,
-        f,
-        p,
-        smp
-    ));
-    Ok(())
-}
-
-impl Ext for SdmTrack {
-    fn name(&self) -> &'static str {
-        "sdmtrack"
-    }
-
-    fn statements(&self) -> &'static [&'static str] {
-        &["run: contenttrack word-size: 256, hard-locations: 100000, load: 3000, address-noise: 0.3, block: 0, samples: 200   (TRACK-C's predicted recall for the content reads; no memory built)"]
-    }
-
-    fn run_stmt(&self, _m: &mut Model, _st: &mut State, t: &[Tok], ln: usize, ctx: &mut Ctx) -> Claim {
-        match t {
-            [Tok::Ident(k), rest @ ..] if k == "contenttrack" => Some(stmt(rest, ln, ctx)),
-            _ => None,
-        }
-    }
-}
+crate::plug::mount!(SdmTrack, kanerva::lang::Family::ContentTrack);
 
 #[cfg(test)]
 mod tests {

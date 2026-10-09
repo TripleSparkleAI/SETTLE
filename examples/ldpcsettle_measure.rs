@@ -4,6 +4,8 @@
 //! Predictions were sealed in the SETTLE campaign ledger before the measuring parts were run. `pilot` prints
 //! only wall-clock time per decode (to pick the sweep budget) and never an error count. Everything is seeded.
 
+#![allow(clippy::needless_range_loop)] // index loops mirror the equations they measure
+
 use settle::coded::{unframe, CodeKind, Comp, English, Ldpc, Pipeline, TEST};
 use settle::ldpcsettle::{coded_ldpc, hard_lean, llr_of_lean, soft_lean_laplace, soft_lean_scaled, Gadget, SettleCode};
 use settle::memory::{code, seed_of, store_pattern};
@@ -364,7 +366,8 @@ fn part_soft(gadget: Gadget) {
     // key: (combo, damage index, len) -> [exact per arm], found, fits
     type Row = ([usize; 6], [usize; 6], usize, usize);
     let t0 = Instant::now();
-    let per_trial: Vec<Vec<((usize, usize, usize), Row)>> = par(TRIALS, |t| {
+    type Cell = ((usize, usize, usize), Row);
+    let per_trial: Vec<Vec<Cell>> = par(TRIALS, |t| {
         let mut m = Model::default();
         for i in 0..N {
             m.add(&format!("m_{}", i));

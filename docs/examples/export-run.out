@@ -6,6 +6,6 @@ exported :best (3 things, 3 pulls) to out/best.json
 imported 3 things and 3 pulls from out/w.json
 imported 1 held things and temperature 0.8 from out/w.json
 settled: 2000 samples of 3 things at temperature 0.8
-  rain           ################### 63.7%
-  sprinkler      #################### 65.0%
+  rain           #################### 65.2%
+  sprinkler      ################### 64.5%
   wet_grass      ############################## 100.0%  (held)

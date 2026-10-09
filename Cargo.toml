@@ -3,10 +3,52 @@ name = "settle"
 version = "0.1.0"
 edition = "2021"
 description = "SETTLE: a toy language where a program is springs and running it means letting it settle"
+repository = "https://github.com/triplesparkle/SETTLE"
+readme = "README.md"
+keywords = ["ising", "boltzmann", "gibbs-sampling", "sparse-distributed-memory", "language"]
+categories = ["science", "compilers"]
+# NO LICENCE IS CHOSEN YET (LICENSE.md). When the owner chooses one, add `license = "<SPDX id>"` here.
+# Not published to crates.io: the owner decides (RELEASE_CHECKLIST.md).
+publish = false
 
 [dependencies]
-# KANERVA, the sparse distributed memory toolbox: every SDM algorithm the statements use lives there.
-kanerva = { git = "https://github.com/triplesparkle/KANERVA" }
+# KANERVA, the sparse distributed memory toolbox: every SDM algorithm the statements use lives there. It is
+# optional: the `sdm` feature (on by default) brings it in; `--no-default-features` builds SETTLE without it.
+kanerva = { git = "https://github.com/triplesparkle/KANERVA", optional = true }
+
+[features]
+default = ["sdm"]
+# The sdm-family statements (memory, sdm, softsdm, sdmscale, sdmrefuse, sdmtrack, and coded's save/recall).
+sdm = ["dep:kanerva"]
 
 [profile.release]
 opt-level = 3
+
+# The measurement programs that read KANERVA's memories need the `sdm` feature.
+[[example]]
+name = "sdmcoded_measure"
+required-features = ["sdm"]
+
+[[example]]
+name = "sdmscale_measure"
+required-features = ["sdm"]
+
+[[example]]
+name = "ldpcsettle_measure"
+required-features = ["sdm"]
+
+[[example]]
+name = "sdmkeys_measure"
+required-features = ["sdm"]
+
+[[example]]
+name = "sdmtrack_measure"
+required-features = ["sdm"]
+
+[[example]]
+name = "sdmradius_measure"
+required-features = ["sdm"]
+
+[[example]]
+name = "sdmrefuse_measure"
+required-features = ["sdm"]

@@ -49,7 +49,7 @@
 //! calmest for its own energy, so puzzles sharing a model no longer judge each other's best.
 
 use crate::ext::{Claim, Ctx, Ext};
-use crate::lex::{err, kw, kwargs, num, only, text, SettleError, Tok};
+use crate::lex::{err, kw, kwargs, num, only, text, SettleError, Tok, whole};
 use crate::model::{Model, State};
 use std::collections::HashMap;
 
@@ -262,7 +262,7 @@ fn declare_sudoku(m: &mut Model, name: &str, rest: &[Tok], ln: usize) -> Result<
     fresh(m, name, ln)?;
     let kv = kwargs(rest, ln)?;
     only(&kv, &["size", "given", "by", "given_by"], "sudoku", ln)?;
-    let n = kw(&kv, "size").map(|v| num(v, ln)).transpose()?.unwrap_or(9.0) as usize;
+    let n = whole(kw(&kv, "size").map(|v| num(v, ln)).transpose()?.unwrap_or(9.0), 0.0, f64::INFINITY, "size:", ln)?;
     if ![4, 9].contains(&n) {
         return err(ln, "sudoku size is 4 or 9");
     }
@@ -428,7 +428,7 @@ fn declare_colouring(m: &mut Model, name: &str, rest: &[Tok], ln: usize) -> Resu
     fresh(m, name, ln)?;
     let kv = kwargs(rest, ln)?;
     only(&kv, &["colours", "edges", "by"], "colouring", ln)?;
-    let k = kw(&kv, "colours").map(|v| num(v, ln)).transpose()?.unwrap_or(3.0) as usize;
+    let k = whole(kw(&kv, "colours").map(|v| num(v, ln)).transpose()?.unwrap_or(3.0), 0.0, f64::INFINITY, "colours:", ln)?;
     if !(2..=9).contains(&k) {
         return err(ln, "colours must be from 2 to 9");
     }
@@ -686,19 +686,21 @@ fn declare_factor(m: &mut Model, name: &str, rest: &[Tok], ln: usize) -> Result<
     fresh(m, name, ln)?;
     let kv = kwargs(rest, ln)?;
     only(&kv, &["number", "penalty", "encoding"], "factor", ln)?;
+    // The column encoding is the default since 2026-10-06 (lane NEWDEFAULTS; ZOOHARD: 899 at 100,000 sweeps
+    // factors in 100% of 50 seeds against 14% for Rosenberg). `encoding: :rosenberg` is the old default.
     let columns = match kw(&kv, "encoding") {
-        None => false,
+        None => true,
         Some(Tok::Sym(e)) if e == "rosenberg" => false,
         Some(Tok::Sym(e)) if e == "columns" => true,
-        Some(_) => return err(ln, "encoding is :rosenberg (the default) or :columns"),
+        Some(_) => return err(ln, "encoding is :columns (the default) or :rosenberg"),
     };
     let n = match kw(&kv, "number") {
         Some(v) => num(v, ln)?,
         None => return err(ln, "factor needs number:"),
     };
     let top = if columns { 1e12 } else { 1_000_000.0 };
-    if n.fract() != 0.0 || !(9.0..=top).contains(&n) || (n as u64) % 2 == 0 {
-        return err(ln, if columns { "factor with encoding: :columns takes an odd whole number from 9 to 10^12" } else { "factor takes an odd whole number from 9 to 1,000,000" });
+    if n.fract() != 0.0 || !(9.0..=top).contains(&n) || (n as u64).is_multiple_of(2) {
+        return err(ln, if columns { "factor takes an odd whole number from 9 to 10^12" } else { "factor with encoding: :rosenberg takes an odd whole number from 9 to 1,000,000" });
     }
     let n = n as u64;
     let (pb, qb) = factor_widths(n);
@@ -732,7 +734,7 @@ fn declare_factor(m: &mut Model, name: &str, rest: &[Tok], ln: usize) -> Result<
 }
 
 // ---------------------------------------------------------------------------------------------------------
-// NONOGRAM (lane PUZZLEFEATURE): the domain-wall encoding, the same as sites/settle-site/src/engine/nonogram.js
+// NONOGRAM (lane PUZZLEFEATURE): the domain-wall encoding, the same as SETTLE/settle-site/src/engine/nonogram.js
 // ---------------------------------------------------------------------------------------------------------
 
 /// Clues: lines separated by '/', run lengths by spaces; "0" or nothing is an empty line. "1 1/5/5/3/1".
@@ -1217,7 +1219,13 @@ pub fn judge(m: &Model, name: &str, s: &[f64]) -> Option<(bool, Vec<String>)> {
 fn anneal_each_stmt(m: &mut Model, st: &mut State, sweeps: usize, rest: &[Tok], ln: usize, ctx: &mut Ctx) -> Result<(), SettleError> {
     let rest = if rest.first() == Some(&Tok::Comma) { &rest[1..] } else { rest };
     let kv = kwargs(rest, ln)?;
-    only(&kv, &["temperature", "seed"], "anneal_each", ln)?;
+    only(&kv, &["temperature", "seed", "update"], "anneal_each", ln)?;
+    // `update:` as on the core `settle` and `anneal`: :metro (the default since 2026-10-06) or :gibbs
+    match kw(&kv, "update") {
+        None => {}
+        Some(Tok::Sym(s)) if crate::words::core::update_of(s).is_some() => st.update = crate::words::core::update_of(s).unwrap(),
+        Some(_) => return err(ln, "`update:` takes :gibbs or :metro"),
+    }
     if let Some(v) = kw(&kv, "temperature") {
         st.temp = num(v, ln)?;
         if st.temp <= 0.0 {
@@ -1244,9 +1252,9 @@ impl Ext for Zoo {
             "model: sudoku :s, size: 4, given: \"1... .4.. ..4. ...1\", by: 1, given_by: 4",
             "model: colouring :g, colours: 3, edges: \"a-b b-c c-a\"",
             "model: maxcut :m, edges: \"a-b b-c:2 c-a\", target: 3",
-            "model: factor :f, number: 143, penalty: 128   /   factor :f, number: 10403, encoding: :columns",
+            "model: factor :f, number: 10403   /   factor :f, number: 143, encoding: :rosenberg, penalty: 128",
             "model: nonogram :n, rows: \"1 1/5/5/3/1\", cols: \"2/4/4/4/2\"",
-            "run: anneal_each 10_000, seed: 1   (each puzzle keeps its own calmest arrangement)",
+            "run: anneal_each 10_000, seed: 1, update: :metro|:gibbs   (each puzzle keeps its own calmest arrangement)",
             "run: s.solution   (after anneal: decode the calmest arrangement and check it by the rules)",
         ]
     }
@@ -1284,7 +1292,9 @@ impl Ext for Zoo {
                     }
                 })
             }
-            [Tok::Ident(k), Tok::Num(nv), rest @ ..] if k == "anneal_each" => Some(anneal_each_stmt(m, st, *nv as usize, rest, ln, ctx)),
+            [Tok::Ident(k), Tok::Num(nv), rest @ ..] if k == "anneal_each" => {
+                Some(whole(*nv, 0.0, f64::INFINITY, "anneal_each", ln).and_then(|sweeps| anneal_each_stmt(m, st, sweeps, rest, ln, ctx)))
+            }
             _ => None,
         }
     }
@@ -1519,7 +1529,7 @@ mod tests {
             ("model :m do\n  colouring :g, edges: \"a-a\"\nend", "line 2: 'a-a' joins a node to itself"),
             ("model :m do\n  maxcut :g\nend", "line 2: needs edges:"),
             ("model :m do\n  factor :f, number: 16\nend", "line 2: factor takes an odd"),
-            ("model :m do\n  factor :f, number: 15, encoding: :wires\nend", "line 2: encoding is :rosenberg"),
+            ("model :m do\n  factor :f, number: 15, encoding: :wires\nend", "line 2: encoding is :columns"),
             ("model :m do\n  maxcut :g, edges: \"a-b\"\nend\nrun :m do\n  g.solution\nend", "line 5: solution needs an anneal first"),
         ];
         for (src, want) in cases {
@@ -1598,7 +1608,7 @@ mod tests {
 
     #[test]
     fn the_rust_and_browser_nonogram_encodings_have_the_same_size() {
-        // sites/settle-site/tests/nonogram.test.mjs pins the same counts for the duck: 175 things
+        // SETTLE/settle-site/tests/nonogram.test.mjs pins the same counts for the duck: 175 things
         let duck = ["...###....", "..#####...", "..##.###..", ".....####.", "..######..", ".########.", "##########", "##########", ".########.", "..######.."];
         let (rows, cols) = clues_of(&duck);
         let (q, lay) = nonogram_qubo(&rows, &cols, 1.0, 1.0, 1.0).unwrap();

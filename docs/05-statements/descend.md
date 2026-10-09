@@ -10,7 +10,7 @@ It is the [numbers family](numbers.md)'s springs generalised from one fixed quad
 differentiable loss. On the numbers' own springs, `descend` is `drift`, number for number.
 
 The source is `src/descend.rs`. The measurements are in
-`experiments/thermosim/runs/gradsettle/REPORT_GRADSETTLE.md`.
+`SETTLE/runs/gradsettle/REPORT_GRADSETTLE.md`.
 
 | Statement | Block | Summary |
 |---|---|---|
@@ -84,7 +84,7 @@ data :mnist, dir: "data", rows: 1_000, from: 0, split: "train"
 **What it does:** reads the examples the loss is fitted to. A CSV file holds one example per row, numbers
 separated by spaces or commas, the target in the last column. Empty lines and lines starting with `#` are
 skipped, and a first line that is not all numbers is a header. `:mnist` reads the MNIST IDX files from `dir:`
-(the four unzipped files; see `experiments/thermosim/runs/mnist/PROVENANCE.md`): 784 features, each grey value
+(the four unzipped files; see `SETTLE/runs/mnist/PROVENANCE.md`): 784 features, each grey value
 divided by 255, and the digit as the target. `split:` defaults to `"train"`.
 
 **Output:** `data: <n> examples of <p> features`.
@@ -458,5 +458,5 @@ line 6: descend needs data for this loss; declare it in the model, like: data "p
 
 ## What was measured
 
-`experiments/thermosim/runs/gradsettle/REPORT_GRADSETTLE.md`: MNIST fitted by Settling beside SGD and Adam at
+`SETTLE/runs/gradsettle/REPORT_GRADSETTLE.md`: MNIST fitted by Settling beside SGD and Adam at
 the same budget, with sealed predictions.

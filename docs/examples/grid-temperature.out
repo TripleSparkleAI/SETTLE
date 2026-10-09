@@ -1,4 +1,4 @@
-play :img: 3 frames, 40 sweeps, warm, bits, tap: median PSNR 21.78 dB (worst 21.18), <time> frames/s settling, <time> frames/s with file work
-play :img: 3 frames, 40 sweeps, warm, bits, tap: median PSNR 16.60 dB (worst 16.56), <time> frames/s settling, <time> frames/s with file work
-play :img: 3 frames, 40 sweeps, warm, bits, tap: median PSNR 22.72 dB (worst 22.66), <time> frames/s settling, <time> frames/s with file work
+play :img: 3 frames, 40 sweeps, warm, bits: median PSNR 26.18 dB (worst 25.75), <time> frames/s settling, <time> frames/s with file work
+play :img: 3 frames, 40 sweeps, warm, bits: median PSNR 18.64 dB (worst 17.88), <time> frames/s settling, <time> frames/s with file work
+play :img: 3 frames, 40 sweeps, warm, bits: median PSNR 27.47 dB (worst 27.44), <time> frames/s settling, <time> frames/s with file work
 show_as :img -> grid-temperature-last-frame.pgm (rate)

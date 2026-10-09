@@ -9,11 +9,11 @@ on the same addresses), so what is true of one is true of the other. The model k
 and the list of what was written, and every read rebuilds the store from that list.
 
 The family also chooses the activation radius for a given read-address address-noise (`tolerate-noise:`) and offers three rules for which
-hard locations wake in the pulls read (`wake:`). Those two parts come from the SDMRADIUS lane.
+hard locations wake in the pulls read (`wake:`). Those two parts come from the SDMRADIUS experiment.
 
-The source is `src/sdmscale.rs`. The activation radius choice and the wake thresholds are in `src/sdmradius.rs`. The lane
-reports are `experiments/thermosim/runs/sdmscale/REPORT_SDMSCALE.md` and
-`experiments/thermosim/runs/sdmradius/REPORT_SDMRADIUS.md`. SDMSCALE measured, at word-size 256, that the address read
+The source is `src/sdmscale.rs`. The words of this family are parsed by KANERVA (`kanerva::lang`, its keywords in `kanerva/src/words.rs`), the same parser the `kanerva` command uses, so a `.kanerva` file of these lines prints the same under `settle` and `kanerva` (see [the plug](#the-plug) below). The activation radius choice and the wake thresholds are in `src/sdmradius.rs`. The experiment
+reports are `SETTLE/runs/sdmscale/REPORT_SDMSCALE.md` and
+`SETTLE/runs/sdmradius/REPORT_SDMRADIUS.md`. SDMSCALE measured, at word-size 256, that the address read
 at 10% address-noise holds about 0.02 to 0.03 times the number of hard locations, from 2,000 to 1,000,000 hard locations, while at
 30% and 40% address-noise capacity does not grow with the number of hard locations under the default activation radius. SDMRADIUS found
 that the activation radius chosen for 30% address-noise makes 30% capacity grow with the number of hard locations, at a price at 10%.
@@ -412,3 +412,12 @@ line 8: wake: applies to via: :pulls
 - Counters are clamped to -127 to 127. A hard location holds more than 127 patterns only in very dense stores, and the
   clamping is not reported by any statement.
 - `address-noise:` is not checked. A value above 1 flips every value; a negative value flips none.
+
+## The plug
+
+SETTLE does not parse this family itself. Its registry entry is a mount of KANERVA's family (`src/plug.rs`): the
+line goes to `kanerva::lang`, and the typed statement comes back to `src/sdmscale.rs`, which runs it on the model.
+The `kanerva` command runs the same lines on KANERVA's engine alone, and the test `tests/oneparser_parity.rs` holds
+the two equal: every program KANERVA accepts prints the same lines under both, and every error is the same error.
+Every sdmscale statement runs under both commands.
+

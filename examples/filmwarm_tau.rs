@@ -12,6 +12,8 @@
 //! (var_i / 4) 2 tau / T. Printed per frame and rule: 2 tau (bits, tanh I), the variance ratio, the bias in dB,
 //! and the PSNR predicted for an 80-sweep bits read and an 80-sweep tanh read.
 
+#![allow(clippy::needless_range_loop)] // index loops mirror the equations they measure
+
 use settle::filmsharp::{precond_leans, Sweeper, Update};
 use settle::grid::{leans_for, magnetisations, read_pgm, Invert, Spec};
 use settle::model::Model;

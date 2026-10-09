@@ -7,8 +7,8 @@ folder of pictures and scores each reproduced frame against its target.
 
 The source is `src/grid.rs`. Two library files add options to `play` and have no statements of their own:
 `src/filmsharp.rs` (the Bethe inversion, the fitted leans, the Rao-Blackwellised read and the other update rules)
-and `src/filmwarm.rs` (warm-started fits). The measurements are in these lane reports, all under
-`experiments/thermosim/runs/`:
+and `src/filmwarm.rs` (warm-started fits). The measurements are in these experiment reports, all under
+`SETTLE/runs/`:
 
 - `gridplayer/REPORT_GRIDPLAYER.md`: the mapping, the bits and soft reads, warm and cold starts.
 - `gridplayer2/REPORT_GRIDPLAYER2.md`: the TAP inversion and `copies:`.
@@ -45,10 +45,14 @@ correct: :mean    h_i = by * atanh(m_i) - sum_j J_ij m_j
 correct: :tap     h_i = by * atanh(m_i) - sum_j J_ij m_j + m_i * sum_j J_ij^2 (1 - m_j^2)
 ```
 
-`:no` aims at the grey and ignores the neighbours. `:mean` (the default, also written `:yes`) subtracts the
-neighbours' average pull. `:tap` adds back the Onsager term: part of a neighbour's pull is the pixel's own
+`:no` aims at the grey and ignores the neighbours. `:mean` (also written `:yes`) subtracts the neighbours'
+average pull; it was the default until 2026-10-06. `:tap`, the default since then, adds back the Onsager term: part of a neighbour's pull is the pixel's own
 influence echoed back, so the mean-field form subtracts too much. On a uniform grey region the mean-field lean
-changes sign above a pull of 0.25 and the picture comes out as its mirror image; the TAP lean does not.
+changes sign above a pull of 0.25 and the picture comes out as its mirror image; the TAP lean does not. The TAP
+picture still breaks down at stronger pulls: on the horse, bits after 80 sweeps, it falls from 21.15 dB at a
+pull of 0.35 to 7.22 dB at 0.40 (`runs/gridplayer2/tap_out.txt`). On 20 targets solved exactly on a 4x4 grid,
+`:tap` was closer than `:mean` at every pull from 0.05 to 0.5 (`runs/gridplayer2/tap_exact_out.txt`), which is
+why it became the default on 2026-10-06. Write `correct: :mean` for the old default.
 
 ```text
 correct: :bethe   h_i = atanh(m_i) - sum_j atanh(t_ij * mu_j\i) + (by - 1) * atanh(m_i),   t_ij = tanh(J_ij)
@@ -118,7 +122,7 @@ img.lean_from "frame.pgm", by: 1, correct: :mean
 | `img` | a grid's name | required | the grid whose leans are set |
 | path | path string | required | a binary PGM (P5) picture of exactly the grid's width and height; relative to the program file |
 | `by:` | number | `1` | multiplies the `atanh(m)` part of each lean; above 1 sharpens the picture |
-| `correct:` | one of `:mean` / `:yes` / `:tap` / `:bethe` / `:no` | `:mean` | the inversion (see [How a grey becomes a lean](#how-a-grey-becomes-a-lean)) |
+| `correct:` | one of `:tap` / `:mean` / `:yes` / `:bethe` / `:no` | `:tap` (`:mean` until 2026-10-06) | the inversion (see [How a grey becomes a lean](#how-a-grey-becomes-a-lean)) |
 
 **What it does:** reads the picture and replaces the lean of every pixel of the grid with the lean the chosen
 inversion gives. Leans of other things are not changed. It stores the picture's greys in `notes` as
@@ -148,9 +152,9 @@ Output:
 
 ```text output=grid-lean-run
 settled: 400 samples of 384 things at temperature 1
-show_as :img -> grid-lean-run-a.pgm (rate), PSNR 17.52 dB against the leans' picture
+show_as :img -> grid-lean-run-a.pgm (rate), PSNR 17.36 dB against the leans' picture
 settled: 400 samples of 384 things at temperature 1
-show_as :img -> grid-lean-run-b.pgm (rate), PSNR 20.44 dB against the leans' picture
+show_as :img -> grid-lean-run-b.pgm (rate), PSNR 18.88 dB against the leans' picture
 ```
 
 **Errors:**
@@ -227,8 +231,8 @@ Output:
 
 ```text output=grid-still
 settled: 400 samples of 384 things at temperature 1
-show_as :img -> grid-still-rate.pgm (rate), PSNR 26.78 dB against the leans' picture
-show_as :img -> grid-still-last.pgm (last), PSNR 6.41 dB against the leans' picture
+show_as :img -> grid-still-rate.pgm (rate), PSNR 35.77 dB against the leans' picture
+show_as :img -> grid-still-last.pgm (last), PSNR 6.88 dB against the leans' picture
 ```
 
 **Errors:**
@@ -248,8 +252,8 @@ show_as :img -> grid-still-last.pgm (last), PSNR 6.41 dB against the leans' pict
 
 ```text
 play :img, frames: "dir/", sweeps: 10, out: "dir2/", against: "other/", warm: :yes, read: :bits, keep: 1,
-           by: 1, correct: :mean, copies: 1, update: :gibbs, fit: 0, fit_sweeps: 200, fit_update: :gibbs,
-           warm_fit: 0, warm_fit_sweeps: 200, warm_from: :leans, warm_step: 1, cut: 0,
+           by: 1, correct: :tap, copies: 1, update: :metro_checker, fit: 0, fit_sweeps: 200,
+           fit_update: :metro_checker, warm_fit: 0, warm_fit_sweeps: 200, warm_from: :correction, warm_step: 1, cut: 0,
            temperature: 1, seed: 1, quiet: :no
 ```
 
@@ -268,15 +272,15 @@ A statement is one line; the form is split here only for reading.
 | `read:` | one of `:bits` / `:soft` / `:rb` | `:bits` | how a frame is read from the sweeps (see below) |
 | `keep:` | number above 0, at most 1 | `1` | the share of the last sweeps that is counted |
 | `by:` | number | `1` | as for `lean_from` |
-| `correct:` | one of `:mean` / `:yes` / `:tap` / `:bethe` / `:no` | `:mean` | as for `lean_from` |
+| `correct:` | one of `:tap` / `:mean` / `:yes` / `:bethe` / `:no` | `:tap` (`:mean` until 2026-10-06) | as for `lean_from` |
 | `copies:` | whole number, 1 to 4096 | `1` | independent copies of the grid whose counts are pooled |
-| `update:` | one of `:gibbs` / `:checker` / `:metro` / `:metro_checker` / `:cluster` | `:gibbs` | how each sweep updates the pixels (see below) |
+| `update:` | one of `:metro_checker` / `:gibbs` / `:checker` / `:metro` / `:cluster` | `:metro_checker` (`:gibbs` until 2026-10-06) | how each sweep updates the pixels (see below) |
 | `fit:` | whole number, 0 to 1000 | `0` | iterations of the lean fit run before each frame; 0 uses the closed-form leans |
 | `fit_sweeps:` | whole number, at least 4 | `200` | sweeps per fit iteration |
 | `fit_update:` | as `update:` | the value of `update:` | the update rule of the fit's own chain |
 | `warm_fit:` | whole number, 0 to 1000 | `0` (off) | fit iterations for every frame after the first, started from the previous frame's fit; needs `fit:` |
 | `warm_fit_sweeps:` | whole number, at least 4 | the value of `fit_sweeps:` | sweeps per warm fit iteration |
-| `warm_from:` | one of `:leans` / `:correction` | `:leans` | where a warm fit starts (see below) |
+| `warm_from:` | one of `:correction` / `:leans` | `:correction` (`:leans` until 2026-10-06) | where a warm fit starts (see below) |
 | `warm_step:` | number, 0 to 1 | `1` | the first step size of each warm fit |
 | `cut:` | number, 0 to 1 | `0` (off) | fit a frame cold when its RMS grey change from the previous frame is above this |
 | `temperature:` | number above 0 | the run's temperature | sets the run's temperature, for this play and for later statements |
@@ -319,11 +323,14 @@ mapping there.
 **The update rules.**
 
 - `:gibbs`: every pixel once per sweep in a fresh random order, each drawing yes with the chance above. This is
-  the core `settle` rule and uses the same random numbers.
+  the core `settle` rule `update: :gibbs` and uses the same random numbers. It was the default until 2026-10-06.
 - `:checker`: all pixels with even `x + y`, then all with odd `x + y`, in a fixed order.
 - `:metro`: random order; each pixel proposes the other state and accepts with chance
   `min(1, exp(-2 s_i I_i / T))` (Metropolised Gibbs).
-- `:metro_checker`: the `:metro` rule in the `:checker` order.
+- `:metro_checker`: the `:metro` rule in the `:checker` order. The default since 2026-10-06:
+  on the film it was ahead of Gibbs at every pull measured, 29.68 against 26.71 dB for bits at J 0.2 and 80
+  sweeps (`runs/filmsharp/mixing_out.txt`). Its successive draws of a pixel are anti-correlated, so with no pulls
+  its bits read beats the coin-noise law, which is exact only for `:gibbs`.
 - `:cluster`: one Swendsen-Wang step per sweep. A satisfied pull bonds its two pixels with chance
   `1 - exp(-2 |J| / T)`; a pixel that agrees with its lean plus any pulls from outside the grid bonds to a ghost
   with chance `1 - exp(-2 |field| / T)`; held pixels are tied to the ghost; every cluster not joined to the ghost
@@ -357,7 +364,9 @@ warm_from: :correction   h0 = h_closed(this frame) + h_fit(previous frame) - h_c
 ```
 
 `:leans` starts from the previous frame's fitted leans. `:correction` starts from this frame's closed-form
-leans (the ones `correct:` gives) plus the correction the fit added to the previous frame. The first step of a
+leans (the ones `correct:` gives) plus the correction the fit added to the previous frame. `:correction` is the
+default since 2026-10-06: it was never worse than `:leans` and up to 6.5 dB better after one
+iteration (`runs/filmwarm/budget_j4*_out.txt`). Write `warm_from: :leans` for the old default. The first step of a
 warm fit has size `warm_step:` instead of 1. With `cut: X` above 0, a frame whose target greys differ from the
 previous frame's by more than `X` in RMS is fitted cold instead, with the `fit:` budget and a fresh chain. The
 warm state lasts for one `play` statement.
@@ -390,8 +399,8 @@ The summary line:
 play :<img>: <frames> frames, [<K> copies x ]<sweeps> sweeps, <warm|cold>, <read>[<correct>][<update>]: median PSNR <p> dB (worst <w>), <r1> frames/s settling, <r2> frames/s with file work[<fit>]
 ```
 
-`<read>` is `bits`, `soft` or `rb`. `<correct>` is empty for `:mean`, else `, tap`, `, bethe` or
-`, uncorrected`. `<update>` is empty for `:gibbs`, else `, checker`, `, metro`, `, metro_checker` or
+`<read>` is `bits`, `soft` or `rb`. `<correct>` is empty for `:tap` (the default), else `, mean`, `, bethe` or
+`, uncorrected`. `<update>` is empty for `:metro_checker` (the default), else `, gibbs`, `, checker`, `, metro` or
 `, cluster`. `<r1>` counts only settling time; `<r2>` counts the whole statement, including reading and writing
 files and any fit. `by:` and `temperature:` do not appear in the line. `<fit>` is empty without `fit:`; with
 `fit:` it is:
@@ -433,10 +442,10 @@ end
 Output:
 
 ```text output=grid-play
-  f0.pgm  PSNR 17.72 dB  <time> ms
-  f1.pgm  PSNR 18.27 dB  <time> ms
-  f2.pgm  PSNR 16.60 dB  <time> ms
-play :img: 3 frames, 20 sweeps, warm, bits: median PSNR 17.72 dB (worst 16.60), <time> frames/s settling, <time> frames/s with file work
+  f0.pgm  PSNR 22.59 dB  <time> ms
+  f1.pgm  PSNR 22.45 dB  <time> ms
+  f2.pgm  PSNR 23.02 dB  <time> ms
+play :img: 3 frames, 20 sweeps, warm, bits: median PSNR 22.59 dB (worst 22.45), <time> frames/s settling, <time> frames/s with file work
 ```
 
 **Example:** the three reads on the same chain.
@@ -456,9 +465,9 @@ end
 Output:
 
 ```text output=grid-read
-play :img: 3 frames, 20 sweeps, warm, bits, tap: median PSNR 18.06 dB (worst 17.79), <time> frames/s settling, <time> frames/s with file work
-play :img: 3 frames, 20 sweeps, warm, soft, tap: median PSNR 25.69 dB (worst 25.44), <time> frames/s settling, <time> frames/s with file work
-play :img: 3 frames, 20 sweeps, warm, rb, tap: median PSNR 25.05 dB (worst 24.21), <time> frames/s settling, <time> frames/s with file work
+play :img: 3 frames, 20 sweeps, warm, bits: median PSNR 22.78 dB (worst 22.77), <time> frames/s settling, <time> frames/s with file work
+play :img: 3 frames, 20 sweeps, warm, soft: median PSNR 30.96 dB (worst 30.55), <time> frames/s settling, <time> frames/s with file work
+play :img: 3 frames, 20 sweeps, warm, rb: median PSNR 30.76 dB (worst 30.42), <time> frames/s settling, <time> frames/s with file work
 ```
 
 **Example:** other inversions and update rules, copies, `keep:` and a cold start.
@@ -480,11 +489,11 @@ end
 Output:
 
 ```text output=grid-options
-play :img: 3 frames, 20 sweeps, warm, rb, bethe: median PSNR 19.98 dB (worst 18.20), <time> frames/s settling, <time> frames/s with file work
-play :img: 3 frames, 20 sweeps, warm, rb, tap, checker: median PSNR 19.72 dB (worst 19.20), <time> frames/s settling, <time> frames/s with file work
-play :img: 3 frames, 20 sweeps, warm, rb, tap, metro: median PSNR 21.40 dB (worst 20.98), <time> frames/s settling, <time> frames/s with file work
-play :img: 3 frames, 20 sweeps, warm, rb, tap, cluster: median PSNR 21.26 dB (worst 20.52), <time> frames/s settling, <time> frames/s with file work
-play :img: 3 frames, 4 copies x 10 sweeps, cold, bits, tap: median PSNR 16.82 dB (worst 16.76), <time> frames/s settling, <time> frames/s with file work
+play :img: 3 frames, 20 sweeps, warm, rb, bethe: median PSNR 23.84 dB (worst 23.21), <time> frames/s settling, <time> frames/s with file work
+play :img: 3 frames, 20 sweeps, warm, rb, checker: median PSNR 19.72 dB (worst 19.20), <time> frames/s settling, <time> frames/s with file work
+play :img: 3 frames, 20 sweeps, warm, rb, metro: median PSNR 21.40 dB (worst 20.98), <time> frames/s settling, <time> frames/s with file work
+play :img: 3 frames, 20 sweeps, warm, rb, cluster: median PSNR 21.26 dB (worst 20.52), <time> frames/s settling, <time> frames/s with file work
+play :img: 3 frames, 4 copies x 10 sweeps, cold, bits: median PSNR 20.74 dB (worst 20.22), <time> frames/s settling, <time> frames/s with file work
 ```
 
 **Example:** `temperature:` and `by:`, then `show_as` after a play.
@@ -506,9 +515,9 @@ end
 Output:
 
 ```text output=grid-temperature
-play :img: 3 frames, 40 sweeps, warm, bits, tap: median PSNR 21.78 dB (worst 21.18), <time> frames/s settling, <time> frames/s with file work
-play :img: 3 frames, 40 sweeps, warm, bits, tap: median PSNR 16.60 dB (worst 16.56), <time> frames/s settling, <time> frames/s with file work
-play :img: 3 frames, 40 sweeps, warm, bits, tap: median PSNR 22.72 dB (worst 22.66), <time> frames/s settling, <time> frames/s with file work
+play :img: 3 frames, 40 sweeps, warm, bits: median PSNR 26.18 dB (worst 25.75), <time> frames/s settling, <time> frames/s with file work
+play :img: 3 frames, 40 sweeps, warm, bits: median PSNR 18.64 dB (worst 17.88), <time> frames/s settling, <time> frames/s with file work
+play :img: 3 frames, 40 sweeps, warm, bits: median PSNR 27.47 dB (worst 27.44), <time> frames/s settling, <time> frames/s with file work
 show_as :img -> grid-temperature-last-frame.pgm (rate)
 ```
 
@@ -528,11 +537,11 @@ end
 Output:
 
 ```text output=grid-against
-play :img: 3 frames, 40 sweeps, warm, soft, tap: median PSNR 36.98 dB (worst 36.82), <time> frames/s settling, <time> frames/s with file work
+play :img: 3 frames, 40 sweeps, warm, soft: median PSNR 43.67 dB (worst 42.69), <time> frames/s settling, <time> frames/s with file work
   f0.pgm  PSNR 8.91 dB  <time> ms
-  f1.pgm  PSNR 8.78 dB  <time> ms
-  f2.pgm  PSNR 8.59 dB  <time> ms
-play :img: 3 frames, 40 sweeps, warm, soft, tap: median PSNR 8.78 dB (worst 8.59), <time> frames/s settling, <time> frames/s with file work
+  f1.pgm  PSNR 8.82 dB  <time> ms
+  f2.pgm  PSNR 8.64 dB  <time> ms
+play :img: 3 frames, 40 sweeps, warm, soft: median PSNR 8.82 dB (worst 8.64), <time> frames/s settling, <time> frames/s with file work
   (scored against another folder: the negative control)
 ```
 
@@ -553,8 +562,8 @@ end
 Output:
 
 ```text output=grid-fit
-play :img: 3 frames, 80 sweeps, warm, rb, tap, cluster: median PSNR 13.64 dB (worst 12.06), <time> frames/s settling, <time> frames/s with file work
-play :img: 3 frames, 80 sweeps, warm, rb, tap, cluster: median PSNR 18.54 dB (worst 15.20), <time> frames/s settling, <time> frames/s with file work; fit 8 x 80 sweeps, cluster, median grey residual 0.15422 -> 0.14304, <time> s fitting
+play :img: 3 frames, 80 sweeps, warm, rb, cluster: median PSNR 13.64 dB (worst 12.06), <time> frames/s settling, <time> frames/s with file work
+play :img: 3 frames, 80 sweeps, warm, rb, cluster: median PSNR 18.54 dB (worst 15.20), <time> frames/s settling, <time> frames/s with file work; fit 8 x 80 sweeps, cluster, median grey residual 0.15422 -> 0.14304, <time> s fitting
 ```
 
 **Example:** a warm fit. In the second play the cut detector fits the third frame cold, because its target
@@ -576,14 +585,14 @@ end
 Output:
 
 ```text output=grid-warm-fit
-  f0.pgm  PSNR 15.74 dB  <time> ms  fit cold 240 sweeps, residual 0.23915 -> 0.16835, target change 0.0000
-  f1.pgm  PSNR 15.77 dB  <time> ms  fit warm 60 sweeps, residual 0.22970 -> 0.22970, target change 0.1437
-  f2.pgm  PSNR 13.67 dB  <time> ms  fit warm 60 sweeps, residual 0.20752 -> 0.20752, target change 0.1872
-play :img: 3 frames, 60 sweeps, warm, soft, tap: median PSNR 15.74 dB (worst 13.67), <time> frames/s settling, <time> frames/s with file work; fit 4 x 60 sweeps cold on the first frame, then warm 1 x 60 from correction: 2 warm and 1 cold frames, fit sweeps 360 in all, 60.0 per frame after the first; median PSNR after the first frame 14.72 dB; median grey residual 0.22970 -> 0.20752, <time> s fitting
-  f0.pgm  PSNR 15.74 dB  <time> ms  fit cold 240 sweeps, residual 0.23915 -> 0.16835, target change 0.0000
-  f1.pgm  PSNR 17.85 dB  <time> ms  fit warm 60 sweeps, residual 0.30990 -> 0.22887, target change 0.1437
-  f2.pgm  PSNR 15.38 dB  <time> ms  fit cold 240 sweeps, residual 0.20756 -> 0.18016, target change 0.1872
-play :img: 3 frames, 60 sweeps, warm, soft, tap: median PSNR 15.74 dB (worst 15.38), <time> frames/s settling, <time> frames/s with file work; fit 4 x 60 sweeps cold on the first frame, then warm 2 x 30 from leans, cut above 0.16, step 0.5: 1 warm and 2 cold frames, fit sweeps 540 in all, 150.0 per frame after the first; median PSNR after the first frame 16.61 dB; median grey residual 0.23915 -> 0.18016, <time> s fitting
+  f0.pgm  PSNR 16.95 dB  <time> ms  fit cold 240 sweeps, residual 0.32257 -> 0.22687, target change 0.0000
+  f1.pgm  PSNR 17.12 dB  <time> ms  fit warm 60 sweeps, residual 0.18828 -> 0.18828, target change 0.1437
+  f2.pgm  PSNR 17.59 dB  <time> ms  fit warm 60 sweeps, residual 0.18831 -> 0.18831, target change 0.1872
+play :img: 3 frames, 60 sweeps, warm, soft: median PSNR 17.12 dB (worst 16.95), <time> frames/s settling, <time> frames/s with file work; fit 4 x 60 sweeps cold on the first frame, then warm 1 x 60 from correction: 2 warm and 1 cold frames, fit sweeps 360 in all, 60.0 per frame after the first; median PSNR after the first frame 17.35 dB; median grey residual 0.18831 -> 0.18831, <time> s fitting
+  f0.pgm  PSNR 16.95 dB  <time> ms  fit cold 240 sweeps, residual 0.32257 -> 0.22687, target change 0.0000
+  f1.pgm  PSNR 18.38 dB  <time> ms  fit warm 60 sweeps, residual 0.19669 -> 0.16683, target change 0.1437
+  f2.pgm  PSNR 18.02 dB  <time> ms  fit cold 240 sweeps, residual 0.20480 -> 0.09783, target change 0.1872
+play :img: 3 frames, 60 sweeps, warm, soft: median PSNR 18.02 dB (worst 16.95), <time> frames/s settling, <time> frames/s with file work; fit 4 x 60 sweeps cold on the first frame, then warm 2 x 30 from correction, cut above 0.16, step 0.5: 1 warm and 2 cold frames, fit sweeps 540 in all, 150.0 per frame after the first; median PSNR after the first frame 18.20 dB; median grey residual 0.20480 -> 0.16683, <time> s fitting
 ```
 
 **Errors:**

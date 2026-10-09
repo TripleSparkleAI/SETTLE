@@ -127,11 +127,16 @@ pub fn precond_leans_chain_from(m: &mut Model, g: &Spec, target: &[f64], h0: Vec
     })
 }
 
-/// Read `warm_fit:`, `warm_fit_sweeps:` (the cold `fit_sweeps` when absent), `warm_from:` (:leans when absent) and
+/// The warm fit's starting leans when a program names none: from the correction since 2026-10-06 (lane NEWDEFAULTS;
+/// FILMWARM measured it never worse than the leans and up to 6.5 dB better). `warm_from: :leans` is the old default.
+pub const DEFAULT_WARM_FROM: WarmFrom = WarmFrom::Correction;
+
+/// Read `warm_fit:`, `warm_fit_sweeps:` (the cold `fit_sweeps` when absent), `warm_from:` (DEFAULT_WARM_FROM,
+/// :correction, when absent) and
 /// `cut:` (off when absent). `None` when `warm_fit:` is absent or 0.
 pub fn warm_opts(kv: &[(String, Tok)], fit: usize, fit_sweeps: usize, ln: usize) -> Result<Option<WarmFit>, SettleError> {
     let iters = kw(kv, "warm_fit").map(|v| num(v, ln)).transpose()?.unwrap_or(0.0);
-    if iters < 0.0 || iters > 1000.0 || iters.fract() != 0.0 {
+    if !(0.0..=1000.0).contains(&iters) || iters.fract() != 0.0 {
         return err(ln, "warm_fit must be a whole number from 0 to 1000");
     }
     let sweeps = kw(kv, "warm_fit_sweeps").map(|v| num(v, ln)).transpose()?.unwrap_or(fit_sweeps as f64);
@@ -139,7 +144,7 @@ pub fn warm_opts(kv: &[(String, Tok)], fit: usize, fit_sweeps: usize, ln: usize)
         return err(ln, "warm_fit_sweeps must be a whole number of at least 4");
     }
     let from = match kw(kv, "warm_from") {
-        None => WarmFrom::Leans,
+        None => DEFAULT_WARM_FROM,
         Some(Tok::Sym(s)) if s == "leans" => WarmFrom::Leans,
         Some(Tok::Sym(s)) if s == "correction" => WarmFrom::Correction,
         Some(_) => return err(ln, "warm_from: takes :leans or :correction"),
@@ -316,13 +321,12 @@ mod tests {
         let _ = std::fs::remove_dir_all(&d);
         std::fs::create_dir_all(d.join("in")).unwrap();
         for k in 0..3 {
-            let px: Vec<f64> = (0..20 * 12).map(|i| if (i % 20) as i32 - 6 - k < 6 && (i % 20) as i32 - 6 - k >= 0 { 0.2 } else { 0.8 }).collect();
+            let px: Vec<f64> = (0..20 * 12).map(|i| if (i % 20) - 6 - k < 6 && (i % 20) - 6 - k >= 0 { 0.2 } else { 0.8 }).collect();
             write_pgm(&d.join("in").join(format!("f{}.pgm", k)), &Pgm { w: 20, h: 12, px }).unwrap();
         }
         let prog = |extra: &str| format!("model :m do\n  grid :g, width: 20, height: 12, smooth: 0.4\nend\nrun :m do\n  play :g, frames: \"in/\", sweeps: 50, read: :soft, correct: :tap, fit: 4, fit_sweeps: 40, fit_update: :cluster, seed: 3{}\nend", extra);
         let run = |src: String| {
-            let mut it = Interp::default();
-            it.base_dir = d.clone();
+            let mut it = Interp::in_dir(d.clone());
             it.exec(&src).unwrap_or_else(|e| panic!("{}", e))
         };
         let cold = run(prog(""));
@@ -333,8 +337,7 @@ mod tests {
         let last = warm.last().unwrap();
         assert!(last.contains("2 warm and 1 cold frames, fit sweeps 240 in all, 40.0 per frame after the first"), "{}", last);
         // a bad option is refused by line
-        let mut it = Interp::default();
-        it.base_dir = d.clone();
+        let mut it = Interp::in_dir(d.clone());
         assert!(it.exec(&prog(", warm_from: :leans")).is_err());
     }
 

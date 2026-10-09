@@ -4,12 +4,12 @@ valleys (exact, all 4096 arrangements of 12 free things): 14 valleys, 6 of them 
   energy    -8.128  basin  14.87% ####                           000110101001
   energy    -7.289  basin  11.82% ####                           100000010100
   ... 10 more valleys
-survey: 300 starts, 20 sweeps at temperature 0.05 then a quench: 11 valleys found (1 seen once; Chao1 estimate 11)
-  calmest found: energy -9.657, reached from 23.0% of starts
-  #1   energy    -9.657  basin  23.00% #######                        111001010110  mirror of #4
-  #2   energy    -7.328  basin  20.67% ######                         011111111010
-  #3   energy    -7.289  basin  16.67% #####                          100000010100
+survey: 300 starts, 20 sweeps at temperature 0.05 then a quench: 11 valleys found (0 seen once; Chao1 estimate 11)
+  calmest found: energy -9.657, reached from 19.3% of starts
+  #1   energy    -7.328  basin  21.33% ######                         011111111010
+  #2   energy    -9.657  basin  19.33% ######                         111001010110  mirror of #4
+  #3   energy    -7.289  basin  17.67% #####                          100000010100
   overlaps among the top valleys (+1 same, -1 mirror, 0 unrelated):
-    +1.00 +0.00 +0.33
-    +0.00 +1.00 -0.67
-    +0.33 -0.67 +1.00
+    +1.00 +0.00 -0.67
+    +0.00 +1.00 +0.33
+    -0.67 +0.33 +1.00

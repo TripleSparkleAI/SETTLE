@@ -1,0 +1,11 @@
+# A 5x5 nonogram that draws a heart, and a 3x3 one whose clues no picture satisfies.
+model :p do
+  nonogram :heart, rows: "1 1/5/5/3/1", cols: "2/4/4/4/2"
+  nonogram :odd, rows: "1/1/1", cols: "1/1/0"   # three cells by the rows, two by the columns
+end
+
+run :p do
+  anneal_each 4_000, seed: 1
+  heart.solution    # the picture, then every row and column checked against its clue
+  odd.solution      # the calmest arrangement cannot fit clues that disagree
+end

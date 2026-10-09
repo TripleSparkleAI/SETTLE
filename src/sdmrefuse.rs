@@ -29,10 +29,10 @@
 //! The refusal rules, the oracle, the diagnostic reads and TRACK are KANERVA's (`kanerva::refuse`), with
 //! `binom_pmf` from `kanerva::theory` and `hd`, `nearest`, `pack_all` from `kanerva::bits`, re-exported
 //! here under their old names. This file keeps the `refusal` statement.
+//!
+//! The statements are parsed by KANERVA (`kanerva::lang`), mounted in the registry by `crate::plug`; the printed
+//! line is computed by `kanerva::lang::say`, so this file holds no statement code of its own.
 
-use crate::ext::{Claim, Ctx, Ext};
-use crate::lex::{err, kw, kwargs, num, only, SettleError, Tok};
-use crate::model::{Model, State};
 
 pub use kanerva::bits::{hd, nearest, pack_all};
 pub use kanerva::refuse::{half_cdf, oracle_point, poisson, refusal_prob, travel_threshold, Diag, Fast, Track};
@@ -47,56 +47,7 @@ use kanerva::store::Store;
 #[cfg(test)]
 use kanerva::theory::ball;
 
-pub struct SdmRefuse;
-
-fn refusal_stmt(t: &[Tok], ln: usize, ctx: &mut Ctx) -> Result<(), SettleError> {
-    let kv = kwargs(t, ln)?;
-    only(&kv, &["word-size", "load", "level"], "refusal", ln)?;
-    let get = |k: &str, d: f64| kw(&kv, k).map(|v| num(v, ln)).transpose().map(|x| x.unwrap_or(d));
-    let n = get("word-size", 256.0)? as usize;
-    let load = get("load", 1000.0)? as usize;
-    let level = get("level", 0.01)?;
-    if !(16..=4096).contains(&n) {
-        return err(ln, "refusal size must be between 16 and 4096");
-    }
-    if load < 1 || !(level > 0.0 && level < 1.0) {
-        return err(ln, "refusal needs load: at least 1 and level: between 0 and 1");
-    }
-    let h = travel_threshold(n, load, level);
-    let recs: Vec<String> = [0.1, 0.2, 0.3, 0.4]
-        .iter()
-        .map(|&d| {
-            let (rc, all, _) = oracle_point(n, d, load, h);
-            format!("{:.0}%: {:.3} of {:.3}", 100.0 * d, rc, all)
-        })
-        .collect();
-    ctx.say(format!(
-        "refusal for {} patterns of {} bits: accept an answer only if it lies within {} bits of the cue (a never-stored cue is refused with probability {:.4}); the nearest-neighbour ceiling then recalls {}",
-        load,
-        n,
-        h,
-        refusal_prob(n, load, h),
-        recs.join(", ")
-    ));
-    Ok(())
-}
-
-impl Ext for SdmRefuse {
-    fn name(&self) -> &'static str {
-        "sdmrefuse"
-    }
-
-    fn statements(&self) -> &'static [&'static str] {
-        &["run: refusal word-size: 256, load: 3000, level: 0.01   (the travel rule's threshold and the nearest-neighbour ceiling; no memory built)"]
-    }
-
-    fn run_stmt(&self, _m: &mut Model, _st: &mut State, t: &[Tok], ln: usize, ctx: &mut Ctx) -> Claim {
-        match t {
-            [Tok::Ident(k), rest @ ..] if k == "refusal" => Some(refusal_stmt(rest, ln, ctx)),
-            _ => None,
-        }
-    }
-}
+crate::plug::mount!(SdmRefuse, kanerva::lang::Family::Refusal);
 
 #[cfg(test)]
 mod tests {

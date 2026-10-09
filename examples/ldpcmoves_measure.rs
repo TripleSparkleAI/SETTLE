@@ -6,10 +6,12 @@
 //! wall-clock time per decode, never an error count. Every result is seeded; timings are never claimed.
 //! Threads: LDPCMOVES_THREADS (default 6).
 
+#![allow(clippy::needless_range_loop)] // index loops mirror the equations they measure
+
 use settle::coded::Ldpc;
 use settle::ldpcmoves::{hard_leans, Collapsed, Mover};
 use settle::ldpcsettle::{coded_ldpc, hard_lean, llr_of_lean, Gadget, SettleCode};
-use settle::memory::seed_of;
+use settle::engine::codes::seed_of;
 use settle::rng::Rng;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Mutex;
@@ -204,7 +206,8 @@ fn part_pilot() {
         let l = coded_ldpc(N, r, 1);
         let lam = llr_unit(0.03);
         let sweeps = 100;
-        let mut arms: Vec<(String, Box<dyn Fn(&[u8], &[u8], u64)>)> = Vec::new();
+        type Arm = (String, Box<dyn Fn(&[u8], &[u8], u64)>);
+        let mut arms: Vec<Arm> = Vec::new();
         for g in [Gadget::Chain, Gadget::Sum] {
             let sc = SettleCode::from_ldpc(&l, g, lam);
             arms.push((
@@ -264,7 +267,7 @@ fn part_grid(blocks: usize, sweeps: usize, only: Option<usize>) {
     println!("# work: collapsed arms = one-check ln Z evaluations; full arms = single-thing updates; bp = rounds allowed");
     println!("{}", HEADER);
     for (ci, &(r, p)) in GRID.iter().enumerate() {
-        if only.map_or(false, |o| o != ci) {
+        if only.is_some_and(|o| o != ci) {
             continue;
         }
         let t0 = Instant::now();

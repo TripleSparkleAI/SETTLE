@@ -42,6 +42,9 @@
 //! `attend` computes, outside the sampler, the mean-field read of this machine (infinitely many samples),
 //! the kernel read for infinitely many hard locations, and the softmax-attention read with the inverse
 //! temperature fitted to that kernel.
+//!
+//! The statements are parsed by KANERVA (`kanerva::lang`), mounted in the registry by `crate::plug`; the printed
+//! lines come from `kanerva::lang::say`, and `exec` runs the typed statement on the model.
 
 //!
 //! The machine, the activated step, the calibration, the kernel and the attention reads are KANERVA's
@@ -49,18 +52,16 @@
 //! `kanerva::theory`, re-exported here under their old names. This file keeps the things, the pulls and
 //! the statements.
 
-use crate::ext::{Claim, Ctx, Ext};
-use crate::lex::{err, kw, kwargs, num, only, text, SettleError, Tok};
-use crate::memory::code;
+use crate::ext::Ctx;
+use crate::lex::{err, SettleError};
 use crate::model::{Model, State};
 use crate::rng::Rng;
-use kanerva::codes::bits_text;
+use kanerva::lang::run::MODEL_WRITE_SEED;
+use kanerva::lang::{say, Cue, Stmt};
 
 pub use kanerva::codes::{with_address_noise, overlap, pattern};
 pub use kanerva::soft::{attention_read, calibrate, phi, sign_of, Attn, Machine};
 pub use kanerva::theory::{binom_log_pmf, hard_radius};
-
-pub struct SoftSdm;
 
 // ---------------------------------------------------------------------------------------------------------
 // The model side: things, pulls, and the note that carries the machine between statements.
@@ -98,32 +99,8 @@ fn idx(s: &Stored) -> (usize, usize, usize) {
     (s.start, s.start + s.mach.n, s.start + s.mach.n + s.mach.m)
 }
 
-fn declare(m: &mut Model, rest: &[Tok], name: &str, ln: usize) -> Result<(), SettleError> {
-    if m.notes.contains_key(&key(name)) {
-        return err(ln, format!("softsdm :{} is already declared", name));
-    }
-    let kv = kwargs(rest, ln)?;
-    only(&kv, &["word-size", "hard-locations", "activation-probability", "softness", "gain", "seed", "write_samples"], "softsdm", ln)?;
-    let get = |k: &str, d: f64| kw(&kv, k).map(|v| num(v, ln)).transpose().map(|x| x.unwrap_or(d));
-    let n = get("word-size", 256.0)? as usize;
-    let lm = get("hard-locations", 2000.0)? as usize;
-    let fire = get("activation-probability", 0.05)?;
-    let soft = get("softness", 0.3)?;
-    let gain = get("gain", 64.0)?;
-    let seed = get("seed", 1.0)? as u64;
-    let ws = get("write_samples", 16.0)? as usize;
-    if !(8..=4096).contains(&n) {
-        return err(ln, "softsdm size must be between 8 and 4096");
-    }
-    if lm < 1 || lm * n > 4_000_000 {
-        return err(ln, "softsdm needs at least 1 hard location and at most 4,000,000 location-bits (hard-locations x word-size)");
-    }
-    if !(fire > 0.0 && fire < 1.0) {
-        return err(ln, "activation-probability is a fraction of hard locations, above 0 and below 1");
-    }
-    if soft < 0.0 || gain <= 0.0 {
-        return err(ln, "softness must be at least 0 and gain above 0");
-    }
+#[allow(clippy::too_many_arguments)]
+fn declare(m: &mut Model, name: &str, n: usize, lm: usize, fire: f64, soft: f64, gain: f64, seed: u64, ws: usize, ln: usize) -> Result<(), SettleError> {
     for nm in [format!("{}_addr_0", name), format!("{}_loc_0", name), format!("{}_data_0", name)] {
         if m.idx.contains_key(&nm) {
             return err(ln, format!("a thing :{} already exists; pick another softsdm name", nm));
@@ -204,184 +181,93 @@ fn write(m: &mut Model, rng: &mut Rng, name: &str, what: &str, saved: Option<Str
     Ok(())
 }
 
-fn scores(got: &[f64], s: &Stored) -> Vec<(String, f64)> {
-    let mut v: Vec<(String, f64)> =
-        s.stored.iter().map(|(nm, t)| (nm.clone(), overlap(got, &pattern(nm, t.as_deref(), s.mach.n)))).collect();
-    v.sort_by(|x, y| y.1.partial_cmp(&x.1).unwrap());
-    v
-}
-
-fn verdict(sc: &[(String, f64)]) -> String {
-    match sc.first() {
-        Some((n, o)) if *o >= 0.9 => format!("-> :{}", n),
-        Some((n, o)) => format!("-> nothing clear (closest :{} at {:+.2})", n, o),
-        None => "-> nothing is written".to_string(),
-    }
-}
-
 /// Build the read-address named by `read-address:` (noisy) or pure noise; returns the read-address and a description.
-fn make_cue(s: &Stored, kv: &[(String, Tok)], rng: &mut Rng, ln: usize) -> Result<(Vec<f64>, String), SettleError> {
+fn make_cue(s: &Stored, cue: &Cue, rng: &mut Rng) -> (Vec<f64>, String) {
     let n = s.mach.n;
-    let damage = kw(kv, "address-noise").map(|v| num(v, ln)).transpose()?.unwrap_or(0.3);
-    if !(0.0..=1.0).contains(&damage) {
-        return err(ln, "address-noise is a fraction between 0 and 1");
-    }
-    match kw(kv, "read-address") {
-        Some(Tok::Sym(c)) => {
+    match &cue.address {
+        Some(c) => {
             let saved = s.stored.iter().find(|(x, _)| x == c).and_then(|(_, t)| t.clone());
             let p = pattern(c, saved.as_deref(), n);
-            Ok((with_address_noise(&p, damage, rng), format!("read-address :{} with {:.0}% address-noise", c, 100.0 * damage)))
+            (with_address_noise(&p, cue.noise, rng), format!("read-address :{} with {:.0}% address-noise", c, 100.0 * cue.noise))
         }
-        Some(_) => err(ln, "read-address: takes a symbol, like read-address: :cat"),
-        None => Ok(((0..n).map(|_| if rng.unit() < 0.5 { -1.0 } else { 1.0 }).collect(), "pure noise".to_string())),
+        None => ((0..n).map(|_| if rng.unit() < 0.5 { -1.0 } else { 1.0 }).collect(), "pure noise".to_string()),
     }
 }
 
-fn text_line(got: &[f64], s: &Stored, sc: &[(String, f64)], ctx: &mut Ctx) {
-    if let Some((nm, o)) = sc.first() {
-        if *o >= 0.9 {
-            if let Some((_, Some(t))) = s.stored.iter().find(|(x, _)| x == nm) {
-                let mask = code(nm, s.mach.n);
-                let bits: Vec<f64> = got.iter().zip(&mask).map(|(v, k)| v * k).collect();
-                ctx.say(format!("  text: \"{}\"", bits_text(&bits, t.len())));
-            }
-        }
-    }
-}
-
-fn read(m: &Model, st: &mut State, name: &str, rest: &[Tok], ln: usize, ctx: &mut Ctx) -> Result<(), SettleError> {
+#[allow(clippy::too_many_arguments)]
+fn read(m: &Model, st: &mut State, name: &str, seed: Option<u64>, rounds: usize, samples: usize, burn: usize, settle: bool, cue: &Cue, ctx: &mut Ctx) {
     let s = load(m, name).unwrap();
-    let kv = kwargs(rest, ln)?;
-    only(&kv, &["read-address", "address-noise", "rounds", "samples", "mode", "burn", "seed"], "read", ln)?;
-    if let Some(v) = kw(&kv, "seed") {
-        st.rng = Rng::new(num(v, ln)? as u64);
+    if let Some(v) = seed {
+        st.rng = Rng::new(v);
     }
-    let rounds = kw(&kv, "rounds").map(|v| num(v, ln)).transpose()?.unwrap_or(3.0) as usize;
-    let samples = kw(&kv, "samples").map(|v| num(v, ln)).transpose()?.unwrap_or(16.0) as usize;
-    let burn = kw(&kv, "burn").map(|v| num(v, ln)).transpose()?.unwrap_or(10.0) as usize;
-    let settle = match kw(&kv, "mode") {
-        None => false,
-        Some(Tok::Sym(x)) if x == "pass" => false,
-        Some(Tok::Sym(x)) if x == "settle" => true,
-        Some(_) => return err(ln, "mode: is :pass or :settle"),
-    };
-    let (mut cue, from) = make_cue(&s, &kv, &mut st.rng, ln)?;
+    let (mut z, from) = make_cue(&s, cue, &mut st.rng);
     let mut trail = Vec::new();
     for _ in 0..rounds.max(1) {
-        let (out, _) = if settle { s.mach.read_settle(&cue, burn, samples, &mut st.rng) } else { s.mach.read_pass(&cue, samples, &mut st.rng) };
-        let sc = scores(&out, &s);
+        let (out, _) = if settle { s.mach.read_settle(&z, burn, samples, &mut st.rng) } else { s.mach.read_pass(&z, samples, &mut st.rng) };
+        let sc = say::soft_scores(&out, &s.stored, s.mach.n);
         trail.push(sc.first().map(|(_, o)| format!("{:+.2}", o)).unwrap_or_default());
-        cue = out;
+        z = out;
     }
-    let sc = scores(&cue, &s);
-    let top: Vec<String> = sc.iter().take(3).map(|(nm, o)| format!(":{} {:+.2}", nm, o)).collect();
-    ctx.say(format!(
-        "read :{} from {} ({}, softness {}, {} rounds, best overlap by round {}): {}  {}",
-        name,
-        from,
-        if settle { "settle" } else { "pass" },
-        s.mach.softness,
-        rounds.max(1),
-        trail.join(" "),
-        top.join("  "),
-        verdict(&sc)
-    ));
-    text_line(&cue, &s, &sc, ctx);
+    for line in say::soft_read(name, &from, settle, s.mach.softness, rounds.max(1), &trail, &z, &s.stored, s.mach.n) {
+        ctx.say(line);
+    }
     let (a0, _, d0) = idx(&s);
     let mut last = vec![0.0; m.len()];
-    last[a0..a0 + s.mach.n].copy_from_slice(&cue);
-    last[d0..d0 + s.mach.n].copy_from_slice(&cue);
+    last[a0..a0 + s.mach.n].copy_from_slice(&z);
+    last[d0..d0 + s.mach.n].copy_from_slice(&z);
     st.last = last;
-    Ok(())
 }
 
-fn attend(m: &Model, st: &mut State, name: &str, rest: &[Tok], ln: usize, ctx: &mut Ctx) -> Result<(), SettleError> {
+fn attend(m: &Model, st: &mut State, name: &str, seed: Option<u64>, rounds: usize, cue: &Cue, ctx: &mut Ctx) {
     let s = load(m, name).unwrap();
-    let kv = kwargs(rest, ln)?;
-    only(&kv, &["read-address", "address-noise", "rounds", "seed"], "attend", ln)?;
-    if let Some(v) = kw(&kv, "seed") {
-        st.rng = Rng::new(num(v, ln)? as u64);
+    if let Some(v) = seed {
+        st.rng = Rng::new(v);
     }
-    let rounds = kw(&kv, "rounds").map(|v| num(v, ln)).transpose()?.unwrap_or(3.0) as usize;
-    let (cue0, from) = make_cue(&s, &kv, &mut st.rng, ln)?;
+    let (cue0, from) = make_cue(&s, cue, &mut st.rng);
     let pats: Vec<Vec<f64>> = s.stored.iter().map(|(nm, t)| pattern(nm, t.as_deref(), s.mach.n)).collect();
     let kern = s.mach.kernel_inf();
     let beta = Machine::fit_beta(&kern);
-    ctx.say(format!("attend :{} from {} (softness {}, fitted softmax inverse temperature {:.1} on cosine):", name, from, s.mach.softness, beta));
+    ctx.say(say::soft_attend_head(name, &from, s.mach.softness, beta));
     for label in ["mean-field read of this machine", "kernel read, infinitely many locations", "softmax attention"] {
-        let mut cue = cue0.clone();
+        let mut z = cue0.clone();
         for _ in 0..rounds.max(1) {
-            cue = match label {
-                "mean-field read of this machine" => sign_of(&s.mach.mean_field(&cue), &cue),
-                "kernel read, infinitely many locations" => attention_read(&cue, &pats, &Attn::Kernel(&kern)),
-                _ => attention_read(&cue, &pats, &Attn::Softmax(beta)),
+            z = match label {
+                "mean-field read of this machine" => sign_of(&s.mach.mean_field(&z), &z),
+                "kernel read, infinitely many locations" => attention_read(&z, &pats, &Attn::Kernel(&kern)),
+                _ => attention_read(&z, &pats, &Attn::Softmax(beta)),
             };
         }
-        let sc = scores(&cue, &s);
-        let top: Vec<String> = sc.iter().take(2).map(|(nm, o)| format!(":{} {:+.2}", nm, o)).collect();
-        ctx.say(format!("  {:<40} {}  {}", label, top.join("  "), verdict(&sc)));
-    }
-    Ok(())
-}
-
-impl Ext for SoftSdm {
-    fn name(&self) -> &'static str {
-        "softsdm"
-    }
-
-    fn statements(&self) -> &'static [&'static str] {
-        &[
-            "model: softsdm :s, word-size: 256, hard-locations: 2000, activation-probability: 0.05, softness: 0.3, gain: 64, seed: 1, write_samples: 16",
-            "model: s.write :cat   /   s.write :note, \"some text\"",
-            "run: s.write :cat   /   s.write :note, \"some text\"",
-            "run: s.read read-address: :cat, address-noise: 0.3, rounds: 3, samples: 16, mode: :pass, seed: 1   (mode :settle adds burn: 10)",
-            "run: s.attend read-address: :cat, address-noise: 0.3, rounds: 3, seed: 1",
-        ]
-    }
-
-    fn model_stmt(&self, m: &mut Model, t: &[Tok], ln: usize, _ctx: &mut Ctx) -> Claim {
-        match t {
-            [Tok::Ident(k), Tok::Sym(name), rest @ ..] if k == "softsdm" => {
-                let rest = if rest.first() == Some(&Tok::Comma) { &rest[1..] } else { rest };
-                Some(declare(m, rest, name, ln))
-            }
-            _ => {
-                let mut rng = Rng::new(0x5eed_5d31);
-                self.write_stmt(m, &mut rng, t, ln)
-            }
-        }
-    }
-
-    fn run_stmt(&self, m: &mut Model, st: &mut State, t: &[Tok], ln: usize, ctx: &mut Ctx) -> Claim {
-        match t {
-            [Tok::Ident(name), Tok::Dot, Tok::Ident(v), rest @ ..] if v == "read" && m.notes.contains_key(&key(name)) => {
-                Some(read(m, st, name, rest, ln, ctx))
-            }
-            [Tok::Ident(name), Tok::Dot, Tok::Ident(v), rest @ ..] if v == "attend" && m.notes.contains_key(&key(name)) => {
-                Some(attend(m, st, name, rest, ln, ctx))
-            }
-            _ => self.write_stmt(m, &mut st.rng, t, ln),
-        }
+        ctx.say(say::soft_attend_row(label, &say::soft_scores(&z, &s.stored, s.mach.n)));
     }
 }
 
-impl SoftSdm {
-    /// `s.write ...` is claimed only when `s` is a declared softsdm, so another family may use `write` too.
-    fn write_stmt(&self, m: &mut Model, rng: &mut Rng, t: &[Tok], ln: usize) -> Claim {
-        match t {
-            [Tok::Ident(name), Tok::Dot, Tok::Ident(v), rest @ ..] if v == "write" && m.notes.contains_key(&key(name)) => match rest {
-                [Tok::Sym(what)] => Some(write(m, rng, name, what, None, ln)),
-                [Tok::Sym(what), Tok::Comma, s] => Some(text(s, ln).and_then(|txt| write(m, rng, name, what, Some(txt), ln))),
-                _ => Some(err(ln, "write takes a symbol, and optionally text: s.write :note, \"some text\"")),
-            },
-            _ => None,
+crate::plug::mount!(SoftSdm, kanerva::lang::Family::SoftSdm);
+
+/// Run one parsed softsdm statement on this model. A write inside a model block draws from a fresh stream seeded
+/// 0x5eed_5d31; inside a run it draws from the run's stream. `st` is None inside a model block.
+pub fn exec(m: &mut Model, st: Option<&mut State>, s: Stmt, ln: usize, ctx: &mut Ctx) -> Result<(), SettleError> {
+    match (s, st) {
+        (Stmt::SoftDeclare { name, word_size, hard_locations, activation_probability, softness, gain, seed, write_samples }, _) => {
+            declare(m, &name, word_size, hard_locations, activation_probability, softness, gain, seed, write_samples, ln)
         }
+        (Stmt::SoftWrite { name, what, text }, None) => write(m, &mut Rng::new(MODEL_WRITE_SEED), &name, &what, text, ln),
+        (Stmt::SoftWrite { name, what, text }, Some(st)) => write(m, &mut st.rng, &name, &what, text, ln),
+        (Stmt::SoftRead { name, seed, rounds, samples, burn, settle, cue }, Some(st)) => {
+            read(m, st, &name, seed, rounds, samples, burn, settle, &cue, ctx);
+            Ok(())
+        }
+        (Stmt::SoftAttend { name, seed, rounds, cue }, Some(st)) => {
+            attend(m, st, &name, seed, rounds, &cue, ctx);
+            Ok(())
+        }
+        _ => err(ln, "not a softsdm statement in this place"),
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::memory::code;
     use crate::interp::Interp;
 
     fn run(src: &str) -> Vec<String> {
@@ -891,7 +777,7 @@ mod measure {
                 }
             }
             if t == 10 || t == 40 {
-                let mut nr = Rng::new(seed ^ 0x0015E + t as u64);
+                let mut nr = Rng::new(seed ^ (0x0015E + t as u64));
                 let mut tally: BTreeMap<&str, [usize; 3]> = BTreeMap::new();
                 for _ in 0..NOISE_CUES {
                     let cue: Vec<f64> = (0..N).map(|_| if nr.unit() < 0.5 { -1.0 } else { 1.0 }).collect();
@@ -1153,8 +1039,8 @@ mod measure_p10 {
         ];
         let dmg = [0.1, 0.2, 0.3, 0.4];
         assert_eq!(hard_radius(256, 0.02).0, 112);
-        let mut ok = vec![[0usize; 4]; 5];
-        let mut nq = vec![[0usize; 4]; 5];
+        let mut ok = [[0usize; 4]; 5];
+        let mut nq = [[0usize; 4]; 5];
         for seed in 1..=3u64 {
             let mut mc = Machine::new(256, 2000, 0.02, 0.0, 64.0, seed + 40, 1);
             let mut r = Rng::new(seed * 991);

@@ -1,8 +1,8 @@
 settled: 5000 samples of 3 things at temperature 1
-ask :a: yes 71.3% of 5000 samples
-ask :a, and: :b: yes 19.0% of 5000 samples
-ask :a, or: :b: yes 79.3% of 5000 samples
+ask :a: yes 72.2% of 5000 samples
+ask :a, and: :b: yes 19.7% of 5000 samples
+ask :a, or: :b: yes 79.5% of 5000 samples
 ask :a, and_not: :b: yes 52.4% of 5000 samples
-ask :a, or_not: :b: yes 92.1% of 5000 samples
-ask :a, and: :c, or: :b: yes 73.1% of 5000 samples
-ask :a, and: :b, and: :c: yes 16.8% of 5000 samples
+ask :a, or_not: :b: yes 92.7% of 5000 samples
+ask :a, and: :c, or: :b: yes 72.7% of 5000 samples
+ask :a, and: :b, and: :c: yes 17.8% of 5000 samples

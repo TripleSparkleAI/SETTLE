@@ -23,7 +23,7 @@
 use crate::ext::{Claim, Ctx, Ext};
 use crate::filmsharp::update_opt;
 use crate::grid::{copies_opt, declare, fit_opts, fit_update_opt, invert_opt, invert_word, load, median, play_frame, read_opt, read_pnm, read_word, update_word, Pgm, PlayOpts, Spec};
-use crate::lex::{err, kw, kwargs, num, only, text, yes_no, SettleError, Tok};
+use crate::lex::{err, kw, kwargs, num, only, text, yes_no, SettleError, Tok, whole};
 use crate::model::{Model, State};
 use crate::rng::Rng;
 use std::path::{Path, PathBuf};
@@ -145,7 +145,7 @@ fn play_colour(m: &mut Model, st: &mut State, name: &str, rest: &[Tok], ln: usiz
     let out_dir = kw(&kv, "out").map(|t| text(t, ln)).transpose()?.map(|p| ctx.path(&p));
     let against = kw(&kv, "against").map(|t| text(t, ln)).transpose()?.map(|p| ctx.path(&p));
     let sweeps = match kw(&kv, "sweeps") {
-        Some(v) => num(v, ln)? as usize,
+        Some(v) => whole(num(v, ln)?, 0.0, f64::INFINITY, "sweeps:", ln)?,
         None => return err(ln, "play_colour needs `sweeps:`"),
     };
     if sweeps == 0 {
@@ -223,15 +223,17 @@ fn play_colour(m: &mut Model, st: &mut State, name: &str, rest: &[Tok], ln: usiz
     }
     let worst = overall.iter().cloned().fold(f64::INFINITY, f64::min);
     let law_txt = if soft || rb { String::new() } else { format!(" (coin-noise law at no pulls: R {:.2} G {:.2} B {:.2})", median(&law[0]), median(&law[1]), median(&law[2])) };
+    let copies_txt = if o.copies > 1 { format!("{} copies x ", o.copies) } else { String::new() };
     ctx.say(format!(
-        "play_colour :{}: {} frames, {}{} sweeps, {}, {}{}{}: median PSNR R {:.2} G {:.2} B {:.2} overall {:.2} dB (worst overall {:.2}){}, {:.1} frames/s settling",
+        "play_colour :{}: {} frames, {}{} sweeps, {}, {}{}{}{}: median PSNR R {:.2} G {:.2} B {:.2} overall {:.2} dB (worst overall {:.2}){}, {:.1} frames/s settling",
         name,
         files.len(),
-        if o.copies > 1 { format!("{} copies x ", o.copies) } else { String::new() },
+        copies_txt,
         sweeps,
         if o.warm { "warm" } else { "cold" },
         read_word(&o),
-        format!("{}{}", invert_word(o.correct), update_word(o.update)),
+        invert_word(o.correct),
+        update_word(o.update),
         if against.is_some() { ", scored against another shot" } else { "" },
         median(&per_c[0]),
         median(&per_c[1]),
@@ -334,8 +336,7 @@ mod tests {
             "model :film do\n  colour :film, width: 30, height: 20, smooth: 0.1\nend\nrun :film do\n  play_colour :film, frames: \"a/\", out: \"out/\", sweeps: 400, read: :soft, correct: :tap, seed: 3{}\nend",
             extra
         );
-        let mut it = Interp::default();
-        it.base_dir = d.to_path_buf();
+        let mut it = Interp::in_dir(d.to_path_buf());
         it.exec(&src).unwrap_or_else(|e| panic!("{}", e))
     }
 
@@ -358,7 +359,7 @@ mod tests {
         let own = run_film(&d, "");
         let other = run_film(&d, ", against: \"b/\"");
         let (po, pb) = (overall(own.last().unwrap()), overall(other.last().unwrap()));
-        assert!(own.last().unwrap().starts_with("play_colour :film: 2 frames, 400 sweeps, warm, soft, tap: median PSNR R"), "{:?}", own);
+        assert!(own.last().unwrap().starts_with("play_colour :film: 2 frames, 400 sweeps, warm, soft: median PSNR R"), "{:?}", own);
         assert!(po > 30.0 && pb < 12.0 && po > pb + 18.0, "own {:.2} other {:.2}", po, pb);
         let out = read_ppm(&d.join("out").join("f1.ppm")).unwrap();
         assert_eq!((out.w, out.h), (30, 20));
@@ -366,21 +367,42 @@ mod tests {
 
     #[test]
     fn bits_readout_without_pulls_sits_on_the_coin_noise_law_per_channel() {
-        // exact answer: with no pulls each channel is S independent coins per pixel, PSNR = 10 log10(S / mean g(1-g))
+        // exact answer: with no pulls each channel is S independent coins per pixel, PSNR = 10 log10(S / mean g(1-g)).
+        // The coins are independent only under Gibbs, so the test names `update: :gibbs` (the default until
+        // 2026-10-06); the default rule's draws are anti-correlated and beat the law (the next test).
         let d = scratch("law");
         std::fs::create_dir_all(d.join("a")).unwrap();
         for k in 0..9 {
             write_ppm(&d.join("a").join(format!("f{}.ppm", k)), &picture(b'a', 40, 30)).unwrap();
         }
-        let src = "model :film do\n  colour :film, width: 40, height: 30\nend\nrun :film do\n  play_colour :film, frames: \"a/\", sweeps: 30, seed: 5\nend";
-        let mut it = Interp::default();
-        it.base_dir = d.clone();
+        let src = "model :film do\n  colour :film, width: 40, height: 30\nend\nrun :film do\n  play_colour :film, frames: \"a/\", sweeps: 30, seed: 5, update: :gibbs\nend";
+        let mut it = Interp::in_dir(d.clone());
         let out = it.exec(src).unwrap();
         let line = out.last().unwrap();
         let grab = |tag: &str, after: &str| -> f64 { line.split(after).nth(1).unwrap().split(tag).nth(1).unwrap().trim().chars().take_while(|c| c.is_ascii_digit() || *c == '.').collect::<String>().parse().unwrap() };
         for c in ["R", "G", "B"] {
             let (got, law) = (grab(&format!("{} ", c), "median PSNR"), grab(&format!("{} ", c), "law at no pulls:"));
             assert!((got - law).abs() < 0.4, "{}: measured {:.2} law {:.2} in {}", c, got, law, line);
+        }
+    }
+
+    #[test]
+    fn the_default_rule_beats_the_coin_noise_law_without_pulls() {
+        // checkerboard Metropolised Gibbs, the default since 2026-10-06 (lane NEWDEFAULTS): at no pulls a pixel's
+        // successive draws are anti-correlated, so its bits read beats S independent coins. Measured on this
+        // picture: R 26.54 G 26.80 B 25.40 dB against the law's 21.35, 21.35 and 24.00.
+        let d = scratch("lawdefault");
+        std::fs::create_dir_all(d.join("a")).unwrap();
+        for k in 0..9 {
+            write_ppm(&d.join("a").join(format!("f{}.ppm", k)), &picture(b'a', 40, 30)).unwrap();
+        }
+        let src = "model :film do\n  colour :film, width: 40, height: 30\nend\nrun :film do\n  play_colour :film, frames: \"a/\", sweeps: 30, seed: 5\nend";
+        let out = Interp::in_dir(d.clone()).exec(src).unwrap();
+        let line = out.last().unwrap();
+        let grab = |tag: &str, after: &str| -> f64 { line.split(after).nth(1).unwrap().split(tag).nth(1).unwrap().trim().chars().take_while(|c| c.is_ascii_digit() || *c == '.').collect::<String>().parse().unwrap() };
+        for c in ["R", "G", "B"] {
+            let (got, law) = (grab(&format!("{} ", c), "median PSNR"), grab(&format!("{} ", c), "law at no pulls:"));
+            assert!(got > law + 1.0, "{}: measured {:.2} law {:.2} in {}", c, got, law, line);
         }
     }
 
@@ -393,8 +415,7 @@ mod tests {
             write_ppm(&d.join("a").join(format!("f{}.ppm", k)), &picture(b'a', 6, 4)).unwrap();
         }
         write_ppm(&d.join("b").join("f0.ppm"), &picture(b'b', 6, 4)).unwrap();
-        let mut it = Interp::default();
-        it.base_dir = d;
+        let mut it = Interp::in_dir(d);
         let e = it.exec("model :f do\n  colour :f, width: 6, height: 4\nend\nrun :f do\n  play_colour :f, frames: \"a/\", sweeps: 2, against: \"b/\"\nend").err().unwrap().0;
         assert!(e.starts_with("line 5:") && e.contains("fewer than the 2 played"), "{}", e);
     }

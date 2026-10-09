@@ -35,10 +35,14 @@ pub enum Update {
     Cluster,
 }
 
-/// Read `update:` (:gibbs when absent).
+/// The play's update rule when a program names none: checkerboard Metropolised Gibbs since 2026-10-06 (lane
+/// NEWDEFAULTS; FILMSHARP measured it ahead of Gibbs at every pull on the film). `update: :gibbs` is the old default.
+pub const DEFAULT_UPDATE: Update = Update::MetroChecker;
+
+/// Read `update:` (DEFAULT_UPDATE, :metro_checker, when absent).
 pub fn update_opt(kv: &[(String, Tok)], ln: usize) -> Result<Update, SettleError> {
     match kw(kv, "update") {
-        None => Ok(Update::Gibbs),
+        None => Ok(DEFAULT_UPDATE),
         Some(Tok::Sym(s)) => match s.as_str() {
             "gibbs" => Ok(Update::Gibbs),
             "checker" => Ok(Update::Checker),
@@ -179,6 +183,7 @@ pub fn tap_precond(m: &Model, g: &Spec, mm: &[f64], floor: f64) -> (Vec<f64>, Ve
 }
 
 /// Fit leans with the TAP preconditioner held at the target: h <- h + eta P (m* - m_hat), P PD (see tap_precond).
+#[allow(clippy::too_many_arguments)] // the fitting knobs, called positionally by the film measurements
 pub fn precond_fit(
     m: &mut Model,
     g: &Spec,
@@ -238,6 +243,7 @@ pub fn precond_fit_from(
 }
 
 /// The same with magnetisations measured by settling the grid (RB read, a quarter burn-in per iteration).
+#[allow(clippy::too_many_arguments)] // the fitting knobs, called positionally by the film measurements
 pub fn precond_leans(m: &mut Model, g: &Spec, target: &[f64], h0: Vec<f64>, rule: Update, iters: usize, sweeps: usize, beta: f64, seed: u64, floor: f64) -> (Vec<f64>, Vec<f64>) {
     let n = g.w * g.h;
     let mut rng = Rng::new(seed);
@@ -258,6 +264,7 @@ pub fn precond_leans(m: &mut Model, g: &Spec, target: &[f64], h0: Vec<f64>, rule
 
 /// Fit leans by settling the grid itself: `iters` rounds of `sweeps` sweeps (a quarter burn-in), the
 /// magnetisation read Rao-Blackwellised, a fresh chain from coin flips drawn from `seed`.
+#[allow(clippy::too_many_arguments)] // the fitting knobs, called positionally by the film measurements
 pub fn fit_leans(m: &mut Model, g: &Spec, target: &[f64], h0: Vec<f64>, rule: Update, iters: usize, sweeps: usize, beta: f64, seed: u64) -> (Vec<f64>, Vec<f64>) {
     let n = g.w * g.h;
     let mut rng = Rng::new(seed);
@@ -353,6 +360,7 @@ pub fn solve_response(resp: &Response, mhat: &[f64], r: &[f64], lambda: f64, ite
 /// Newton on the leans with a measured response: h <- h + eta (C + lambda D)^-1 (m* - m_hat). The oracle returns
 /// the magnetisations and the response at the current leans. eta halves when the residual grows; with `average`
 /// the returned leans average the second half of the iterations. Returns the leans and the RMS grey residuals.
+#[allow(clippy::too_many_arguments)] // the fitting knobs, called positionally by the film measurements
 pub fn newton_fit(
     m: &mut Model,
     g: &Spec,
@@ -396,6 +404,7 @@ pub fn newton_fit(
 
 /// Newton with the response measured by settling the grid: each iteration `sweeps` sweeps (a quarter burn-in),
 /// m_hat Rao-Blackwellised, the covariance from the kept arrangements (at most 400, evenly spaced).
+#[allow(clippy::too_many_arguments)] // the fitting knobs, called positionally by the film measurements
 pub fn newton_leans(m: &mut Model, g: &Spec, target: &[f64], h0: Vec<f64>, rule: Update, iters: usize, sweeps: usize, beta: f64, seed: u64, lambda: f64) -> (Vec<f64>, Vec<f64>) {
     let n = g.w * g.h;
     let mut rng = Rng::new(seed);
@@ -411,7 +420,7 @@ pub fn newton_leans(m: &mut Model, g: &Spec, target: &[f64], h0: Vec<f64>, rule:
         for t in 0..sweeps {
             let rb = if t >= burn { Some(&mut acc[..]) } else { None };
             sw.sweep(mm, g, &mut s, &mut free, &mut rng, beta, rb);
-            if t >= burn && (t - burn) % every == 0 {
+            if t >= burn && (t - burn).is_multiple_of(every) {
                 for i in 0..n {
                     store.push(s[g.start + i] as f32);
                     mean[i] += s[g.start + i];
@@ -553,6 +562,7 @@ impl Sweeper {
 
 /// One single-site update of thing `i`: heat bath (Gibbs) or Metropolised Gibbs.
 #[inline]
+#[allow(clippy::too_many_arguments)] // the fitting knobs, called positionally by the film measurements
 fn single(m: &Model, g: &Spec, s: &mut [f64], i: usize, rng: &mut Rng, beta: f64, metro: bool, rb: Option<&mut [f64]>) {
     let x = beta * m.input(i, s);
     let t = x.tanh();
@@ -693,7 +703,7 @@ mod tests {
         let mut s: Vec<f64> = (0..12).map(|_| if rng.unit() < 0.5 { -1.0 } else { 1.0 }).collect();
         let mut free: Vec<usize> = (0..12).collect();
         let mut sw = Sweeper::new(rule, &g, &free);
-        let mut yes = vec![0.0; 12];
+        let mut yes = [0.0; 12];
         for _ in 0..100 {
             sw.sweep(&m, &g, &mut s, &mut free, &mut rng, 1.0, None);
         }

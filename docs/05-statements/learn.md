@@ -7,10 +7,10 @@ Boltzmann machine learning rule). `classify` holds the input things of each row,
 which label thing comes out yes. Optional hidden things turn the model into a restricted Boltzmann machine.
 
 The source is `src/learn.rs`. The measurements are in
-`experiments/thermosim/runs/boltzlearn/REPORT_BOLTZLEARN.md`: on binarised 8x8 handwritten digits, a machine
+`SETTLE/runs/boltzlearn/REPORT_BOLTZLEARN.md`: on binarised 8x8 handwritten digits, a machine
 with 64 hidden things classified 93.8% of the test digits correctly on average over three splits, against
 91.2% for logistic regression. The denoise family builds on this family; its report is
-`experiments/thermosim/runs/boltzlearn2/REPORT_BOLTZLEARN2.md`.
+`SETTLE/runs/boltzlearn2/REPORT_BOLTZLEARN2.md`.
 
 | Statement | Block | Summary |
 |---|---|---|
@@ -431,7 +431,7 @@ Output:
 ```text output=learn-file
 examples :train from data/learn-same.txt, 4 in all, over 4 things
 learned :train by exact gradients over 400 rounds of 4 rows: 4 visible, 4 hidden, 16 pulls, <time>s; exact log-likelihood per example -1.4313
-classify :train by settling 200 sweeps with 2 inputs held: 4 of 4 right (100.0%); exact one-hot readout 100.0%; chance 50.0%
+classify :train by settling 200 sweeps with 2 inputs held: 3 of 4 right (75.0%); exact one-hot readout 100.0%; chance 50.0%
 ```
 
 A test set with a row that has both labels on, `decay:` in the fit, and `temperature:` in `classify`:
@@ -457,7 +457,7 @@ Output:
 examples :train from data/learn-same.txt, 4 in all, over 4 things
 examples :test inline: 5 rows added, 5 in all, over 4 things
 learned :train by exact gradients over 400 rounds of 4 rows: 4 visible, 4 hidden, 16 pulls, <time>s; exact log-likelihood per example -1.4363
-classify :test by settling 200 sweeps with 2 inputs held: 4 of 4 right (100.0%); exact one-hot readout 100.0%; chance 50.0%; 1 rows skipped (not exactly one label on)
+classify :test by settling 200 sweeps with 2 inputs held: 3 of 4 right (75.0%); exact one-hot readout 100.0%; chance 50.0%; 1 rows skipped (not exactly one label on)
 ```
 
 **Errors:**

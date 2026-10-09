@@ -4,6 +4,8 @@
 //! Predictions were sealed in the SETTLE campaign ledger before this instrument was run. Everything is
 //! seeded; the only timings printed are wall-clock totals, stamped by the caller with the machine load.
 
+#![allow(clippy::needless_range_loop)] // index loops mirror the equations they measure
+
 use settle::coded::{ac_encode, bytes_to_bits, crc16, CodeKind, Codec, Comp, English, Pipeline, TEST, TRAIN};
 use settle::memory::{code, seed_of, shake, store_pattern};
 use settle::model::{Model, State};

@@ -1,1 +1,1 @@
-line 6: settle does not take `sweeps:`
+line 6: settle does not take `sweeps:`; it takes `temperature:`, `seed:` and `update:`

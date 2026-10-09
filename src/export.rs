@@ -38,10 +38,11 @@
 //! Only the yes/no part of a model is exported. Real-valued `number` things (kept in the model's notes) are not.
 
 use crate::ext::{Claim, Ctx, Ext};
-use crate::lex::{err, kw, kwargs, only, text, SettleError, Tok};
+use crate::lex::{err, kw, kwargs, only, SettleError, Tok};
 use crate::model::{Model, State};
+use crate::doors::json::{number as fnum, string as fstr};
+pub use crate::doors::json::{parse_json, Json};
 use std::collections::HashMap;
-use std::fmt::Write as _;
 
 pub struct Export;
 
@@ -74,9 +75,9 @@ pub fn to_ising(m: &Model, held: &HashMap<usize, f64>, temperature: f64) -> Isin
             }
         }
     }
-    edges.sort_by(|a, b| (a.0, a.1).cmp(&(b.0, b.1)));
+    edges.sort_by_key(|a| (a.0, a.1));
     let mut hl: Vec<(usize, f64)> = held.iter().map(|(&i, &v)| (i, v)).collect();
-    hl.sort_by(|a, b| a.0.cmp(&b.0));
+    hl.sort_by_key(|a| a.0);
     Ising { names: m.names.clone(), h: m.h.clone(), edges, temperature, held: hl }
 }
 
@@ -142,29 +143,6 @@ pub fn qubo_energy(q: &Qubo, x: &[bool]) -> f64 {
 // writing
 // -------------------------------------------------------------------------------------------------------
 
-fn fnum(x: f64) -> Result<String, String> {
-    if !x.is_finite() {
-        return Err(format!("{} cannot be written as JSON", x));
-    }
-    Ok(format!("{:?}", x))
-}
-
-fn fstr(s: &str) -> String {
-    let mut o = String::from("\"");
-    for c in s.chars() {
-        match c {
-            '"' => o.push_str("\\\""),
-            '\\' => o.push_str("\\\\"),
-            c if (c as u32) < 0x20 => {
-                let _ = write!(o, "\\u{:04x}", c as u32);
-            }
-            c => o.push(c),
-        }
-    }
-    o.push('"');
-    o
-}
-
 fn names_json(names: &[String]) -> String {
     format!("[{}]", names.iter().map(|n| fstr(n)).collect::<Vec<_>>().join(", "))
 }
@@ -205,6 +183,7 @@ pub fn ising_json(d: &Ising) -> Result<String, String> {
 
 pub fn qubo_json(d: &Ising) -> Result<String, String> {
     let q = to_qubo(d);
+    let held_bits = format!("[{}]", d.held.iter().map(|&(i, v)| format!("[{}, {}]", i, if v > 0.0 { 1 } else { 0 })).collect::<Vec<_>>().join(", "));
     Ok(format!(
         "{{\n  \"format\": \"settle-qubo\",\n  \"version\": 1,\n  \"convention\": {},\n  \"n\": {},\n  \"names\": {},\n  \"linear\": {},\n  \"quadratic\": {},\n  \"offset\": {},\n  \"temperature\": {},\n  \"held\": {}\n}}\n",
         fstr(QUBO_CONVENTION),
@@ -214,7 +193,7 @@ pub fn qubo_json(d: &Ising) -> Result<String, String> {
         triples_json(&q.quad)?,
         fnum(q.offset)?,
         fnum(d.temperature)?,
-        format!("[{}]", d.held.iter().map(|&(i, v)| format!("[{}, {}]", i, if v > 0.0 { 1 } else { 0 })).collect::<Vec<_>>().join(", "))
+        held_bits
     ))
 }
 
@@ -268,7 +247,7 @@ pub fn moments_json(m: &Model, st: &State) -> Result<String, String> {
         }
     }
     let mut held: Vec<(usize, f64)> = st.held.iter().map(|(&i, &v)| (i, v)).collect();
-    held.sort_by(|a, b| a.0.cmp(&b.0));
+    held.sort_by_key(|a| a.0);
     Ok(format!(
         "{{\n  \"format\": \"settle-moments\",\n  \"version\": 1,\n  \"names\": {},\n  \"samples\": {},\n  \"temperature\": {},\n  \"held\": {},\n  \"yes_rate\": {},\n  \"pair_mean\": {}\n}}\n",
         names_json(&m.names),
@@ -293,170 +272,6 @@ pub fn best_json(m: &Model, st: &State) -> Result<String, String> {
 // -------------------------------------------------------------------------------------------------------
 // reading: a small JSON parser, enough for these files
 // -------------------------------------------------------------------------------------------------------
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum Json {
-    Null,
-    Bool(bool),
-    Num(f64),
-    Str(String),
-    Arr(Vec<Json>),
-    Obj(Vec<(String, Json)>),
-}
-
-impl Json {
-    pub fn get(&self, key: &str) -> Option<&Json> {
-        match self {
-            Json::Obj(kv) => kv.iter().find(|(k, _)| k == key).map(|(_, v)| v),
-            _ => None,
-        }
-    }
-}
-
-struct P<'a> {
-    b: &'a [u8],
-    i: usize,
-}
-
-impl P<'_> {
-    fn ws(&mut self) {
-        while self.i < self.b.len() && self.b[self.i].is_ascii_whitespace() {
-            self.i += 1;
-        }
-    }
-    fn fail<T>(&self, what: &str) -> Result<T, String> {
-        Err(format!("JSON: {} at byte {}", what, self.i))
-    }
-    fn lit(&mut self, s: &str, v: Json) -> Result<Json, String> {
-        if self.b[self.i..].starts_with(s.as_bytes()) {
-            self.i += s.len();
-            Ok(v)
-        } else {
-            self.fail("unknown word")
-        }
-    }
-    fn value(&mut self) -> Result<Json, String> {
-        self.ws();
-        match self.b.get(self.i) {
-            None => self.fail("unexpected end"),
-            Some(b'{') => {
-                self.i += 1;
-                let mut kv = Vec::new();
-                self.ws();
-                if self.b.get(self.i) == Some(&b'}') {
-                    self.i += 1;
-                    return Ok(Json::Obj(kv));
-                }
-                loop {
-                    self.ws();
-                    let k = match self.value()? {
-                        Json::Str(s) => s,
-                        _ => return self.fail("object key must be a string"),
-                    };
-                    self.ws();
-                    if self.b.get(self.i) != Some(&b':') {
-                        return self.fail("expected ':'");
-                    }
-                    self.i += 1;
-                    let v = self.value()?;
-                    kv.push((k, v));
-                    self.ws();
-                    match self.b.get(self.i) {
-                        Some(b',') => self.i += 1,
-                        Some(b'}') => {
-                            self.i += 1;
-                            return Ok(Json::Obj(kv));
-                        }
-                        _ => return self.fail("expected ',' or '}'"),
-                    }
-                }
-            }
-            Some(b'[') => {
-                self.i += 1;
-                let mut v = Vec::new();
-                self.ws();
-                if self.b.get(self.i) == Some(&b']') {
-                    self.i += 1;
-                    return Ok(Json::Arr(v));
-                }
-                loop {
-                    v.push(self.value()?);
-                    self.ws();
-                    match self.b.get(self.i) {
-                        Some(b',') => self.i += 1,
-                        Some(b']') => {
-                            self.i += 1;
-                            return Ok(Json::Arr(v));
-                        }
-                        _ => return self.fail("expected ',' or ']'"),
-                    }
-                }
-            }
-            Some(b'"') => {
-                self.i += 1;
-                let mut s = String::new();
-                loop {
-                    match self.b.get(self.i) {
-                        None => return self.fail("unclosed string"),
-                        Some(b'"') => {
-                            self.i += 1;
-                            return Ok(Json::Str(s));
-                        }
-                        Some(b'\\') => {
-                            let c = self.b.get(self.i + 1).copied();
-                            self.i += 2;
-                            match c {
-                                Some(b'"') => s.push('"'),
-                                Some(b'\\') => s.push('\\'),
-                                Some(b'/') => s.push('/'),
-                                Some(b'n') => s.push('\n'),
-                                Some(b't') => s.push('\t'),
-                                Some(b'r') => s.push('\r'),
-                                Some(b'b') => s.push('\u{8}'),
-                                Some(b'f') => s.push('\u{c}'),
-                                Some(b'u') => {
-                                    let hex = std::str::from_utf8(self.b.get(self.i..self.i + 4).unwrap_or(&[])).unwrap_or("");
-                                    let cp = u32::from_str_radix(hex, 16).map_err(|_| "JSON: bad \\u escape".to_string())?;
-                                    s.push(char::from_u32(cp).unwrap_or('\u{fffd}'));
-                                    self.i += 4;
-                                }
-                                _ => return self.fail("bad escape"),
-                            }
-                        }
-                        Some(_) => {
-                            // copy one UTF-8 character
-                            let rest = std::str::from_utf8(&self.b[self.i..]).map_err(|_| "JSON: not UTF-8".to_string())?;
-                            let c = rest.chars().next().unwrap();
-                            s.push(c);
-                            self.i += c.len_utf8();
-                        }
-                    }
-                }
-            }
-            Some(b't') => self.lit("true", Json::Bool(true)),
-            Some(b'f') => self.lit("false", Json::Bool(false)),
-            Some(b'n') => self.lit("null", Json::Null),
-            Some(_) => {
-                let s = self.i;
-                while self.i < self.b.len() && matches!(self.b[self.i], b'-' | b'+' | b'.' | b'e' | b'E' | b'0'..=b'9') {
-                    self.i += 1;
-                }
-                let t = std::str::from_utf8(&self.b[s..self.i]).unwrap_or("");
-                t.parse::<f64>().map(Json::Num).or_else(|_| self.fail(&format!("'{}' is not a number", t)))
-            }
-        }
-    }
-}
-
-pub fn parse_json(s: &str) -> Result<Json, String> {
-    let mut p = P { b: s.as_bytes(), i: 0 };
-    let v = p.value()?;
-    p.ws();
-    if p.i != p.b.len() {
-        return p.fail("trailing text");
-    }
-    Ok(v)
-}
 
 fn as_num(j: &Json, what: &str) -> Result<f64, String> {
     match j {
@@ -532,7 +347,7 @@ pub fn parse_ising(src: &str) -> Result<Ising, String> {
         edges.push((i, k, as_num(&e[2], "a pull")?));
     }
     edges.retain(|e| e.2 != 0.0);
-    edges.sort_by(|a, b| (a.0, a.1).cmp(&(b.0, b.1)));
+    edges.sort_by_key(|a| (a.0, a.1));
     let temperature = match j.get("temperature") {
         None => 1.0,
         Some(v) => as_num(v, "temperature")?,
@@ -554,7 +369,7 @@ pub fn parse_ising(src: &str) -> Result<Ising, String> {
             held.push((as_index(&e[0], n, "held thing")?, v));
         }
     }
-    held.sort_by(|a, b| a.0.cmp(&b.0));
+    held.sort_by_key(|a| a.0);
     Ok(Ising { names, h, edges, temperature, held })
 }
 
@@ -753,7 +568,7 @@ end";
             // negative control: dropping the constant is visible
             let x = vec![false; 12];
             if q.offset.abs() > 1e-9 {
-                assert!((qubo_energy(&q, &x) - m.energy(&vec![-1.0; 12])).abs() > 1e-9);
+                assert!((qubo_energy(&q, &x) - m.energy(&[-1.0; 12])).abs() > 1e-9);
             }
         }
     }
@@ -764,7 +579,7 @@ end";
         let m = random_model(9, 7, 0.6);
         let d = to_ising(&m, &HashMap::new(), 1.0);
         let q = to_qubo(&d);
-        assert!((q.offset - m.energy(&vec![-1.0; 9])).abs() < 1e-12);
+        assert!((q.offset - m.energy(&[-1.0; 9])).abs() < 1e-12);
     }
 
     #[test]

@@ -7,7 +7,7 @@ with that distance. One dial, `softness:`, sets how smooth the fall is. At softn
 hard SDM; as softness rises the edge of the ball blurs. The family also computes, outside the sampler, the read
 this machine approaches with infinitely many samples, with infinitely many hard locations, and as softmax attention.
 
-The source is `src/softsdm.rs`. The lane report is `experiments/thermosim/runs/softsdm/REPORT_SOFTSDM.md`. Its
+The source is `src/softsdm.rs`. The words of this family are parsed by KANERVA (`kanerva::lang`, its keywords in `kanerva/src/words.rs`), the same parser the `kanerva` command uses, so a `.kanerva` file of these lines prints the same under `settle` and `kanerva` (see [the plug](#the-plug) below). The experiment report is `SETTLE/runs/softsdm/REPORT_SOFTSDM.md`. Its
 main results: at a activated fraction of 0.01 the machine holds about 80, 40 and 10 patterns at 10%, 20% and 30%
 address-noise (half of the read-addresses recalled) for softness up to 0.25, recall collapses from softness 0.5 up, and the settle read (below) does not beat
 the one-way pass.
@@ -48,14 +48,14 @@ activated fraction for a random read-address stays `f`. The softness dial theref
 how many hard locations are activated on average.
 
 **Writing.** To write a pattern `p`, the address things are held at `p` and each hard location is activated or not
-`write_samples` times. Location `m` adds `f_m * p` to its row of bit-counters `J_m`, where `f_m` is the fraction of
+`write-samples` times. Location `m` adds `f_m * p` to its row of bit-counters `J_m`, where `f_m` is the fraction of
 those tries in which it was activated:
 
 ```text
 J_m <- J_m + f_m * p
 ```
 
-With `write_samples: 0`, `f_m` is the exact activated probability `phi(d)` instead of a sampled fraction.
+With `write-samples: 0`, `f_m` is the exact activated probability `phi(d)` instead of a sampled fraction.
 
 **The model's pulls.** The machine is laid out as ordinary things, leans and pulls, so the energy of the model is
 the energy of the machine:
@@ -82,7 +82,7 @@ written. The reads use the copy in the notes.
 **Form:**
 
 ```text
-softsdm :name, word-size: 256, hard-locations: 2000, activation-probability: 0.05, softness: 0.3, gain: 64, seed: 1, write_samples: 16
+softsdm :name, word-size: 256, hard-locations: 2000, activation-probability: 0.05, softness: 0.3, gain: 64, seed: 1, write-samples: 16
 ```
 
 **Arguments:**
@@ -96,10 +96,10 @@ softsdm :name, word-size: 256, hard-locations: 2000, activation-probability: 0.0
 | `softness:` | number, at least 0 | `0.3` | the width of the activated edge, in units of `sqrt(size) / 2` bits; 0 is hard SDM |
 | `gain:` | number above 0 | `64` | the data input one clean stored pattern gives |
 | `seed:` | whole number | `1` | the seed of the random addresses |
-| `write_samples:` | whole number | `16` | how many activated tries each write samples per hard location; 0 uses the exact probability |
+| `write-samples:` | whole number | `16` | how many activated tries each write samples per hard location; 0 uses the exact probability. `write_samples:`, the older spelling, still works |
 
 `hard-locations` times `word-size` must be at most 4,000,000. The comma after `:name` is optional. Numbers given for
-`word-size:`, `hard-locations:`, `seed:` and `write_samples:` are cut to whole numbers.
+`word-size:`, `hard-locations:`, `seed:` and `write-samples:` are cut to whole numbers.
 
 **What it does:** computes the activation radius and threshold (above), draws the addresses from a generator seeded by
 `seed` mixed with a fixed constant, and adds the three blocks of things at the end of the model in the order
@@ -245,7 +245,7 @@ A hard location's input adds the data's agreement with its bit-counters to the a
 
 The first `burn` sweeps are discarded, then `samples` sweeps are counted, and the result is the sign of the mean
 data value, a zero mean keeping the read-address's value. This feedback is the difference between SDM and a settle
-machine: SDM's read is a one-way pass. The lane report measured the feedback term at about 40 against an address
+machine: SDM's read is a one-way pass. The experiment report measured the feedback term at about 40 against an address
 term of about 1, and at softness 0.25 and a activated fraction of 0.05 the settle read recalled 0 of 420 read-addresses where
 the pass recalled 76.
 
@@ -469,3 +469,12 @@ attend :s from read-address :cat with 20% address-noise (softness 0.5, fitted so
   `size^3 / 6` activated-probability evaluations. At size 4096 that is slow.
 - `name.read` sets the hard location things to 0 in the run's last arrangement. A statement that reads the last
   arrangement after a softsdm read sees 0 there, which is neither yes nor no.
+
+## The plug
+
+SETTLE does not parse this family itself. Its registry entry is a mount of KANERVA's family (`src/plug.rs`): the
+line goes to `kanerva::lang`, and the typed statement comes back to `src/softsdm.rs`, which runs it on the model.
+The `kanerva` command runs the same lines on KANERVA's engine alone, and the test `tests/oneparser_parity.rs` holds
+the two equal: every program KANERVA accepts prints the same lines under both, and every error is the same error.
+Every softsdm statement runs under both commands.
+

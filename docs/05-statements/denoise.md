@@ -11,7 +11,7 @@ here reports how close its samples come to the nearest training row, and counts 
 row exactly.
 
 The source is `src/denoise.rs`. The measurements are in
-`experiments/thermosim/runs/boltzlearn2/REPORT_BOLTZLEARN2.md`.
+`SETTLE/runs/boltzlearn2/REPORT_BOLTZLEARN2.md`.
 
 | Statement | Block | Summary |
 |---|---|---|
@@ -375,7 +375,7 @@ Output:
 
 ```text output=denoise-baselines
 examples :train from data/denoise-glyphs.txt, 24 in all, over 16 things
-sampled the model directly over :train (200 sweeps from a random start, 16 things settling): 8 samples, yes-rate 0.570 (:train 0.333); nearest :train row: median 5 of 16 pixels differ, 0 exact copies; wrote denoise-baselines-direct.pgm
+sampled the model directly over :train (200 sweeps from a random start, 16 things settling): 8 samples, yes-rate 0.516 (:train 0.333); nearest :train row: median 6 of 16 pixels differ, 0 exact copies; wrote denoise-baselines-direct.pgm
 coins at the pixel rates of :train: 8 samples, yes-rate 0.297 (:train 0.333); nearest :train row: median 4 of 16 pixels differ, 0 exact copies; wrote denoise-baselines-coins.txt; wrote denoise-baselines-coins.pgm
 ```
 
@@ -451,4 +451,4 @@ high, each pixel drawn as a `scale` x `scale` square: black for yes, white for n
 - On 8 x 8 binarised digits, an 8-step chain reached an MMD (x1000) of about 1.5 against held-out digits
   whether its leans started at the data's rates or at zero. The learn family's machine sampled directly for 800
   sweeps reached 51.5 and ran to a yes-rate of 0.455 against the data's 0.323
-  (`experiments/thermosim/runs/boltzlearn2/REPORT_BOLTZLEARN2.md`, "Results").
+  (`SETTLE/runs/boltzlearn2/REPORT_BOLTZLEARN2.md`, "Results").

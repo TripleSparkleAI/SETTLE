@@ -19,7 +19,7 @@ Reading: a thing that points the way it leans lowers the energy by its lean, and
 energy by its pull (a negative pull, written `pushes`, rewards disagreement instead).
 
 The model is named after Ernst Ising, who solved its one-dimensional case. Implemented in `Model::energy`
-(`src/model.rs`).
+(`src/engine/model.rs`).
 
 - E. Ising, "Beitrag zur Theorie des Ferromagnetismus", *Zeitschrift fur Physik* 31, 253-258 (1925).
 
@@ -71,7 +71,7 @@ Var(average) ~= (2 tau / N) Var(single sample)
 ```
 
 Reading: a chain that forgets its past slowly behaves like a smaller sample; strong pulls, low temperatures and
-deep separated valleys all make `tau` larger. The FILMSHARP and FILMWARM lanes measure `tau` for the grid
+deep separated valleys all make `tau` larger. The FILMSHARP and FILMWARM experiments measure `tau` for the grid
 (`examples/filmsharp_tau.rs`, `examples/filmwarm_tau.rs`).
 
 ## Simulated annealing
@@ -84,7 +84,10 @@ T_k = 10 T x 0.005^( k / (N - 1) )
 
 and keeps the lowest-energy arrangement visited. Reading: at a high temperature the sampler moves freely between
 valleys; as the temperature falls it settles into a deep one. A slow enough schedule finds the global minimum
-with high probability, but a finite schedule gives no guarantee.
+with high probability, but a finite schedule gives no guarantee. Measured on factoring, the walk often passes the
+answer and then leaves it: factoring 899 in 50,000 sweeps, 90% of 100 walks visited the answer and 9% ended in it
+(`runs/zoohard/measure_dwave.txt`). That is why `anneal` keeps the calmest arrangement visited, and why
+`x.final` reports the end state separately.
 
 - S. Kirkpatrick, C. D. Gelatt and M. P. Vecchi, "Optimization by simulated annealing", *Science* 220(4598),
   671-680 (1983).
@@ -120,14 +123,14 @@ z_j <- sign( sum over { i : d(a_i, z) <= r } of C_ij )
 
 Reading: many hard locations each hold a blurred superposition of the patterns written near them, and the majority over
 the hard locations near a read-address reconstructs the pattern nearest that read-address. Iterating the read moves a noisy read-address towards
-the stored pattern. The sdm page explains how the bit-counters become SETTLE pulls. The sdmscale and sdmrefuse lanes use
+the stored pattern. The sdm page explains how the bit-counters become SETTLE pulls. The sdmscale and sdmrefuse experiments use
 Bricken and Pehlevan's analysis to choose the activation radius and to predict when a read converges.
 
 SETTLE names every part with Kanerva's own word, joined by a hyphen where his word is two: `read-address:`,
 `address-noise:`, `hard-locations:`, `activation-radius:`, `activation-probability:`, `iterated-reads:` and
 `word-size:` are keywords, and write-address, access-circle, data-word, bit-counters, read-threshold,
 critical-distance and best-match are the words the pages use. Each one, with the sentence Kanerva wrote it in and
-its page, is in `experiments/thermosim/kanerva/KANERVA_TERMS.md`.
+its page, is in `SETTLE/kanerva/KANERVA_TERMS.md`.
 
 - P. Kanerva, *Sparse Distributed Memory* (MIT Press, 1988).
 - P. Kanerva, "Sparse distributed memory and related models", in M. H. Hassoun (ed.), *Associative Neural
@@ -205,7 +208,11 @@ The ldpcsettle and ldpcmoves families write a low-density parity-check code as t
 check becomes helper things and penalty pulls that make an odd check expensive, and each received bit leans its
 code bit towards what was received. The calmest arrangement is the most likely codeword. At the Nishimori
 temperature (`T = 1` when the leans are the channel's true log-likelihood ratios) the Boltzmann distribution is
-the exact posterior over codewords, so averaging each bit there gives the bitwise best decision.
+the exact posterior over codewords, so averaging each bit there gives the bitwise best decision. That holds only
+when the check penalties are infinitely strong. At the finite strengths SETTLE builds, the distribution also
+weighs arrangements that are not codewords: on a small code enumerated exactly (20 bits, p 0.05, 400 blocks),
+the bitwise average at `T = 1` had 67.5% block error, against 18.0% for the bitwise average over codewords
+only (`runs/ldpcmoves/exact.txt`). So the decoders anneal to a calm codeword rather than read that average.
 
 - R. G. Gallager, "Low-density parity-check codes", *IRE Transactions on Information Theory* 8(1), 21-28 (1962).
 - D. J. C. MacKay and R. M. Neal, "Near Shannon limit performance of low density parity check codes",
@@ -215,7 +222,7 @@ the exact posterior over codewords, so averaging each bit there gives the bitwis
 
 ## Further reading in this repository
 
-- The campaign ledger, `experiments/thermosim/SETTLE_CAMPAIGN_2026-09-30.md`, lists every lane, its sealed
+- The campaign ledger, `SETTLE/SETTLE_CAMPAIGN_2026-09-30.md`, lists every experiment, its sealed
   predictions and its results.
-- Each lane's report, `experiments/thermosim/runs/<lane>/REPORT_<LANE>.md`, gives the measurements behind a
+- Each experiment's report, `SETTLE/runs/<experiment>/REPORT_<NAME>.md`, gives the measurements behind a
   family, with the equations it uses and their readings.

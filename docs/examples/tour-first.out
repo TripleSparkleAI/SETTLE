@@ -1,5 +1,5 @@
 settled: 20000 samples of 2 things at temperature 1
-  a              ###################### 73.5%
-  b              #################### 68.0%
-ask :b: yes 68.0% of 20000 samples
-ask :a, and: :b: yes 64.9% of 20000 samples
+  a              ###################### 72.7%
+  b              #################### 67.3%
+ask :b: yes 67.3% of 20000 samples
+ask :a, and: :b: yes 63.9% of 20000 samples

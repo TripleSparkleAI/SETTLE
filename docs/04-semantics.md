@@ -2,8 +2,8 @@
 
 This page states what the interpreter does when it runs a program. It covers the core model and the core
 sampler, which every family builds on. Families that add their own state (grids, memories, learned machines,
-real-valued numbers) describe it on their own pages. The source for this page is `src/interp.rs`,
-`src/model.rs` and `src/core.rs`.
+real-valued numbers) describe it on their own pages. The source for this page is `src/words/interp.rs`,
+`src/engine/model.rs` and `src/words/core.rs`.
 
 ## Execution order
 
@@ -88,7 +88,7 @@ Consequences:
 ```settle example=sem-seed
 # Each run block starts from the same default seed, so these two runs print the same numbers.
 model :coin do
-  thing :c
+  thing :c, leans: :yes, by: 0.2      # a slightly bent coin, so each draw is a real coin flip
 end
 
 run :coin do
@@ -106,16 +106,18 @@ end
 
 ```text output=sem-seed
 settled: 1000 samples of 1 things at temperature 1
-ask :c: yes 50.7% of 1000 samples
+ask :c: yes 59.5% of 1000 samples
 settled: 1000 samples of 1 things at temperature 1
-ask :c: yes 50.7% of 1000 samples
+ask :c: yes 59.5% of 1000 samples
 settled: 1000 samples of 1 things at temperature 1
-ask :c: yes 48.9% of 1000 samples
+ask :c: yes 59.3% of 1000 samples
 ```
 
 ## Settling
 
-`settle N` draws samples by Gibbs sampling (also called Glauber dynamics, or the p-bit rule). Precisely:
+`settle N` draws samples by a Markov chain whose update rule is the run's `update:`: Metropolised Gibbs by
+default since 2026-10-06, or Gibbs sampling (also called Glauber dynamics, or the p-bit rule) with
+`update: :gibbs`, the default until then. Precisely:
 
 1. **Start.** Every thing that is not held gets a random value, yes or no with equal chance. Held things get
    their held value.
@@ -126,7 +128,7 @@ ask :c: yes 48.9% of 1000 samples
    I_i = h_i + sum_k J_ik s_k
    ```
 
-   and the thing is set to yes with probability
+   Under `update: :gibbs` the thing is set to yes with probability
 
    ```text
    P(s_i = yes) = (1 + tanh(I_i / T)) / 2
@@ -136,6 +138,18 @@ ask :c: yes 48.9% of 1000 samples
    This is the exact conditional probability of `s_i` given all the other things under `P(s)`, so repeated
    sweeps leave `P(s)` unchanged. The implementation draws `r` uniformly from [-1, 1) and sets yes when
    `tanh(I_i / T) > r`, which has that probability.
+
+   Under `update: :metro` (the default) the thing proposes the other value and takes it with probability
+
+   ```text
+   P(flip) = min(1, exp(-2 s_i I_i / T))
+   ```
+
+   Reading: a move against the push is taken only sometimes, and a move with it, or along flat ground, always.
+   This leaves the same `P(s)` unchanged and changes a thing at least as often as Gibbs, so an average over the
+   samples carries less error: 0.15 to 0.47 times Gibbs's squared error on four small models measured against
+   exact enumeration (`examples/core_update_measure.rs`). One consequence: a free thing whose input is exactly
+   zero flips at every visit, so with no lean and no pulls it reads exactly 50.0% on every seed.
 3. **Burn in.** The first `max(1, N / 10)` sweeps (whole-number division) are discarded, so the recorded samples
    do not depend much on the random start.
 4. **Record.** Then `N` more sweeps are run, and the arrangement after each is recorded as one sample.
@@ -200,9 +214,9 @@ end
 
 ```text output=sem-temperature
 settled: 20000 samples of 2 things at temperature 0.25
-ask :a, and: :b: yes 100.0% of 20000 samples
+ask :a, and: :b: yes 99.9% of 20000 samples
 settled: 20000 samples of 2 things at temperature 4
-ask :a, and: :b: yes 39.3% of 20000 samples
+ask :a, and: :b: yes 39.1% of 20000 samples
 ```
 
 ## What `show` and `ask` report
@@ -256,7 +270,7 @@ settled: 10000 samples of 2 things at temperature 1
 ## Determinism
 
 Given the same program, the same input files and the same interpreter build, the output is the same on every
-run: all randomness comes from the run state's generator (an xorshift64* generator in `src/rng.rs`), and every
+run: all randomness comes from the run state's generator (an xorshift64* generator in `src/engine/rng.rs`), and every
 run block starts from a fixed seed. Families that print wall-clock timings are the one exception; those numbers
 vary. Results may differ in the last printed digit between machines whose maths libraries compute `tanh` or
 `exp` differently.

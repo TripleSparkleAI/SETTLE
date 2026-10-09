@@ -6,7 +6,7 @@
 //! Each part prints plain text tables. Seeds are fixed, so a rerun prints the same numbers.
 
 use settle::interp::Interp;
-use settle::memory::code;
+use settle::engine::codes::code;
 use settle::model::{Model, State};
 use settle::rng::Rng;
 use settle::valleys::*;
@@ -342,7 +342,8 @@ fn part_hopfield(threads: usize) {
             }
             (c.valleys.len() as f64, sv, sb, fv, fb, (have.len() < p) as u8 as f64)
         });
-        let col = |f: &dyn Fn(&(f64, f64, f64, f64, f64, f64)) -> f64| mean(&rows.iter().map(f).collect::<Vec<_>>());
+        type Row6 = (f64, f64, f64, f64, f64, f64);
+        let col = |f: &dyn Fn(&Row6) -> f64| mean(&rows.iter().map(f).collect::<Vec<_>>());
         println!(
             "{:>2} {:>7.1} {:>13.1} {:>14.1} {:>11.1} {:>13.1} {:>13}/10",
             p,
@@ -407,7 +408,7 @@ fn part_hopfield(threads: usize) {
     }
     println!("== CLUSTERING: does a random input roll to its nearest pattern? (N = 200, 1000 inputs) ==");
     println!("{:>3} {:>10} {:>16} {:>18} {:>8}", "p", "dynamics", "agree nearest %", "stored/mirror %", "fake %");
-    let cases: Vec<u64> = vec![2_0, 2_1, 5_0, 5_1, 10_0, 10_1];
+    let cases: Vec<u64> = vec![20, 21, 50, 51, 100, 101]; // p * 10 + (1 if shaken)
     let rows = par_map(&cases, threads, |cs| {
         let (p, shake) = ((cs / 10) as usize, cs % 10 == 1);
         let m = hopfield(200, p, 1);

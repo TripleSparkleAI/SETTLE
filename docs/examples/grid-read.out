@@ -1,3 +1,3 @@
-play :img: 3 frames, 20 sweeps, warm, bits, tap: median PSNR 18.06 dB (worst 17.79), <time> frames/s settling, <time> frames/s with file work
-play :img: 3 frames, 20 sweeps, warm, soft, tap: median PSNR 25.69 dB (worst 25.44), <time> frames/s settling, <time> frames/s with file work
-play :img: 3 frames, 20 sweeps, warm, rb, tap: median PSNR 25.05 dB (worst 24.21), <time> frames/s settling, <time> frames/s with file work
+play :img: 3 frames, 20 sweeps, warm, bits: median PSNR 22.78 dB (worst 22.77), <time> frames/s settling, <time> frames/s with file work
+play :img: 3 frames, 20 sweeps, warm, soft: median PSNR 30.96 dB (worst 30.55), <time> frames/s settling, <time> frames/s with file work
+play :img: 3 frames, 20 sweeps, warm, rb: median PSNR 30.76 dB (worst 30.42), <time> frames/s settling, <time> frames/s with file work

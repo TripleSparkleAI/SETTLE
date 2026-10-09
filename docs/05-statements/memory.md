@@ -7,9 +7,9 @@ recall, a run starts the block from a noisy read-address and shakes it at a low 
 into the nearest calm arrangement. This is a Hopfield network with Hebbian storage. A memory can also hold short
 text, either in the open or under a key.
 
-The source is `src/memory.rs`. The family has no lane report of its own. The Hopfield store in this file is
+The source is `src/memory.rs`. The family has no experiment report of its own. The Hopfield store in this file is
 measured against Kanerva's sparse distributed memory, and the keyed save and recall are measured, in
-`experiments/thermosim/runs/sdmkeys/REPORT_SDMKEYS.md`.
+`SETTLE/runs/sdmkeys/REPORT_SDMKEYS.md`.
 
 | Statement | Block | Summary |
 |---|---|---|
@@ -137,12 +137,13 @@ Output:
 recall :m from read-address :cat with 30% address-noise after 30 sweeps: :cat +1.00  :owl -0.09  :dog -0.07  -> :cat
 recall :m from read-address :dog with 45% address-noise after 30 sweeps: :owl +1.00  :cat -0.09  :dog +0.02  -> :owl
 recall :m from read-address :zebra with 0% address-noise after 30 sweeps: :cat -1.00  :owl +0.09  :dog +0.07  -> :cat (its mirror image)
-recall :m from pure noise after 30 sweeps: :dog +0.52  :owl +0.50  :cat +0.41  -> nothing clear (closest :dog at +0.52)
+recall :m from pure noise after 30 sweeps: :owl +1.00  :cat -0.09  :dog +0.02  -> :owl
 ```
 
 The second read-address, with 45% of its bits flipped, lands on `:owl` instead of `:dog`. The third read-address, `:zebra`, was
 never stored: its pattern is not a calm arrangement, so the block rolls away from it into the mirror image of
-`:cat`. The last recall starts from noise and finds no single memory.
+`:cat`. The last recall starts from noise and falls into `:owl`, one of the three stored valleys; under `update: :gibbs` (the
+default until 2026-10-06) the same recall ended between memories, with no clear verdict.
 
 **Example:** with a fade, each new pattern weakens the older ones.
 
@@ -225,7 +226,7 @@ text can hold at most `size / 8 - 1` bytes, and never more than 255.
 
 A key is not encryption. It is hashed to 64 bits, the landscape of pulls is visible to anyone who holds the model,
 and a guessed key can be checked offline against the padding. The measurements of what a key protects and what it
-does not are in `experiments/thermosim/runs/sdmkeys/REPORT_SDMKEYS.md`.
+does not are in `SETTLE/runs/sdmkeys/REPORT_SDMKEYS.md`.
 
 **Output:** none.
 
@@ -408,7 +409,7 @@ Output:
 ```text output=memory-options
 recall :m from read-address :cat with 20% address-noise after 0 sweeps: :cat +0.56  :dog -0.02  -> nothing clear (closest :cat at +0.56)
 recall :m from read-address :cat with 20% address-noise after 5 sweeps: :cat +1.00  :dog -0.08  -> :cat
-recall :m from read-address :cat with 20% address-noise after 30 sweeps: :cat +0.05  :dog +0.00  -> nothing clear (closest :cat at +0.05)
+recall :m from read-address :cat with 20% address-noise after 30 sweeps: :dog +0.06  :cat -0.05  -> nothing clear (closest :dog at +0.06)
 ```
 
 With no sweeps, recall reports the noisy read-address itself, which is 20% away from `:cat`. Five sweeps at the default

@@ -61,7 +61,7 @@ fn pixels01(d: &Digits) -> Vec<f32> {
 /// Exact and settled readouts over rows of pixels; settled at the given sweep counts, threads over digits.
 fn score_joint(m: &Rbm, px: &[f32], ys: &[u8], sweeps: &[usize], seed: u64, threads: usize) -> (Vec<usize>, Vec<Vec<usize>>) {
     let n = ys.len();
-    let per = (n + threads - 1) / threads;
+    let per = n.div_ceil(threads);
     let mut exact = vec![0usize; n];
     let mut settled = vec![vec![0usize; n]; sweeps.len()];
     std::thread::scope(|sc| {

@@ -39,14 +39,22 @@
 //! scoreboard leaves it out, as it does keyed notes. The text is kept in this family's notes (as memory.rs
 //! keeps saved text), which the `knows: :all` read-address and the measurements use; decoding never reads it.
 
-use crate::ext::{Claim, Ctx, Ext};
-use crate::lex::{err, kw, kwargs, num, only, text, SettleError, Tok};
-use crate::memory::{code, seed_of, shake, store_pattern};
-use crate::model::{Model, State};
-use crate::rng::Rng;
-use crate::sdm::View;
+use crate::engine::codes::{code, seed_of};
+use crate::engine::rng::Rng;
+#[cfg(feature = "sdm")]
+use crate::{
+    ext::{Claim, Ctx, Ext},
+    lex::{err, kw, kwargs, num, only, text, whole, SettleError, Tok},
+    memory::{shake, store_pattern},
+    model::{Model, State},
+    sdm::View,
+};
 use std::sync::OnceLock;
 
+/// The statements `save_coded` and `recall_coded`. They store into a `memory` or an `sdm`, so they come with the
+/// `sdm` feature; the codecs above them (compression, the frame, the codes, the pipeline) are always built, and
+/// `ldpcsettle` and `ldpcmoves` use them.
+#[cfg(feature = "sdm")]
 pub struct Coded;
 
 /// The training text of the static English model (public domain; provenance in `data/PROVENANCE.txt`).
@@ -261,7 +269,7 @@ const Q3: u64 = 3 << 30;
 pub fn ac_encode(t: &[u8], model: &English) -> Vec<u8> {
     let mut out = Vec::new();
     let (mut low, mut high, mut pending) = (0u64, TOP, 0usize);
-    let mut emit = |out: &mut Vec<u8>, bit: u8, pending: &mut usize| {
+    let emit = |out: &mut Vec<u8>, bit: u8, pending: &mut usize| {
         out.push(bit);
         for _ in 0..*pending {
             out.push(1 - bit);
@@ -556,7 +564,7 @@ impl Ldpc {
                     if chosen.contains(&c) {
                         continue;
                     }
-                    if best.map_or(true, |b| weight[c] < weight[b]) {
+                    if best.is_none_or(|b| weight[c] < weight[b]) {
                         best = Some(c);
                     }
                 }
@@ -569,7 +577,7 @@ impl Ldpc {
                 rows[c].push(j);
             }
         }
-        let words = (n + 63) / 64;
+        let words = n.div_ceil(64);
         let mut dense: Vec<Vec<u64>> = rows
             .iter()
             .map(|row| {
@@ -840,11 +848,13 @@ impl Pipeline {
 
 // ---------------------------------------------------------------- the statements
 
+#[cfg(feature = "sdm")]
 enum Store {
     Hop { start: usize, size: usize, fade: f64 },
     Sdm(View),
 }
 
+#[cfg(feature = "sdm")]
 impl Store {
     fn find(m: &Model, name: &str, ln: usize) -> Result<Store, SettleError> {
         if let Some((nums, _)) = m.notes.get(&format!("memory:{}", name)) {
@@ -870,11 +880,13 @@ impl Store {
 }
 
 /// (text, compressor, code) of a saved coded note, from this family's notes.
+#[cfg(feature = "sdm")]
 fn saved(m: &Model, mem: &str, what: &str) -> Option<(String, Comp, CodeKind)> {
     let (_, words) = m.notes.get(&format!("coded:{}", mem))?;
     words.chunks(4).find(|w| w[0] == what).map(|w| (w[1].clone(), Comp::parse(&w[2]).unwrap(), CodeKind::from_name(&w[3]).unwrap()))
 }
 
+#[cfg(feature = "sdm")]
 fn sym_opt(kv: &[(String, Tok)], k: &str, ln: usize) -> Result<Option<String>, SettleError> {
     match kw(kv, k) {
         None => Ok(None),
@@ -883,6 +895,7 @@ fn sym_opt(kv: &[(String, Tok)], k: &str, ln: usize) -> Result<Option<String>, S
     }
 }
 
+#[cfg(feature = "sdm")]
 fn parse_choice(kv: &[(String, Tok)], ln: usize) -> Result<(Option<Comp>, Option<CodeKind>), SettleError> {
     let comp = match sym_opt(kv, "compress", ln)? {
         None => None,
@@ -896,6 +909,7 @@ fn parse_choice(kv: &[(String, Tok)], ln: usize) -> Result<(Option<Comp>, Option
     Ok((comp, code))
 }
 
+#[cfg(feature = "sdm")]
 fn save(m: &mut Model, mem: &str, what: &str, txt: String, rest: &[Tok], ln: usize, ctx: &mut Ctx) -> Result<(), SettleError> {
     let store = Store::find(m, mem, ln)?;
     let kv = kwargs(rest, ln)?;
@@ -931,6 +945,7 @@ fn save(m: &mut Model, mem: &str, what: &str, txt: String, rest: &[Tok], ln: usi
     Ok(())
 }
 
+#[cfg(feature = "sdm")]
 fn recall(m: &Model, st: &mut State, mem: &str, rest: &[Tok], ln: usize, ctx: &mut Ctx) -> Result<(), SettleError> {
     let store = Store::find(m, mem, ln)?;
     let kv = kwargs(rest, ln)?;
@@ -966,7 +981,7 @@ fn recall(m: &Model, st: &mut State, mem: &str, rest: &[Tok], ln: usize, ctx: &m
     let cue: Vec<f64> = cue.iter().map(|&b| if st.rng.unit() < damage { -b } else { b }).collect();
     let (got, how) = match &store {
         Store::Hop { start, .. } => {
-            let sweeps = kw(&kv, "sweeps").map(|v| num(v, ln)).transpose()?.unwrap_or(30.0) as usize;
+            let sweeps = whole(kw(&kv, "sweeps").map(|v| num(v, ln)).transpose()?.unwrap_or(30.0), 0.0, f64::INFINITY, "sweeps:", ln)?;
             let temp = kw(&kv, "temperature").map(|v| num(v, ln)).transpose()?.unwrap_or(0.1);
             if temp <= 0.0 {
                 return err(ln, "temperature must be above zero");
@@ -974,7 +989,7 @@ fn recall(m: &Model, st: &mut State, mem: &str, rest: &[Tok], ln: usize, ctx: &m
             (shake(m, st, *start, &cue, sweeps, temp), format!("{} sweeps", sweeps))
         }
         Store::Sdm(v) => {
-            let iters = kw(&kv, "iterated-reads").map(|x| num(x, ln)).transpose()?.unwrap_or(10.0) as usize;
+            let iters = whole(kw(&kv, "iterated-reads").map(|x| num(x, ln)).transpose()?.unwrap_or(10.0), 0.0, f64::INFINITY, "iterated-reads:", ln)?;
             match sym_opt(&kv, "via", ln)?.as_deref() {
                 None | Some("addresses") => (v.read_addresses(m, &cue, iters).0, "the address read".to_string()),
                 Some("pulls") => (v.read_pulls(m, st, &cue, iters).0, "the pulls read".to_string()),
@@ -1000,6 +1015,7 @@ fn recall(m: &Model, st: &mut State, mem: &str, rest: &[Tok], ln: usize, ctx: &m
     Ok(())
 }
 
+#[cfg(feature = "sdm")]
 impl Ext for Coded {
     fn name(&self) -> &'static str {
         "coded"
@@ -1024,6 +1040,7 @@ impl Ext for Coded {
     }
 }
 
+#[cfg(feature = "sdm")]
 fn save_stmt(m: &mut Model, t: &[Tok], ln: usize, ctx: &mut Ctx) -> Claim {
     match t {
         [Tok::Ident(name), Tok::Dot, Tok::Ident(v), Tok::Sym(what), Tok::Comma, s, rest @ ..] if v == "save_coded" => {
@@ -1037,8 +1054,10 @@ fn save_stmt(m: &mut Model, t: &[Tok], ln: usize, ctx: &mut Ctx) -> Claim {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(feature = "sdm")]
     use crate::interp::Interp;
 
+    #[cfg(feature = "sdm")]
     fn run(src: &str) -> Vec<String> {
         Interp::default().exec(src).unwrap_or_else(|e| panic!("{}", e))
     }
@@ -1148,6 +1167,7 @@ mod tests {
         }
     }
 
+    #[cfg(feature = "sdm")]
     const SRC: &str = "model :mind do
   memory :m, size: 512
   m.remember :cat
@@ -1159,6 +1179,7 @@ end
 ";
 
     #[test]
+    #[cfg(feature = "sdm")] // a memory from the memory family
     fn a_coded_note_comes_back_from_its_name_alone() {
         let out = run(&format!("{}run :mind do\n  m.recall_coded read-address: :note, address-noise: 0.1, seed: 1\n  m.recall_coded read-address: :note, address-noise: 0.3, knows: :all, seed: 2\n  s.recall_coded read-address: :memo, address-noise: 0.05, knows: :all, seed: 3\nend", SRC));
         assert!(out[2].ends_with("text \"meet at the harbour at nine, bring the red lantern\""), "{:?}", out);
@@ -1167,6 +1188,7 @@ end
     }
 
     #[test]
+    #[cfg(feature = "sdm")] // a memory from the memory family
     fn a_never_saved_cue_is_refused_and_prints_no_text() {
         let out = run(&format!("{}run :mind do\n  m.recall_coded read-address: :ghost, seed: 1\n  m.recall_coded read-address: :cat, seed: 2\nend", SRC));
         assert!(out[2].contains("refused") && !out[2].contains("text \""), "{}", out[2]);
@@ -1174,6 +1196,7 @@ end
     }
 
     #[test]
+    #[cfg(feature = "sdm")] // a memory from the memory family
     fn a_wrong_codebook_is_refused() {
         let out = run(&format!(
             "{}run :mind do\n  s.recall_coded read-address: :memo, knows: :all, codebook_seed: 2, seed: 3\n  m.recall_coded read-address: :note, knows: :all, code: :rep3, seed: 1\n  s.recall_coded read-address: :memo, knows: :all, seed: 3\nend",
@@ -1185,6 +1208,7 @@ end
     }
 
     #[test]
+    #[cfg(feature = "sdm")] // a memory from the memory family
     fn a_coded_note_stays_out_of_the_plain_scoreboard_and_too_long_text_is_an_error() {
         let out = run(&format!("{}run :mind do\n  m.recall read-address: :cat, address-noise: 0.1, seed: 1\nend", SRC));
         assert!(out[2].ends_with("-> :cat") && !out[2].contains(":note"), "{}", out[2]);

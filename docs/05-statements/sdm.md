@@ -5,9 +5,9 @@ in a large set of hidden "hard locations", and gets a pattern back from a noisy 
 memory's bit-counters are SETTLE pulls, so the memory is part of the model: its bit-counters can be inspected, exported
 and read by a settle of the pulls.
 
-The source is `src/sdm.rs`. The keyed text helpers are shared with the memory family and live in
+The source is `src/sdm.rs`. The words of this family are parsed by KANERVA (`kanerva::lang`, its keywords in `kanerva/src/words.rs`), the same parser the `kanerva` command uses, so a `.kanerva` file of these lines prints the same under `settle` and `kanerva` (see [the plug](#the-plug) below). The keyed text helpers are shared with the memory family and live in
 `src/memory.rs`. The family was measured against the Hopfield memory, with fake valleys, fade and keys, in
-`experiments/thermosim/runs/sdmkeys/REPORT_SDMKEYS.md`. At 2,000 hard locations and word-size 256 that report found the
+`SETTLE/runs/sdmkeys/REPORT_SDMKEYS.md`. At 2,000 hard locations and word-size 256 that report found the
 address read holds 40 patterns at 10% address-noise (90% recall) and the pulls read 100. For much larger stores see the
 [sdmscale](sdmscale.md) family, and for a soft cut-off see [softsdm](softsdm.md).
 
@@ -174,6 +174,9 @@ read :s from read-address :first with 10% address-noise via addresses (2 iterate
 - `fade must be above 0 and at most 1`
 - `activation-radius cannot be larger than word-size`
 - `a number was expected`
+- `a thing :<name>_loc_0 already exists; pick another sdm name` (or another of its things): the memory's things
+  would share a name with things already in the model, for example a softsdm of the same name. Before 2026-10-06
+  this case stopped the interpreter with a panic.
 
 ## `name.write`
 
@@ -215,7 +218,7 @@ The pattern depends on the form:
   never more than 255. Only a marker is kept in the notes; the text is not.
 
 A key is not encryption. It is hashed to 64 bits and the bit-counters are visible to anyone who holds the model. The
-measurements of what a key protects are in `experiments/thermosim/runs/sdmkeys/REPORT_SDMKEYS.md`.
+measurements of what a key protects are in `SETTLE/runs/sdmkeys/REPORT_SDMKEYS.md`.
 
 The line is claimed by this family whenever `name` is not a declared [softsdm](softsdm.md), so writing to a name
 that is neither gives the error `no sdm :<name> (...)`.
@@ -446,3 +449,13 @@ read :s from a key via addresses (3 iterated reads, 22 of 1000 hard locations ac
   exist. Declare the memory before any thing whose name could collide.
 - The pulls read follows every pull on the memory's things, so pulls you add by hand between a memory's things
   and other things change it. The address read uses only the bit-counters.
+
+## The plug
+
+SETTLE does not parse this family itself. Its registry entry is a mount of KANERVA's family (`src/plug.rs`): the
+line goes to `kanerva::lang`, and the typed statement comes back to `src/sdm.rs`, which runs it on the model.
+The `kanerva` command runs the same lines on KANERVA's engine alone, and the test `tests/oneparser_parity.rs` holds
+the two equal: every program KANERVA accepts prints the same lines under both, and every error is the same error.
+The one exception is `via: :pulls`: it settles SETTLE's pulls, so only `settle` runs it, and `kanerva` refuses it
+by name.
+

@@ -41,9 +41,9 @@ end
 
 ```text output=cook-explaining-away
 settled: 40000 samples of 3 things at temperature 1
-ask :burglary: yes 5.2% of 40000 samples
+ask :burglary: yes 5.4% of 40000 samples
 settled: 40000 samples of 3 things at temperature 1
-ask :burglary: yes 56.5% of 40000 samples
+ask :burglary: yes 56.0% of 40000 samples
 settled: 40000 samples of 3 things at temperature 1
 ask :burglary: yes 26.8% of 40000 samples
 ```
@@ -113,10 +113,10 @@ end
 
 ```text output=cook-several-questions
 settled: 40000 samples of 3 things at temperature 1
-ask :wet_grass: yes 11.8% of 40000 samples
+ask :wet_grass: yes 11.7% of 40000 samples
 ask :rain, and: :wet_grass: yes 7.5% of 40000 samples
 ask :rain, and_not: :wet_grass: yes 1.4% of 40000 samples
-ask :rain, or: :sprinkler, and: :wet_grass: yes 11.3% of 40000 samples
+ask :rain, or: :sprinkler, and: :wet_grass: yes 11.2% of 40000 samples
 ```
 
 See [`ask`](05-statements/core.md#ask).
@@ -186,13 +186,13 @@ end
 
 ```text output=cook-temperature-sweep
 settled: 20000 samples of 6 things at temperature 0.5
-ask :f: yes 91.8% of 20000 samples
+ask :f: yes 92.0% of 20000 samples
 settled: 20000 samples of 6 things at temperature 1
-ask :f: yes 62.3% of 20000 samples
+ask :f: yes 61.8% of 20000 samples
 settled: 20000 samples of 6 things at temperature 2
-ask :f: yes 50.7% of 20000 samples
+ask :f: yes 50.6% of 20000 samples
 settled: 20000 samples of 6 things at temperature 4
-ask :f: yes 49.8% of 20000 samples
+ask :f: yes 50.0% of 20000 samples
 ```
 
 At a low temperature the pulls dominate and the far end of the chain follows the held end; at a high
@@ -219,15 +219,15 @@ end
 
 ```text output=zoo-sudoku
 annealed: 2000 sweeps, calmest energy found -136.000
-  1 3 | 2 4
-  2 4 | 1 3
+  1 2 | 3 4
+  3 4 | 1 2
   ---------
-  3 1 | 4 2
-  4 2 | 3 1
+  2 1 | 4 3
+  4 3 | 2 1
 sudoku :s: VALID (checked rule by rule, not by energy)
 ```
 
-See [the zoo family](05-statements/zoo.md) for colouring, max-cut and factoring.
+See [the zoo family](05-statements/zoo.md) for colouring, max-cut, factoring and nonograms.
 
 ## Store text and recall it from a noisy read-address
 
@@ -277,8 +277,8 @@ end
 
 ```text output=grid-still
 settled: 400 samples of 384 things at temperature 1
-show_as :img -> grid-still-rate.pgm (rate), PSNR 26.78 dB against the leans' picture
-show_as :img -> grid-still-last.pgm (last), PSNR 6.41 dB against the leans' picture
+show_as :img -> grid-still-rate.pgm (rate), PSNR 35.77 dB against the leans' picture
+show_as :img -> grid-still-last.pgm (last), PSNR 6.88 dB against the leans' picture
 ```
 
 See [the grid family](05-statements/grid.md) for playing a folder of frames, and [colour](05-statements/colour.md)
@@ -308,7 +308,7 @@ end
 examples :train from data/learn-same.txt, 4 in all, over 4 things
 examples :test inline: 5 rows added, 5 in all, over 4 things
 learned :train by exact gradients over 400 rounds of 4 rows: 4 visible, 4 hidden, 16 pulls, <time>s; exact log-likelihood per example -1.4363
-classify :test by settling 200 sweeps with 2 inputs held: 4 of 4 right (100.0%); exact one-hot readout 100.0%; chance 50.0%; 1 rows skipped (not exactly one label on)
+classify :test by settling 200 sweeps with 2 inputs held: 3 of 4 right (75.0%); exact one-hot readout 100.0%; chance 50.0%; 1 rows skipped (not exactly one label on)
 ```
 
 See [the learn family](05-statements/learn.md) and, for generating new examples, [denoise](05-statements/denoise.md).

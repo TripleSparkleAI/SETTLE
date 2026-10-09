@@ -1,7 +1,7 @@
 # Extending SETTLE
 
 SETTLE's statements are grouped into **families**. Each family is one Rust file that implements the `Ext` trait
-from `src/ext.rs`. The interpreter knows nothing about any particular statement: it offers every line to each
+from `src/words/registry.rs`. The interpreter knows nothing about any particular statement: it offers every line to each
 family in turn, and the first family that recognises the line runs it. Adding a family therefore needs no change
 to the lexer or the interpreter. This page describes that interface and walks through a complete small family.
 
@@ -46,12 +46,12 @@ pub type Claim = Option<Result<(), SettleError>>;
 
 ### Useful helpers
 
-From `src/lex.rs`: `err(ln, msg)` builds an error that prints as `line N: msg`; `kwargs(tokens, ln)` parses
+From `src/words/lex.rs`: `err(ln, msg)` builds an error that prints as `line N: msg`; `kwargs(tokens, ln)` parses
 `key: value` pairs; `kw(&kv, "key")` looks one up; `only(&kv, &[...], "statement", ln)` refuses unknown keys;
 `num`, `text` and `yes_no` convert a value token or fail with the standard message.
 
-From `src/model.rs`: `Model::add(name)` declares a thing (or returns the existing one), `Model::couple(i, k, w)`
-adds to a pull, `Model::need(name, ln)` finds a thing or fails with the standard message, `Model::energy(s)`
+From `src/engine/model.rs`: `Model::add(name)` declares a thing (or returns the existing one), `Model::couple(i, k, w)`
+adds to a pull, `Model::need(name, ln)` (in `src/words/names.rs`) finds a thing or fails with the standard message, `Model::energy(s)`
 and `Model::input(i, s)` compute the energy and one thing's input. `State::settle(m, n)` and
 `State::anneal(m, n)` run the core sampler, and `State::rates()` gives the yes-rates.
 
@@ -66,7 +66,7 @@ blocks; the run `State` does not.
 
 1. Write `src/<family>.rs` with a unit struct and an `impl Ext` for it.
 2. Add `pub mod <family>;` to `src/lib.rs`.
-3. Add one line, `Box::new(crate::<family>::<Struct>),`, to `registry()` in `src/ext.rs`. Order matters: the
+3. Add one line, `v.push(Box::new(crate::<family>::<Struct>));`, to `registry()` in `src/words/registry.rs`. Order matters: the
    first family whose pattern matches a line wins, and `core` stays first.
 4. Add tests in the file's `#[cfg(test)]` module, run `cargo test --release`, and document the family: a page
    in `docs/05-statements/`, with examples in `docs/examples/`.
@@ -166,11 +166,11 @@ end
 
 ```text file=ext_chain.program.out
 settled: 20000 samples of 6 things at temperature 1
-chain :x: ends agree in 56.9% of 20000 samples
+chain :x: ends agree in 55.8% of 20000 samples
 ```
 
 For a chain of pulls `J` at temperature 1 with no leans, the two ends agree with probability
-`(1 + tanh(J)^(L-1)) / 2`, which is 56.5% for `J = 0.8` and `L = 6`; the sampled 56.9% is within sampling error.
+`(1 + tanh(J)^(L-1)) / 2`, which is 56.5% for `J = 0.8` and `L = 6`; the sampled 55.8% is within sampling error.
 
 The file is `docs/examples/ext_chain.rs`, and the test `the_extension_example_runs` compiles it, so this page's
 code cannot drift from code that builds.
@@ -182,4 +182,62 @@ code cannot drift from code that builds.
 - Report a refusal (a result that cannot be trusted) as an output line that says so, and an impossible request
   as an error.
 - Take a `seed:` keyword wherever the statement uses randomness, and use the run's generator otherwise.
+- Read a count (sweeps, rounds, samples) with `whole(value, least, most, "sweeps:", ln)` from `src/words/lex.rs`, so
+  a count that is not a whole number in range is refused with the same words in every family, never truncated.
 - Keep examples fast and add them to `docs/examples/` so the doctest keeps them honest.
+
+## The three floors
+
+The crate is built in three floors, the same three KANERVA has:
+
+| Floor | Folder | What lives there |
+|---|---|---|
+| engine | `src/engine/` | Data in, data out: the model, the sampler and the anneal schedule, energy, answers by counting, the random generator, the word codes. No parsing, no printing, no keyword names. |
+| words | `src/words/` | The language: the lexer, the blocks, the registry every family plugs into, the core family, its word list (`vocab.rs`) and its builder face. |
+| doors | `src/doors/` | The ways in and out: the `settle` command and JSON. |
+
+A new family plugs into the words floor through the registry. When its engine grows past a few functions, keep the
+arithmetic in functions that take and return plain data, and keep tokens and printed lines in the statement code;
+the core family (`src/words/core.rs` over `src/engine/`) is the pattern.
+
+## The builder face
+
+The core family has a second face for Rust programs: a builder that writes the same statements without a program
+file. Its method names are the words of the program (`thing`, `leans`, `pulls`, `pushes`, `hold`, `settle`,
+`temperature`, `seed`, `anneal`, `show`, `best`, `ask`, `and`, `or`, `and_not`, `or_not`), and it runs through the
+same code as a program, so it prints the same lines. This is the cookbook's alarm program,
+`docs/examples/cook-explaining-away-short.settle`, written with the builder:
+
+```rust file=builder-alarm.rs
+use settle::engine::model::Model;
+use settle::lex::SettleError;
+
+// the alarm program, written in Rust
+fn alarm() -> Result<Vec<String>, SettleError> {
+    Model::build()
+        .thing("burglary").leans("no", 1.0)
+        .thing("earthquake").leans("no", 1.0)
+        .thing("alarm").leans("no", 1.0)
+        .pulls("burglary", "alarm", 1.5)
+        .pulls("earthquake", "alarm", 1.5)
+        .pushes("burglary", "earthquake", 1.0)
+        .run()
+        .hold("alarm", "yes")
+        .hold("earthquake", "yes")
+        .settle(40_000).seed(1)
+        .ask("burglary")
+        .lines()
+}
+```
+
+`alarm()` returns the program's lines:
+
+```text output=cook-explaining-away-short
+settled: 40000 samples of 3 things at temperature 1
+ask :burglary: yes 26.8% of 40000 samples
+```
+
+A misuse, such as `temperature` with no `settle` before it, is returned by `lines()` as an error, never a panic.
+The test `tests/two_faces.rs` compiles `docs/examples/builder-alarm.rs` as written and checks its lines; it also
+runs the other documented core examples through both faces and checks that the models and the printed lines are
+the same, and that the builder's methods and the word list `src/words/vocab.rs` name the same words.

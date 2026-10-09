@@ -3,5 +3,5 @@ model :m do
 end
 
 run :m do
-  settle 100, sweeps: 5            # settle takes temperature: and seed: only
+  settle 100, sweeps: 5            # settle takes temperature:, seed: and update: only
 end

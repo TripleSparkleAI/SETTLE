@@ -1,1 +1,3 @@
 target/
+/examples/horse/out/
+/examples/horse/still.pgm

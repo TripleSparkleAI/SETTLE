@@ -10,10 +10,10 @@ keyword arguments; the pages below are complete.
 
 | Order | Family | Source | What it adds |
 |---|---|---|---|
-| 1 | [core](core.md) | `src/core.rs` | Things, leans and pulls; `hold`, `settle`, `anneal`, `show`, `best`, `ask`. |
+| 1 | [core](core.md) | `src/words/core.rs` | Things, leans and pulls; `hold`, `settle`, `anneal`, `show`, `best`, `ask`. |
 | 2 | [memory](memory.md) | `src/memory.rs` | A Hopfield memory: store patterns and text in the pulls, recall them from a damaged cue, keyed notes. |
 | 3 | [grid](grid.md) | `src/grid.rs` | One thing per pixel: read and write PGM pictures, play a folder of frames. |
-| 4 | [zoo](zoo.md) | `src/zoo.rs` | Puzzles as models: sudoku, graph colouring, max-cut, factoring; checking a solution. |
+| 4 | [zoo](zoo.md) | `src/zoo.rs` | Puzzles as models: sudoku, graph colouring, max-cut, factoring, nonograms; checking a solution. |
 | 5 | [learn](learn.md) | `src/learn.rs` | Example sets, hidden things, Boltzmann machine learning, classification by settling. |
 | 6 | [valleys](valleys.md) | `src/valleys.rs` | Test landscapes; exact enumeration and random surveys of the calm arrangements. |
 | 7 | [numbers](numbers.md) | `src/numbers.rs` | Real-valued things on springs, Langevin drift, solving linear systems. |
@@ -33,7 +33,7 @@ keyword arguments; the pages below are complete.
 
 ## Modules without statements of their own
 
-Four source files add no statements. They implement options that other families' statements accept:
+Five source files add no statements. They implement options or data that other families' statements use:
 
 | Module | Used by | What it provides |
 |---|---|---|
@@ -41,5 +41,33 @@ Four source files add no statements. They implement options that other families'
 | `src/filmwarm.rs` | grid | Warm-started lean fits from frame to frame (`warm_fit:` and related options). |
 | `src/zoohard.rs` | zoo | Hard puzzle generators and exact deciders used by the measurement program `examples/zoohard_measure.rs`. |
 | `src/sdmradius.rs` | sdmscale | Choosing a radius for the damage a cue carries, and density-scaled read thresholds. |
+| `src/mnist.rs` | descend | Reading the MNIST IDX files for `data :mnist` and `test :mnist`, and the restricted machines the measurement program `examples/mnist_measure.rs` trains. |
 
 The options are documented on the pages of the statements that accept them.
+
+## The KANERVA boundary
+
+Every sparse distributed memory algorithm the statements use lives in KANERVA, the crate SETTLE depends on
+(`Cargo.toml`; [Install and run](../01-install-and-run.md#requirements) says where Cargo finds it). The rule at
+the seam: KANERVA holds the algorithms, their equations and their own tests; a SETTLE file holds the statements,
+the way a memory is laid out as things and pulls, and the tests of that layout. A SETTLE file reaches KANERVA
+only through `use kanerva::...` at its top, and re-exports KANERVA's items under the names they had before the
+split (`pub use`), so `settle::sdmscale::Store` and `kanerva::store::Store` are the same type. Nothing in
+KANERVA knows about SETTLE.
+
+| SETTLE file | KANERVA modules it uses |
+|---|---|
+| `src/engine/rng.rs` | `rng`, with the `sdm` feature on: one random generator both crates draw from (off, SETTLE's own byte-identical copy) |
+| `src/engine/codes.rs` | `codes`, in its test only: SETTLE's own copies of seed_of and code are held equal to KANERVA's |
+| `src/plug.rs` | `lang`, `words`: KANERVA's parser of the five sdm-family statements, mounted in the registry |
+| `src/memory.rs` | `codes`, `keys` |
+| `src/sdm.rs` | `address`, `codes`, `keys`, `lang`, `store`, `theory` |
+| `src/softsdm.rs` | `soft`, `codes`, `lang`, `theory` |
+| `src/sdmscale.rs` | `bits`, `hopfield`, `lang`, `smap`, `store`, `theory` |
+| `src/sdmradius.rs` | `smap`, `store`, `theory` |
+| `src/sdmrefuse.rs` | `bits`, `lang`, `refuse`, `store`, `theory` |
+| `src/sdmtrack.rs` | `track`, `bits`, `lang`, `store`, `theory` |
+
+Recount it with `grep -rn "kanerva::" src`. The `valleys` and `coded` statements use `src/engine/codes.rs`, not
+KANERVA, however the crate is built. The KANERVA modules and their equations are in KANERVA's own
+README.

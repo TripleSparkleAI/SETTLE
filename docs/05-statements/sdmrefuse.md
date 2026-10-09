@@ -8,10 +8,10 @@ statement, `refusal`, is a calculator for the travel rule. For a memory holding 
 it prints the largest travel an answer may have and still be accepted, how often a never-stored read-address is then
 refused, and the best recall any read could reach with that rule.
 
-The source is `src/sdmrefuse.rs`. Most of the file is measurement code with no statement of its own: reads that
+The source is `src/sdmrefuse.rs`. The words of this family are parsed by KANERVA (`kanerva::lang`, its keywords in `kanerva/src/words.rs`), the same parser the `kanerva` command uses, so a `.kanerva` file of these lines prints the same under `settle` and `kanerva` (see [the plug](#the-plug) below). Most of the file is measurement code with no statement of its own: reads that
 return diagnostics, the exact nearest-neighbour oracle, and a predictor of how a read converges. The measurement
 program `examples/sdmrefuse_measure.rs` uses them. The family was measured in
-`experiments/thermosim/runs/sdmrefuse/REPORT_SDMREFUSE.md`. There, the travel rule followed the exact oracle to
+`SETTLE/runs/sdmrefuse/REPORT_SDMREFUSE.md`. There, the travel rule followed the exact oracle to
 within 0.01 to 0.05 wherever never-stored read-addresses moved, and failed in the most crowded stores, where they did not
 move. The stores it was measured on are those of the [sdmscale](sdmscale.md) family.
 
@@ -128,3 +128,12 @@ the time once the rule refuses 99.28% of never-stored read-addresses. At 10% to 
 - `word-size:` and `load:` are cut to whole numbers, so `load: 0.5` is `load: 0` and is refused.
 - The rule and the oracle assume the stored patterns and the never-stored read-addresses are random and independent. The
   report measures how real reads compare with them.
+
+## The plug
+
+SETTLE does not parse this family itself. Its registry entry is a mount of KANERVA's family (`src/plug.rs`): the
+line goes to `kanerva::lang`, and the typed statement comes back to `src/sdmrefuse.rs`, which runs it on the model.
+The `kanerva` command runs the same lines on KANERVA's engine alone, and the test `tests/oneparser_parity.rs` holds
+the two equal: every program KANERVA accepts prints the same lines under both, and every error is the same error.
+`refusal` runs under both commands.
+

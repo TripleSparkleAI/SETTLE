@@ -48,10 +48,11 @@
 //! - Methods. `method: :adam` runs Adam (beta 0.9, 0.999, eps 1e-8) with rate `step`; it has no temperature and
 //!   refuses one. Walkers start at 0, or at init * N(0, 1) for a net (0 is a saddle of a net).
 //! - State lives in Model.notes: "descend:data", "descend:test", "descend:loss", "descend:last".
+//!
 //! </claudes_code_comments>
 
 use crate::ext::{Claim, Ctx, Ext};
-use crate::lex::{err, kw, kwargs, num, only, text, SettleError, Tok};
+use crate::lex::{err, kw, kwargs, num, only, text, SettleError, Tok, whole};
 use crate::model::{Model, State};
 use crate::numbers::{gauss_inverse, gauss_solve, inverse_from_spread, rel_frob, stiffest, Springs, BLOWUP};
 use crate::rng::Rng;
@@ -604,7 +605,7 @@ pub fn descend(pb: &Problem, data: &Data, o: &Opts, report: usize, cb: &mut dyn 
     let t0 = Instant::now();
     let d = pb.nparams(data.p);
     let n = data.n;
-    let full = pb.kind == Kind::Springs || o.batch.map_or(true, |b| b >= n);
+    let full = pb.kind == Kind::Springs || o.batch.is_none_or(|b| b >= n);
     let bsz = if full { n } else { o.batch.unwrap().max(1) };
     let scale = if full { 1.0 } else { n as f64 / bsz as f64 };
     let want_cov = d <= COV_MAX;
@@ -612,7 +613,7 @@ pub fn descend(pb: &Problem, data: &Data, o: &Opts, report: usize, cb: &mut dyn 
     let kept_total = o.walkers * per_walker;
     let nb = 20usize;
     let bsize = (kept_total / nb).max(1);
-    let snap_every = if o.keep == 0 { usize::MAX } else { (per_walker / o.keep).max(1) };
+    let snap_every = per_walker.checked_div(o.keep).map_or(usize::MAX, |q| q.max(1));
     let mut ksum = vec![0.0; d];
     let mut ksq = if want_cov { vec![0.0; d * d] } else { vec![0.0; d] };
     let mut bsum = vec![0.0; d];
@@ -694,7 +695,7 @@ pub fn descend(pb: &Problem, data: &Data, o: &Opts, report: usize, cb: &mut dyn 
             if report > 0 && (s % report == 0 || s == o.steps) {
                 cb(&Tick { step: s, walker: wi, th: &th, batch_loss, temp });
             }
-            if s > o.burn && (s - o.burn) % o.every.max(1) == 0 {
+            if s > o.burn && (s - o.burn).is_multiple_of(o.every.max(1)) {
                 kept += 1;
                 wkept += 1;
                 for i in 0..d {
@@ -720,7 +721,7 @@ pub fn descend(pb: &Problem, data: &Data, o: &Opts, report: usize, cb: &mut dyn 
                     bsum.iter_mut().for_each(|v| *v = 0.0);
                     inb = 0;
                 }
-                if wkept % snap_every == 0 && samples.len() < (wi + 1) * o.keep {
+                if wkept.is_multiple_of(snap_every) && samples.len() < (wi + 1) * o.keep {
                     samples.push(th.clone());
                 }
             }
@@ -996,11 +997,11 @@ fn load_data(rest: &[Tok], ln: usize, ctx: &Ctx, verb: &str) -> Result<Data, Set
                 None => (if verb == "test" { "test" } else { "train" }).to_string(),
             };
             let from = match kw(&kv, "from") {
-                Some(v) => num(v, ln)? as usize,
+                Some(v) => whole(num(v, ln)?, 0.0, f64::INFINITY, "from:", ln)?,
                 None => 0,
             };
             let rows = match kw(&kv, "rows") {
-                Some(v) => num(v, ln)? as usize,
+                Some(v) => whole(num(v, ln)?, 0.0, f64::INFINITY, "rows:", ln)?,
                 None => usize::MAX,
             };
             let dir = ctx.path(&dir).to_string_lossy().to_string();
@@ -1150,16 +1151,16 @@ fn descend_stmt(m: &mut Model, steps: usize, rest: &[Tok], ln: usize, ctx: &mut 
         o.step_to = Some(h1);
     }
     if let Some(v) = kw(&kv, "batch") {
-        let b = num(v, ln)? as usize;
+        let b = whole(num(v, ln)?, 0.0, f64::INFINITY, "batch:", ln)?;
         if b == 0 {
             return err(ln, "batch must be at least 1");
         }
         o.batch = Some(b);
     }
-    o.walkers = num_or("walkers", 1.0)?.max(1.0) as usize;
-    o.every = num_or("every", 1.0)?.max(1.0) as usize;
-    o.burn = (num_or("burn", (steps / 10) as f64)? as usize).min(steps - 20);
-    o.keep = num_or("keep", if pb.kind == Kind::Springs || pb.kind == Kind::LeastSquares { 0.0 } else { 50.0 })? as usize;
+    o.walkers = whole(num_or("walkers", 1.0)?, 0.0, f64::INFINITY, "walkers:", ln)?.max(1);
+    o.every = whole(num_or("every", 1.0)?, 0.0, f64::INFINITY, "every:", ln)?.max(1);
+    o.burn = whole(num_or("burn", (steps / 10) as f64)?, 0.0, f64::INFINITY, "burn:", ln)?.min(steps - 20);
+    o.keep = whole(num_or("keep", if pb.kind == Kind::Springs || pb.kind == Kind::LeastSquares { 0.0 } else { 50.0 })?, 0.0, f64::INFINITY, "keep:", ln)?;
     if let Some(v) = kw(&kv, "method") {
         o.method = match v {
             Tok::Sym(s) if s == "langevin" => Method::Langevin,
@@ -1167,7 +1168,7 @@ fn descend_stmt(m: &mut Model, steps: usize, rest: &[Tok], ln: usize, ctx: &mut 
             _ => return err(ln, "method is :langevin (Settling, the default) or :adam"),
         };
     }
-    if o.method == Method::Adam && (o.temp > 0.0 || o.cool_to.map_or(false, |t| t > 0.0)) {
+    if o.method == Method::Adam && (o.temp > 0.0 || o.cool_to.is_some_and(|t| t > 0.0)) {
         return err(ln, "refused: Adam has no temperature. Settling with noise is method :langevin; Adam is for temperature 0");
     }
     let d = pb.nparams(data.p);
@@ -1186,7 +1187,7 @@ fn descend_stmt(m: &mut Model, steps: usize, rest: &[Tok], ln: usize, ctx: &mut 
             false
         }
         None => {
-            let full = pb.kind == Kind::Springs || o.batch.map_or(true, |b| b >= data.n);
+            let full = pb.kind == Kind::Springs || o.batch.is_none_or(|b| b >= data.n);
             let how = if o.method == Method::Adam {
                 "Adam".to_string()
             } else if o.temp == 0.0 && temp_end == 0.0 {
@@ -1227,7 +1228,7 @@ fn descend_stmt(m: &mut Model, steps: usize, rest: &[Tok], ln: usize, ctx: &mut 
         h: o.step,
         temp: o.temp,
         temp_end,
-        batch: pb.kind != Kind::Springs && o.batch.map_or(false, |b| b < data.n),
+        batch: pb.kind != Kind::Springs && o.batch.is_some_and(|b| b < data.n),
         method: o.method,
         settled,
         walkers: o.walkers,
@@ -1261,7 +1262,7 @@ fn ask_stmt(m: &Model, rest: &[Tok], ln: usize, ctx: &mut Ctx) -> Result<(), Set
                 }
             },
             Tok::Comma => {}
-            other => return err(ln, format!("unexpected {:?} in ask (write: ask :w1, :bias)", other)),
+            other => return err(ln, format!("unexpected `{}` in ask (write: ask :w1, :bias)", other)),
         }
     }
     let shown: Vec<usize> = if want.is_empty() { (0..l.d.min(16)).collect() } else { want };
@@ -1409,7 +1410,9 @@ impl Ext for Descend {
 
     fn run_stmt(&self, m: &mut Model, _st: &mut State, t: &[Tok], ln: usize, ctx: &mut Ctx) -> Claim {
         Some(match t {
-            [Tok::Ident(k), Tok::Num(n), rest @ ..] if k == "descend" => descend_stmt(m, *n as usize, rest, ln, ctx),
+            [Tok::Ident(k), Tok::Num(n), rest @ ..] if k == "descend" => {
+                whole(*n, 0.0, f64::INFINITY, "descend", ln).and_then(|steps| descend_stmt(m, steps, rest, ln, ctx))
+            }
             [Tok::Ident(k), rest @ ..] if k == "ask" && m.notes.contains_key(LOSS) => ask_stmt(m, rest, ln, ctx),
             [Tok::Ident(k)] if k == "score" => score_stmt(m, ln, ctx),
             _ => return None,
@@ -1711,8 +1714,7 @@ mod tests {
         std::fs::write(dir.join("tr.csv"), format!("x1 x2 y\n{}", csv(&tr))).unwrap();
         std::fs::write(dir.join("te.csv"), csv(&te)).unwrap();
         let src = "model :line do\n  data \"tr.csv\"\n  test \"te.csv\"\n  loss :least_squares, noise: 0.5, prior: 10\nend\nrun :line do\n  descend 200_000, step: 0.004, temperature: 1, seed: 1, keep: 200\n  ask\n  score\nend";
-        let mut it = Interp::default();
-        it.base_dir = dir.clone();
+        let mut it = Interp::in_dir(dir.clone());
         let out = it.exec(src).unwrap();
         assert!(out[0].starts_with("data: 40 examples of 2 features"), "{:?}", out);
         let ask = out.iter().find(|l| l.starts_with("ask:")).unwrap();

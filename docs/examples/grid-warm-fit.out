@@ -1,8 +1,8 @@
-  f0.pgm  PSNR 15.74 dB  <time> ms  fit cold 240 sweeps, residual 0.23915 -> 0.16835, target change 0.0000
-  f1.pgm  PSNR 15.77 dB  <time> ms  fit warm 60 sweeps, residual 0.22970 -> 0.22970, target change 0.1437
-  f2.pgm  PSNR 13.67 dB  <time> ms  fit warm 60 sweeps, residual 0.20752 -> 0.20752, target change 0.1872
-play :img: 3 frames, 60 sweeps, warm, soft, tap: median PSNR 15.74 dB (worst 13.67), <time> frames/s settling, <time> frames/s with file work; fit 4 x 60 sweeps cold on the first frame, then warm 1 x 60 from correction: 2 warm and 1 cold frames, fit sweeps 360 in all, 60.0 per frame after the first; median PSNR after the first frame 14.72 dB; median grey residual 0.22970 -> 0.20752, <time> s fitting
-  f0.pgm  PSNR 15.74 dB  <time> ms  fit cold 240 sweeps, residual 0.23915 -> 0.16835, target change 0.0000
-  f1.pgm  PSNR 17.85 dB  <time> ms  fit warm 60 sweeps, residual 0.30990 -> 0.22887, target change 0.1437
-  f2.pgm  PSNR 15.38 dB  <time> ms  fit cold 240 sweeps, residual 0.20756 -> 0.18016, target change 0.1872
-play :img: 3 frames, 60 sweeps, warm, soft, tap: median PSNR 15.74 dB (worst 15.38), <time> frames/s settling, <time> frames/s with file work; fit 4 x 60 sweeps cold on the first frame, then warm 2 x 30 from leans, cut above 0.16, step 0.5: 1 warm and 2 cold frames, fit sweeps 540 in all, 150.0 per frame after the first; median PSNR after the first frame 16.61 dB; median grey residual 0.23915 -> 0.18016, <time> s fitting
+  f0.pgm  PSNR 16.95 dB  <time> ms  fit cold 240 sweeps, residual 0.32257 -> 0.22687, target change 0.0000
+  f1.pgm  PSNR 17.12 dB  <time> ms  fit warm 60 sweeps, residual 0.18828 -> 0.18828, target change 0.1437
+  f2.pgm  PSNR 17.59 dB  <time> ms  fit warm 60 sweeps, residual 0.18831 -> 0.18831, target change 0.1872
+play :img: 3 frames, 60 sweeps, warm, soft: median PSNR 17.12 dB (worst 16.95), <time> frames/s settling, <time> frames/s with file work; fit 4 x 60 sweeps cold on the first frame, then warm 1 x 60 from correction: 2 warm and 1 cold frames, fit sweeps 360 in all, 60.0 per frame after the first; median PSNR after the first frame 17.35 dB; median grey residual 0.18831 -> 0.18831, <time> s fitting
+  f0.pgm  PSNR 16.95 dB  <time> ms  fit cold 240 sweeps, residual 0.32257 -> 0.22687, target change 0.0000
+  f1.pgm  PSNR 18.38 dB  <time> ms  fit warm 60 sweeps, residual 0.19669 -> 0.16683, target change 0.1437
+  f2.pgm  PSNR 18.02 dB  <time> ms  fit cold 240 sweeps, residual 0.20480 -> 0.09783, target change 0.1872
+play :img: 3 frames, 60 sweeps, warm, soft: median PSNR 18.02 dB (worst 16.95), <time> frames/s settling, <time> frames/s with file work; fit 4 x 60 sweeps cold on the first frame, then warm 2 x 30 from correction, cut above 0.16, step 0.5: 1 warm and 2 cold frames, fit sweeps 540 in all, 150.0 per frame after the first; median PSNR after the first frame 18.20 dB; median grey residual 0.20480 -> 0.16683, <time> s fitting

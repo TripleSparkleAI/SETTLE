@@ -19,7 +19,10 @@
 //! - Out of distribution: the eval images with one fixed random permutation of the pixels (seed 99). AUROC of
 //!   predictive entropy (and, for clouds, of mutual information) separating real from permuted.
 //! - Output: ROW lines (key=value) on stdout; `--out DIR` also writes curve_<tag>.csv per run and summary.json.
+//!
 //! </claudes_code_comments>
+
+#![allow(clippy::needless_range_loop)] // index loops mirror the equations they measure
 
 use settle::descend::{descend, metrics, predictive, Data, Method, Opts, Problem, Tick};
 use std::collections::BTreeMap;
@@ -136,7 +139,7 @@ fn run_arm(cfg: &Cfg, arm: &str, seed: u64, train: &Data, eval: &Data, ood: &Dat
     let mut acc_loss = (0.0, 0usize);
     let every = cfg.curve_every.max(1);
     let eval_slice = Data { n: eval.n.min(2000), p: eval.p, x: eval.x[..eval.n.min(2000) * eval.p].to_vec(), y: eval.y[..eval.n.min(2000)].to_vec() };
-    let report = if arm == "gd" { 1 } else { 1 };
+    let report = 1; // the same report interval for every arm
     let mut cb = |t: &Tick| {
         if t.walker != 0 {
             return;
@@ -144,7 +147,7 @@ fn run_arm(cfg: &Cfg, arm: &str, seed: u64, train: &Data, eval: &Data, ood: &Dat
         acc_loss.0 += t.batch_loss;
         acc_loss.1 += 1;
         let stride = if arm == "gd" { (every * cfg.batch / n).max(1) } else { every };
-        if t.step % stride == 0 || t.step == 1 {
+        if t.step.is_multiple_of(stride) || t.step == 1 {
             let m = metrics(&pb, &predictive(&pb, &[t.th], &eval_slice), &eval_slice);
             let rows = if arm == "gd" { t.step * n } else { t.step * cfg.batch };
             curve.push((rows, acc_loss.0 / acc_loss.1 as f64, m.accuracy));

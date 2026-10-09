@@ -34,7 +34,7 @@
 
 use crate::coded::{CodeKind, Codec, Ldpc};
 use crate::ext::{Claim, Ctx, Ext};
-use crate::lex::{err, kw, kwargs, num, only, SettleError, Tok};
+use crate::lex::{err, kw, kwargs, num, only, SettleError, Tok, whole};
 use crate::model::{Model, State};
 use crate::rng::Rng;
 use crate::zoo::Qubo;
@@ -575,7 +575,7 @@ fn decode_stmt(m: &Model, st: &mut State, name: &str, rest: &[Tok], ln: usize, c
     if from != "received" && from != "random" {
         return err(ln, "start is :received or :random");
     }
-    let sweeps = kw(&kv, "sweeps").map(|v| num(v, ln)).transpose()?.unwrap_or(400.0) as usize;
+    let sweeps = whole(kw(&kv, "sweeps").map(|v| num(v, ln)).transpose()?.unwrap_or(400.0), 0.0, f64::INFINITY, "sweeps:", ln)?;
     let default_hot = if from == "random" { 10.0 } else { 1.0 };
     let hot = kw(&kv, "hot").map(|v| num(v, ln)).transpose()?.unwrap_or(default_hot);
     let cold = kw(&kv, "cold").map(|v| num(v, ln)).transpose()?.unwrap_or(0.05);

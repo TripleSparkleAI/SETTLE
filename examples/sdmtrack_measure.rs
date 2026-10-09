@@ -156,7 +156,7 @@ fn bench(m: usize, t: usize) {
     let g = Member::random(N, m, r, packed_random(t, &mut rr), &mut rr);
     let tb = t3.elapsed().as_secs_f64();
     let t4 = Instant::now();
-    let (_, rounds, _, _) = g.read(&g.pats[..4].to_vec(), Wake::Topk(c.k()), 20);
+    let (_, rounds, _, _) = g.read(&g.pats[..4], Wake::Topk(c.k()), 20);
     println!("  TRACK-R build {:.2}s rows {}, read {:.3}s ({} rounds)", tb, g.rows(), t4.elapsed().as_secs_f64(), rounds);
     stamp("bench-end");
 }
@@ -304,7 +304,7 @@ fn capgrid(m: usize, spec: &str) {
     stamp(&format!("capgrid-end-M{}", m));
 }
 
-fn median(v: &mut Vec<f64>) -> f64 {
+fn median(v: &mut [f64]) -> f64 {
     if v.is_empty() {
         return f64::NAN;
     }
@@ -365,7 +365,8 @@ fn census_part(m: usize, ts: &[usize]) {
         let landed = recs.iter().filter(|x| 1.0 - 2.0 * x.2 as f64 / N as f64 >= OK).count();
         let mut tr: Vec<f64> = recs.iter().map(|x| x.0 as f64).collect();
         let mut rd: Vec<f64> = recs.iter().map(|x| x.1 as f64).collect();
-        let pick = |f: &dyn Fn(&(Census, usize, f64, f64, f64, f64)) -> f64, last: bool| -> f64 {
+        type Point = (Census, usize, f64, f64, f64, f64);
+        let pick = |f: &dyn Fn(&Point) -> f64, last: bool| -> f64 {
             let mut v: Vec<f64> = recs.iter().map(|x| f(if last { x.3.last().unwrap() } else { &x.3[0] })).collect();
             median(&mut v)
         };
@@ -524,7 +525,8 @@ fn selfcal2(read: &str, m: usize, ts: &[usize], off: u64) {
         let cmin = |x: &[f64]| tc.min(x) < cut_m;
         let h = travel_threshold(N, t, 0.01);
         let ruler = |x: &[f64]| x[0] <= h as f64;
-        let rules: [(&str, &dyn Fn(&[f64]) -> bool); 5] = [("unionS", &union), ("product", &product), ("calmin", &cmin), ("travel", &|x: &[f64]| x[0] < tau_t), ("ruleR", &ruler)];
+        type Rule<'a> = (&'a str, &'a dyn Fn(&[f64]) -> bool);
+        let rules: [Rule; 5] = [("unionS", &union), ("product", &product), ("calmin", &cmin), ("travel", &|x: &[f64]| x[0] < tau_t), ("ruleR", &ruler)];
         let srec = par(4 * qs, |k| {
             let di = k / qs;
             let mut rr = Rng::new(base * 3 + t as u64 * 104_729 + k as u64);

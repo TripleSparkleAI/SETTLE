@@ -1,8 +1,8 @@
 settled: 20000 samples of 6 things at temperature 0.5
-ask :f: yes 91.8% of 20000 samples
+ask :f: yes 92.0% of 20000 samples
 settled: 20000 samples of 6 things at temperature 1
-ask :f: yes 62.3% of 20000 samples
+ask :f: yes 61.8% of 20000 samples
 settled: 20000 samples of 6 things at temperature 2
-ask :f: yes 50.7% of 20000 samples
+ask :f: yes 50.6% of 20000 samples
 settled: 20000 samples of 6 things at temperature 4
-ask :f: yes 49.8% of 20000 samples
+ask :f: yes 50.0% of 20000 samples

@@ -3,13 +3,13 @@
 The zoo family writes hard puzzles as settling problems. Each puzzle statement declares a block of things and
 sets their leans and pulls so that the calmest arrangement of the block is the answer to the puzzle. An anneal
 then looks for that arrangement, and `x.solution` decodes the calmest arrangement found and checks it against
-the puzzle's rules with plain code. The energy is never used for the verdict. Four puzzles are available:
-sudoku, graph colouring, max-cut and factoring.
+the puzzle's rules with plain code. The energy is never used for the verdict. Five puzzles are available:
+sudoku, graph colouring, max-cut, factoring and nonograms.
 
 The source is `src/zoo.rs`. The file `src/zoohard.rs` holds no statements: it has the exact solvers,
 generators and deciders that the measurements used. The encodings and first measurements are in
-`experiments/thermosim/runs/settlezoo/REPORT_SETTLEZOO.md`. The column encoding for `factor` and the
-`anneal_each` statement are in `experiments/thermosim/runs/zoohard/REPORT_ZOOHARD.md`.
+`SETTLE/runs/settlezoo/REPORT_SETTLEZOO.md`. The column encoding for `factor` and the
+`anneal_each` statement are in `SETTLE/runs/zoohard/REPORT_ZOOHARD.md`.
 
 | Statement | Block | Summary |
 |---|---|---|
@@ -17,6 +17,7 @@ generators and deciders that the measurements used. The encodings and first meas
 | [`colouring`](#colouring) | model | declare a graph colouring with 2 to 9 colours |
 | [`maxcut`](#maxcut) | model | declare a max-cut problem on a weighted graph |
 | [`factor`](#factor) | model | declare the factoring of an odd whole number |
+| [`nonogram`](#nonogram) | model | declare a nonogram: a picture drawn from row and column clues |
 | [`anneal_each`](#anneal_each) | run | anneal, and let every puzzle keep its own calmest block |
 | [`x.solution`](#xsolution) | run | decode a puzzle from the calmest arrangement and check it |
 
@@ -112,11 +113,11 @@ Output:
 
 ```text output=zoo-sudoku
 annealed: 2000 sweeps, calmest energy found -136.000
-  1 3 | 2 4
-  2 4 | 1 3
+  1 2 | 3 4
+  3 4 | 1 2
   ---------
-  3 1 | 4 2
-  4 2 | 3 1
+  2 1 | 4 3
+  4 3 | 2 1
 sudoku :s: VALID (checked rule by rule, not by energy)
 ```
 
@@ -194,7 +195,7 @@ Output:
 ```text output=zoo-colouring
 annealed each: 1000 sweeps, calmest energy found -7.250; per puzzle :three -5.250, :two -2.000
   (:three judged on its own calmest arrangement from anneal_each)
-  a 3, b 1, c 2
+  a 1, b 2, c 3
 colouring :three with 3 colours: PROPER (checked edge by edge, not by energy)
   (:two judged on its own calmest arrangement from anneal_each)
   a 2, b 1, c -
@@ -271,7 +272,7 @@ annealed each: 1000 sweeps, calmest energy found -3.000; per puzzle :sq -2.000, 
   side yes: c   side no: a b d
 maxcut :sq: cut 4, exact best 4 by brute force: OPTIMAL
   (:tri judged on its own calmest arrangement from anneal_each)
-  side yes: a b   side no: c
+  side yes: b   side no: a c
 maxcut :tri: cut 2, exact best 2 by brute force: OPTIMAL, target 3: NOT REACHED
 ```
 
@@ -290,8 +291,8 @@ maxcut :tri: cut 2, exact best 2 by brute force: OPTIMAL, target 3: NOT REACHED
 **Form:**
 
 ```text
-factor :name, number: 143, encoding: :rosenberg, penalty: 128
 factor :name, number: 10_403, encoding: :columns, penalty: 2
+factor :name, number: 143, encoding: :rosenberg, penalty: 128
 ```
 
 **Arguments:**
@@ -300,7 +301,7 @@ factor :name, number: 10_403, encoding: :columns, penalty: 2
 |---|---|---|---|
 | `:name` | symbol | required | the puzzle's name |
 | `number:` | odd whole number | required | the number `N` to factor: 9 to 1,000,000 with `:rosenberg`, 9 to 10^12 with `:columns` |
-| `encoding:` | one of `:rosenberg` / `:columns` | `:rosenberg` | how the multiplication is written as leans and pulls |
+| `encoding:` | one of `:columns` / `:rosenberg` | `:columns` (`:rosenberg` until 2026-10-06) | how the multiplication is written as leans and pulls; `:columns` solves more (below) |
 | `penalty:` | number | `2^(pb + qb - 2)` with `:rosenberg`, `2` with `:columns` | the weight `λ` that holds each helper to its product |
 
 **What it does:** looks for two odd factors `p` and `q` of `N`, written in binary. The bit widths are:
@@ -350,18 +351,24 @@ land above the top column are not created. Every term is at least zero, and the 
 factorisation with its carries, for any `λ` above zero. The pulls of this form stay within a factor of about 50
 of each other.
 
+Measured over 50 seeds with 100,000 sweeps, each encoding at a temperature of its largest pull divided by 10
+(`runs/zoohard/measure_factor.txt`), `:columns` solved 899 in 100% of runs against 14% for `:rosenberg`, and
+3,599 in 74% against 0%. `:columns` is the default since 2026-10-06; write `encoding: :rosenberg`
+for the old form. The anneal's temperature still matters: the zoo's rule is the largest pull divided by 10, which
+is 0.55 for 143 in the column encoding and 1158.4 in the Rosenberg one.
+
 The layout is stored in the note `zoo:<name>`: the first thing, `N`, `pb`, `qb`, the number of things, the word
 `factor` and the encoding.
 
 **Output:** none.
 
-**Example:** 15 with the default encoding and 21 with the column encoding, in one model.
+**Example:** 15 with the default (column) encoding and 21 with the Rosenberg encoding, in one model.
 
 ```settle example=zoo-factor
-# Factor 15 with the default encoding, and 21 with the column encoding.
+# Factor 15 with the default encoding (columns, since 2026-10-06), and 21 with the older Rosenberg encoding.
 model :p do
   factor :f, number: 15
-  factor :g, number: 21, encoding: :columns
+  factor :g, number: 21, encoding: :rosenberg
 end
 
 run :p do
@@ -374,7 +381,7 @@ end
 Output:
 
 ```text output=zoo-factor
-annealed each: 2000 sweeps, calmest energy found -66.000; per puzzle :f -54.000, :g -12.000
+annealed each: 2000 sweeps, calmest energy found -178.500; per puzzle :f -4.500, :g -174.000
   (:f judged on its own calmest arrangement from anneal_each)
 factor :f: 15 = 3 x 5: VALID (checked by multiplying)
   (:g judged on its own calmest arrangement from anneal_each)
@@ -385,10 +392,88 @@ factor :g: 21 = 3 x 7: VALID (checked by multiplying)
 
 - `puzzle :<name> is already declared`
 - `` factor does not take `<key>:` ``
-- `encoding is :rosenberg (the default) or :columns`
+- `encoding is :columns (the default) or :rosenberg`
 - `factor needs number:`
-- `factor takes an odd whole number from 9 to 1,000,000`
-- `factor with encoding: :columns takes an odd whole number from 9 to 10^12`
+- `factor takes an odd whole number from 9 to 10^12`
+- `factor with encoding: :rosenberg takes an odd whole number from 9 to 1,000,000`
+
+## `nonogram`
+
+**Block:** model.
+
+**Form:**
+
+```text
+nonogram :name, rows: "1 1/5/5/3/1", cols: "2/4/4/4/2", by: 1
+```
+
+**Arguments:**
+
+| Argument | Type | Default | Meaning |
+|---|---|---|---|
+| `:name` | symbol | required | the puzzle's name |
+| `rows:` | string | required | the row clues, top to bottom: rows separated by `/`, the run lengths of one row by spaces; `0` or nothing is an empty row |
+| `cols:` | string | required | the column clues, left to right, in the same form |
+| `by:` | number | `1` | the price of each broken rule; above zero |
+
+**What it does:** declares one thing per cell, named `name_r<row>c<column>`, yes for a filled cell. For every
+block of a row or column clue it also declares a row of "past here" things, `name_row<i>_b<k>_past<p>` (and
+`name_col<i>_b<k>_past<p>` for a column), one for every place the block could start except the first: thing
+`past<p>` is yes when the block starts after cell `p` of its line. A valid start reads
+yes, yes, ..., no, no (a single change from yes to no), so moving a block by one cell is one flip. The costs, each
+of price `by:`: one change per block, the blocks of a line in order with at least one empty cell between them, and
+each cell equal to the blocks of its row that cover it, and to the blocks of its column that cover it. The energy
+is zero exactly at a picture whose every row and column reads back as its clue, and the encoding goes through the
+QUBO translation above. It is the same encoding as the demo site's browser nonogram.
+
+The layout is stored in the note `zoo:<name>`: the first thing, the height, the width, the number of variables,
+the word `nonogram`, and the two clue strings.
+
+**Output:** none.
+
+**Example:** a heart, and a puzzle whose row clues ask for three filled cells while the column clues ask for two.
+
+```settle example=zoo-nonogram
+# A 5x5 nonogram that draws a heart, and a 3x3 one whose clues no picture satisfies.
+model :p do
+  nonogram :heart, rows: "1 1/5/5/3/1", cols: "2/4/4/4/2"
+  nonogram :odd, rows: "1/1/1", cols: "1/1/0"   # three cells by the rows, two by the columns
+end
+
+run :p do
+  anneal_each 4_000, seed: 1
+  heart.solution    # the picture, then every row and column checked against its clue
+  odd.solution      # the calmest arrangement cannot fit clues that disagree
+end
+```
+
+Output:
+
+```text output=zoo-nonogram
+annealed each: 4000 sweeps, calmest energy found -43.750; per puzzle :heart -32.000, :odd -11.750
+  (:heart judged on its own calmest arrangement from anneal_each)
+  .#.#.
+  #####
+  #####
+  .###.
+  ..#..
+nonogram :heart: VALID (every row and column read back against its clue, not by energy)
+  (:odd judged on its own calmest arrangement from anneal_each)
+  #..
+  .#.
+  ...
+nonogram :odd: NOT VALID: row 3 reads [], its clue is [1]
+```
+
+**Errors:**
+
+- `puzzle :<name> is already declared`
+- `` nonogram does not take `<key>:` ``
+- `nonogram needs rows: "1 1/5/5/3/1"` (also `cols:`)
+- `'<text>' is not a run length`
+- `row <i> clue does not fit in <n> cells` (also `column`)
+- `by: must be above zero`
+- `a "quoted" string was expected`, `a number was expected`
 
 ## `anneal_each`
 
@@ -397,7 +482,7 @@ factor :g: 21 = 3 x 7: VALID (checked by multiplying)
 **Form:**
 
 ```text
-anneal_each 10_000, temperature: 1, seed: 1
+anneal_each 10_000, temperature: 1, seed: 1, update: :metro
 ```
 
 **Arguments:**
@@ -407,6 +492,7 @@ anneal_each 10_000, temperature: 1, seed: 1
 | sweeps | whole number | required | how many sweeps the anneal takes |
 | `temperature:` | number | the run's temperature (1 at the start of a run) | the base temperature; sets the run's temperature; must be above zero |
 | `seed:` | whole number | the run's random stream | reseeds the run's random stream before the anneal |
+| `update:` | `:metro` or `:gibbs` | the run's current rule (`:metro` at the start of a run) | the rule each sweep updates a thing by, as for the core [`settle`](core.md#settle) |
 
 **What it does:** walks exactly the path the core `anneal` statement walks, with the same schedule and the same
 random draws, so for the same seed it visits the same arrangements. The temperature at step `k` of `S` sweeps
@@ -442,6 +528,7 @@ The whole-model energy and each puzzle's own energy have three decimals. Puzzles
 **Errors:**
 
 - `` anneal_each does not take `<key>:` ``
+- `` `update:` takes :gibbs or :metro ``
 - `temperature must be above zero`
 
 ## `x.solution`
@@ -454,7 +541,7 @@ The whole-model energy and each puzzle's own energy have three decimals. Puzzles
 name.solution
 ```
 
-**Arguments:** none. `name` is a puzzle declared with `sudoku`, `colouring`, `maxcut` or `factor`. A line
+**Arguments:** none. `name` is a puzzle declared with `sudoku`, `colouring`, `maxcut`, `factor` or `nonogram`. A line
 `x.solution` where `x` is not a declared puzzle is not claimed by this family.
 
 **What it does:** takes the run's best arrangement from the last `anneal` or `anneal_each`. If the last anneal
@@ -472,6 +559,8 @@ arrangement. Then it decodes the puzzle's things (yes means on) and checks the r
   reaches it. If `target:` was given, it says whether the cut reaches the target.
 - **factor:** reads `p` and `q` from the `p` and `q` bits (bit 0 is always 1) and multiplies them. The check
   fails if either factor is below 2 or if `p * q` is not `N`. The helper and carry things are not read.
+- **nonogram:** each cell is filled when its thing is yes. Every row, then every column, is read back as run
+  lengths and compared with its clue. The "past here" things are not read.
 
 It changes nothing in the run.
 
@@ -511,6 +600,15 @@ factor :<name>: <N> = <p> x <q>: VALID (checked by multiplying)
 factor :<name>: NOT VALID for <N>: <p> x <q> = <product>, not <N>
 factor :<name>: NOT VALID for <N>: <p> x <q> uses a trivial factor
 ```
+
+For a nonogram, the picture, one line per row, `#` for a filled cell and `.` for an empty one, then:
+
+```text
+nonogram :<name>: VALID (every row and column read back against its clue, not by energy)
+nonogram :<name>: NOT VALID: row <k> reads [<runs>], its clue is [<runs>]
+```
+
+The column message has the same form with `column`.
 
 The broken-rule messages are: `cell r<r>c<c> has no digit`, `cell r<r>c<c> has several digits`,
 `cell r<r>c<c> was given <d> but holds <e>`, `row <k> has two <d>s` (also `column` and `box`),

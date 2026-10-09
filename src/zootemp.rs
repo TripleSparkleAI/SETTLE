@@ -26,7 +26,7 @@
 //! Equations and their plain readings: `runs/zootemp/REPORT_ZOOTEMP.md`.
 
 use crate::ext::{Claim, Ctx, Ext};
-use crate::lex::{err, kw, kwargs, num, only, SettleError, Tok};
+use crate::lex::{err, kw, kwargs, num, only, SettleError, Tok, whole};
 use crate::model::{Model, State};
 use crate::zoo::judge;
 
@@ -105,9 +105,23 @@ pub fn anneal_walk(m: &Model, st: &mut State, sched: &Sched, sweeps: usize, targ
             let r = st.rng.below(k + 1);
             free.swap(k, r);
         }
+        // the run's update rule, as State::sweep: Metropolised Gibbs by default since 2026-10-06 (lane NEWDEFAULTS),
+        // Gibbs when a statement asked for `update: :gibbs`
+        let metro = st.update == crate::engine::model::Update::Metro;
         for &i in free.iter() {
             let x = m.input(i, &s);
-            let v = if (beta * x).tanh() > st.rng.signed() { 1.0 } else { -1.0 };
+            let v = if metro {
+                let p = (-2.0 * s[i] * (beta * x)).exp();
+                if p >= 1.0 || st.rng.unit() < p {
+                    -s[i]
+                } else {
+                    s[i]
+                }
+            } else if (beta * x).tanh() > st.rng.signed() {
+                1.0
+            } else {
+                -1.0
+            };
             if v != s[i] {
                 e -= (v - s[i]) * x;
                 s[i] = v;
@@ -191,7 +205,13 @@ pub fn largest(m: &Model) -> f64 {
 fn schedule_stmt(m: &mut Model, st: &mut State, sweeps: usize, rest: &[Tok], ln: usize, ctx: &mut Ctx) -> Result<(), SettleError> {
     let rest = if rest.first() == Some(&Tok::Comma) { &rest[1..] } else { rest };
     let kv = kwargs(rest, ln)?;
-    only(&kv, &["temperature", "seed", "hot", "cold", "restarts"], "anneal_schedule", ln)?;
+    only(&kv, &["temperature", "seed", "hot", "cold", "restarts", "update"], "anneal_schedule", ln)?;
+    // `update:` as on the core `settle` and `anneal`: :metro (the default since 2026-10-06) or :gibbs
+    match kw(&kv, "update") {
+        None => {}
+        Some(Tok::Sym(s)) if crate::words::core::update_of(s).is_some() => st.update = crate::words::core::update_of(s).unwrap(),
+        Some(_) => return err(ln, "`update:` takes :gibbs or :metro"),
+    }
     if let Some(v) = kw(&kv, "temperature") {
         st.temp = num(v, ln)?;
         if st.temp <= 0.0 {
@@ -232,14 +252,16 @@ impl Ext for ZooTemp {
 
     fn statements(&self) -> &'static [&'static str] {
         &[
-            "run: anneal_schedule 100_000, temperature: 2.9, hot: 10, cold: 0.05, restarts: 10, seed: 1",
+            "run: anneal_schedule 100_000, temperature: 2.9, hot: 10, cold: 0.05, restarts: 10, seed: 1, update: :metro|:gibbs",
             "run: f.final   (judge the end state the walk came to rest in, beside f.solution's best-so-far)",
         ]
     }
 
     fn run_stmt(&self, m: &mut Model, st: &mut State, t: &[Tok], ln: usize, ctx: &mut Ctx) -> Claim {
         match t {
-            [Tok::Ident(k), Tok::Num(nv), rest @ ..] if k == "anneal_schedule" => Some(schedule_stmt(m, st, *nv as usize, rest, ln, ctx)),
+            [Tok::Ident(k), Tok::Num(nv), rest @ ..] if k == "anneal_schedule" => {
+                Some(whole(*nv, 0.0, f64::INFINITY, "anneal_schedule", ln).and_then(|sweeps| schedule_stmt(m, st, sweeps, rest, ln, ctx)))
+            }
             [Tok::Ident(name), Tok::Dot, Tok::Ident(v)] if v == "final" && m.notes.contains_key(&format!("zoo:{}", name)) => Some(if st.last.len() != m.len() {
                 err(ln, "final needs an anneal first")
             } else {
@@ -281,11 +303,13 @@ mod tests {
             ("model :p do\n  sudoku :s, size: 4, given: \"1... .4.. ..4. ...1\"\nend", 1.0, 700),
         ] {
             let m = model_of(src);
-            for seed in [1u64, 7, 1_003] {
+            for (seed, rule) in [1u64, 7, 1_003].into_iter().flat_map(|s| [(s, crate::engine::model::Update::Metro), (s, crate::engine::model::Update::Gibbs)]) {
                 let mut a = State::new(seed);
                 a.temp = t;
+                a.update = rule;
                 let ea = a.anneal(&m, sweeps);
                 let mut b = State::new(seed);
+                b.update = rule;
                 let w = anneal_walk(&m, &mut b, &Sched::zoo(t), sweeps, None);
                 assert_eq!(a.best.as_ref().unwrap().0, w.best, "same best arrangement");
                 assert_eq!(ea, w.best_e, "same best energy to the bit");

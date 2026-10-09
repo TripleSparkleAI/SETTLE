@@ -1,11 +1,12 @@
-//! The model (things, leans, pulls) and one run's state. Couplings are stored sparse, so a model can hold a
-//! 100x100 grid of pixels as easily as five named things.
+//! ENGINE: the model (things, leans, pulls) and one run's state (the sampler and the anneal schedule).
+//! Couplings are stored sparse, so a model can hold a 100x100 grid of pixels as easily as five named things.
+//! No parsing, no printing and no keyword names live here: the words floor (`crate::words`) reads programs and
+//! formats answers, and finds a thing by name with `Model::need` (in `words::names`).
 
-use crate::lex::{err, SettleError};
-use crate::rng::Rng;
+use crate::engine::rng::Rng;
 use std::collections::HashMap;
 
-#[derive(Clone, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct Model {
     pub names: Vec<String>,
     pub idx: HashMap<String, usize>,
@@ -22,11 +23,8 @@ impl Model {
         self.names.len()
     }
 
-    pub fn need(&self, name: &str, ln: usize) -> Result<usize, SettleError> {
-        match self.idx.get(name) {
-            Some(&i) => Ok(i),
-            None => err(ln, format!("unknown thing :{} (declare it with: thing :{})", name, name)),
-        }
+    pub fn is_empty(&self) -> bool {
+        self.names.is_empty()
     }
 
     /// Declare a thing (or return the existing one).
@@ -77,13 +75,34 @@ impl Model {
     }
 }
 
+/// The seed a run block starts from before any `seed:` is given (`State::new(RUN_SEED)`).
+pub const RUN_SEED: u64 = 0x5eed;
+
 /// Above this many stored values a run keeps only per-thing counts, and `ask` refuses.
 pub const SAMPLE_BUDGET: usize = 20_000_000;
+
+/// How a sweep updates one free thing. Both rules leave the same distribution stationary (the Boltzmann
+/// distribution of the model at the run's temperature); they differ in how fast a chain forgets where it was.
+/// Metropolised Gibbs is the default since 2026-10-06 (lane NEWDEFAULTS, the navigator's ruling on
+/// DISCOVERIES.md section 3); `update: :gibbs` asks for the old default.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Update {
+    /// Gibbs sampling, the p-bit rule: draw the thing afresh, yes with probability (1 + tanh(I / T)) / 2.
+    Gibbs,
+    /// Metropolised Gibbs: propose the other value and accept it with probability min(1, exp(-2 s I / T)). It
+    /// changes a thing at least as often as Gibbs does, which Peskun-orders it ahead of Gibbs for every average
+    /// (runs/filmsharp measured it on the film grid; `examples/core_update_measure.rs` on core models: its
+    /// yes-rate error is 0.15 to 0.47 times Gibbs's). The default.
+    #[default]
+    Metro,
+}
 
 /// One run of a model.
 pub struct State {
     pub held: HashMap<usize, f64>,
     pub temp: f64,
+    /// The update rule of every sweep in this run (Metropolised Gibbs unless a statement chose another).
+    pub update: Update,
     pub rng: Rng,
     /// Every kept arrangement, when they fit the budget.
     pub samples: Vec<Vec<f64>>,
@@ -97,7 +116,17 @@ pub struct State {
 
 impl State {
     pub fn new(seed: u64) -> Self {
-        State { held: HashMap::new(), temp: 1.0, rng: Rng::new(seed), samples: Vec::new(), yes: Vec::new(), n: 0, last: Vec::new(), best: None }
+        State {
+            held: HashMap::new(),
+            temp: 1.0,
+            update: Update::default(),
+            rng: Rng::new(seed),
+            samples: Vec::new(),
+            yes: Vec::new(),
+            n: 0,
+            last: Vec::new(),
+            best: None,
+        }
     }
 
     /// A random starting arrangement with held things in place, and the list of free things.
@@ -111,14 +140,28 @@ impl State {
         (s, free)
     }
 
-    /// Update every free thing once, in a fresh random order (the p-bit rule, exact Gibbs sampling).
+    /// Update every free thing once, in a fresh random order, by the run's update rule (Gibbs, the p-bit rule, by
+    /// default; see `Update`).
     pub fn sweep(&mut self, m: &Model, s: &mut [f64], free: &mut [usize], beta: f64) {
         for k in (1..free.len()).rev() {
             let r = self.rng.below(k + 1);
             free.swap(k, r);
         }
-        for &i in free.iter() {
-            s[i] = if (beta * m.input(i, s)).tanh() > self.rng.signed() { 1.0 } else { -1.0 };
+        match self.update {
+            Update::Gibbs => {
+                for &i in free.iter() {
+                    s[i] = if (beta * m.input(i, s)).tanh() > self.rng.signed() { 1.0 } else { -1.0 };
+                }
+            }
+            Update::Metro => {
+                for &i in free.iter() {
+                    let x = beta * m.input(i, s);
+                    let p = (-2.0 * s[i] * x).exp();
+                    if p >= 1.0 || self.rng.unit() < p {
+                        s[i] = -s[i];
+                    }
+                }
+            }
         }
     }
 
@@ -152,12 +195,13 @@ impl State {
         }
     }
 
-    /// Cool from 10x the temperature to 1/20 of it and keep the calmest arrangement visited.
+    /// Cool from 10x the temperature to 1/20 of it and keep the calmest arrangement visited. The schedule is
+    /// `anneal_temperature`.
     pub fn anneal(&mut self, m: &Model, sweeps: usize) -> f64 {
         let (mut s, mut free) = self.start(m);
         let mut best = (s.clone(), m.energy(&s));
         for step in 0..sweeps {
-            let temp = self.temp * 10.0 * 0.005f64.powf(step as f64 / (sweeps.max(2) - 1) as f64);
+            let temp = anneal_temperature(self.temp, step, sweeps);
             self.sweep(m, &mut s, &mut free, 1.0 / temp);
             let e = m.energy(&s);
             if e < best.1 {
@@ -174,6 +218,19 @@ impl State {
     pub fn rates(&self) -> Vec<f64> {
         self.yes.iter().map(|&c| c as f64 / self.n.max(1) as f64).collect()
     }
+}
+
+/// The anneal schedule: the temperature of sweep `step` of `sweeps`, a geometric cooling from 10 x `temp` at the
+/// first sweep to 10 x 0.005 = 1/20 x `temp` at the last (one sweep counts as two, so a one-sweep anneal is hot).
+///
+/// ```
+/// use settle::engine::model::anneal_temperature;
+/// assert_eq!(anneal_temperature(1.0, 0, 100), 10.0);
+/// assert!((anneal_temperature(1.0, 99, 100) - 0.05).abs() < 1e-12);
+/// assert!((anneal_temperature(2.0, 99, 100) - 0.1).abs() < 1e-12);
+/// ```
+pub fn anneal_temperature(temp: f64, step: usize, sweeps: usize) -> f64 {
+    temp * 10.0 * 0.005f64.powf(step as f64 / (sweeps.max(2) - 1) as f64)
 }
 
 /// True yes-rates by enumerating every arrangement of the free things. Tests only, few things.

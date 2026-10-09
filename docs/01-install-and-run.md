@@ -1,103 +1,41 @@
 # Install and run
 
+Three steps: get the source, build it, run a program. Then the command line, Rust, and the tests.
+
 ## Get the source
 
-The SETTLE source is moving to its own repository:
+SETTLE has its own repository, <https://github.com/triplesparkle/SETTLE>. It is private for now, so a clone needs
+access:
 
-- <https://github.com/triplesparkle/SETTLE> (a private repository; you need to be given access)
+```bash
+git clone https://github.com/triplesparkle/SETTLE
+cd SETTLE
+```
 
-Until that move is complete, the interpreter lives in the dwarfstar repository at
-`experiments/thermosim/settle-rs/`. The commands on this page are run from that folder, or from the root of
-the SETTLE repository once it exists.
+The commands on this page run from the root of that repository. It is an export of `SETTLE/settle-rs/` in the
+SETTLE research repository; the commands run the same from that folder.
 
 ## Requirements
 
-- A Rust toolchain with Cargo, stable channel. The crate uses the 2021 edition.
-- Nothing from the network. The crate has one dependency, KANERVA, the sibling crate at `../kanerva` (a path
-  dependency in `Cargo.toml`), so it builds offline.
+- Rust with Cargo, stable channel. The crate uses the 2021 edition and was last built and tested with rustc 1.96.0.
+- The crate has one dependency, KANERVA, the sparse distributed memory library. In the SETTLE repository Cargo
+  fetches it with `git` from <https://github.com/triplesparkle/KANERVA>, so the first build needs the network and
+  the same access as the clone. In the research repository it is the sibling folder `../kanerva`, and the crate
+  builds offline.
+- KANERVA comes in only with the sdm-family statements (`memory`, `sdm`, `softsdm`, `sdmscale`, `refusal`,
+  `contenttrack`, and `coded`'s `save_coded` and `recall_coded`), through the `sdm` feature, on by default.
+  `cargo build --release --no-default-features` builds SETTLE without it: every other statement prints exactly
+  what the full build prints, and an sdm-family line is refused with an error naming the feature
+  (`tests/standalone.rs` checks both halves).
 
 ## Build
 
-```text
+```bash
 cargo build --release
 ```
 
-This produces the interpreter at `target/release/settle`. Use the release build: the sampler does millions of
-coin flips and the debug build is many times slower.
-
-The crate is both a library (`settle`, in `src/lib.rs`) and a binary (`settle`, in `src/main.rs`). The library
-exposes the interpreter, `settle::interp::Interp`, so a Rust program can run SETTLE source directly:
-
-```text
-let mut it = settle::interp::Interp::default();
-let lines: Vec<String> = it.exec(source_text)?;   // the printed lines, or a SettleError
-```
-
-## Run a program
-
-A SETTLE program is a text file, by convention with the extension `.settle`.
-
-```text
-target/release/settle path/to/program.settle
-```
-
-or, through Cargo:
-
-```text
-cargo run --release -- path/to/program.settle
-```
-
-What happens:
-
-1. The interpreter reads the whole file.
-2. It executes the file line by line (see [Semantics](04-semantics.md)).
-3. If every line succeeds, it prints every output line, in order, and exits with status 0.
-4. If a line fails, it prints one message to standard error and exits with status 2. The message has the form
-   `settle: line N: <what went wrong>`. **Output from the lines before the failure is not printed**: the
-   interpreter collects output and prints it only when the whole program has succeeded.
-5. If the file cannot be read, it prints `settle: cannot read <path>: <reason>` and exits with status 2.
-
-Relative paths inside a program (picture files, example sets, output folders) are resolved against the folder
-that contains the program file, not against the current working directory. Absolute paths are used as given.
-
-## The command line
-
-```text
-settle <program.settle>
-settle --help
-settle -h
-settle
-```
-
-With `--help`, `-h`, or no argument at all, `settle` prints a one-line usage, then every statement grouped by
-family (one line per statement form, prefixed with `[family]` and `model:` or `run:`), then a list of example
-programs. The help lines are short reminders; the full argument lists are in
-[Statements by family](05-statements/README.md).
-
-There are no other options. Everything a program needs, including seeds, temperatures and file paths, is
-written in the program.
-
-## Run the tests
-
-```text
-cargo test --release
-```
-
-This runs the unit tests inside each source file (`#[cfg(test)]` modules) and the integration tests in
-`tests/`. One of those, `tests/docs_examples.rs`, runs every example in this documentation and checks its
-output against the recorded output. See [Examples](09-examples.md) for how to record the output of a new
-example.
-
-## Measurement programs
-
-`examples/*.rs` are Rust programs that the campaign lanes used to take their measurements. Each one names its
-parts in its header. Run one with, for example:
-
-```text
-cargo run --release --example valleymap -- <part>
-```
-
-These are research instruments rather than language examples; [Examples](09-examples.md) lists them.
+The interpreter is `target/release/settle`. Always use the release build: the sampler flips millions of coins,
+and the debug build is many times slower.
 
 ## Your first program
 
@@ -123,10 +61,111 @@ Run it with `target/release/settle first.settle`. It prints:
 
 ```text output=tour-first
 settled: 20000 samples of 2 things at temperature 1
-  a              ###################### 73.5%
-  b              #################### 68.0%
-ask :b: yes 68.0% of 20000 samples
-ask :a, and: :b: yes 64.9% of 20000 samples
+  a              ###################### 72.7%
+  b              #################### 67.3%
+ask :b: yes 67.3% of 20000 samples
+ask :a, and: :b: yes 63.9% of 20000 samples
 ```
 
 The [tour](02-tour.md) explains each line.
+
+## Run a program
+
+A SETTLE program is a text file, by convention with the extension `.settle`:
+
+```bash
+target/release/settle path/to/program.settle
+```
+
+or, through Cargo, `cargo run --release -- path/to/program.settle`. What happens:
+
+1. The interpreter reads the whole file and runs it line by line (see [Semantics](04-semantics.md)).
+2. If every line succeeds, it prints every output line, in order, and exits with status 0.
+3. If a line fails, it prints one message to standard error and exits with status 2. The message reads
+   `settle: line N: <what went wrong>`, then the program line with a caret under the place the error points at
+   ([Errors](06-errors.md#how-an-error-is-reported)). **The lines before the failure print nothing**: output is
+   printed only when the whole program has succeeded.
+4. If the file cannot be read, it prints `settle: cannot read <path>: <reason>` and exits with status 2.
+
+A relative path inside a program (a picture, an example set, an output folder) is read from the folder that holds
+the program file, not from the current directory. An absolute path is used as given.
+
+## The command line
+
+```bash
+settle <program.settle>
+settle --json <program.settle>
+settle --help
+settle -h
+settle
+settle --version
+settle -V
+```
+
+`--help`, `-h`, or no argument at all print the usage, then every statement grouped by family (one line per
+statement form, marked `[family]` and `model:` or `run:`), then a list of example programs. The full argument
+lists are in [Statements by family](05-statements/README.md). `--version` or `-V` prints `settle` and the crate's
+version, for example `settle 0.1.0`.
+
+`--json` before the program path prints one JSON object instead of the lines. It is meant for a program that
+drives `settle`, such as an editor or an MCP server. `settle --json first.settle` prints:
+
+```text file=tour-first.json
+{"settle": "0.1.0", "ok": true, "lines": ["settled: 20000 samples of 2 things at temperature 1", "  a              ###################### 72.7%", "  b              #################### 67.3%", "ask :b: yes 67.3% of 20000 samples", "ask :a, and: :b: yes 63.9% of 20000 samples"]}
+```
+
+A program that fails gives `"ok": false` and the error, with the `line`, `column` and `width` the caret would
+mark, counted from 1. This one pulls on a thing it never declared
+([Errors](06-errors.md#argument-errors-shared-by-every-family)):
+
+```text file=err-unknown-thing.json
+{"settle": "0.1.0", "ok": false, "error": {"message": "line 3: unknown thing :b (declare it with: thing :b)", "line": 3, "column": 11, "width": 2}}
+```
+
+The exit status is the same as without `--json`. An error that names no program line (a file that cannot be read)
+has no `line`, `column` or `width`.
+
+There are no other options. Any other argument that starts with `-` stops with
+`settle: unknown option <arg> (see settle --help)` and status 2, and two program paths stop with
+`settle: one program at a time; got <n> arguments (see settle --help)`. Everything a program needs, seeds,
+temperatures and file paths included, is written in the program.
+
+## Use it from Rust
+
+The crate is also a library, `settle`. `Interp` runs SETTLE source and returns the printed lines:
+
+```rust
+let mut it = settle::interp::Interp::in_dir("models/"); // relative paths resolve against models/
+let lines: Vec<String> = it.exec(source_text)?;          // the printed lines, or a SettleError
+```
+
+The core statements also have a builder, `settle::engine::model::Model::build()`, which writes a program in Rust
+and prints the same lines ([Extending SETTLE](07-extending.md#the-builder-face)).
+
+## Run the tests
+
+```bash
+cargo test --release
+```
+
+This runs the unit tests in each source file and the integration tests in `tests/`, among them:
+
+- `tests/docs_examples.rs`: every example in this documentation runs and prints what the page says.
+- `tests/docs_json.rs`: every `--json` answer on these pages is what `settle --json` prints.
+- `tests/docs_complete.rs`: every keyword and statement the interpreter accepts is written on its family's page.
+- `tests/two_faces.rs`: the builder and the program files build the same models and print the same lines.
+- `tests/standalone.rs`: the build without KANERVA. `tests/counts.rs`: every family refuses a count that is not a
+  whole number.
+
+[Examples](09-examples.md) says how to record the output of a new example.
+
+## Measurement programs
+
+`examples/*.rs` are the Rust programs the experiments used for their measurements. Each one names its parts in
+its header:
+
+```bash
+cargo run --release --example valleymap -- <part>
+```
+
+They are research instruments, not language examples; [Examples](09-examples.md) lists them.

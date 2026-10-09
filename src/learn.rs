@@ -31,7 +31,7 @@
 //! because at zero every hidden thing looks alike and the gradient cannot separate them.
 
 use crate::ext::{Claim, Ctx, Ext};
-use crate::lex::{err, kw, kwargs, num, only, text, SettleError, Tok};
+use crate::lex::{err, kw, kwargs, num, only, text, SettleError, Tok, whole};
 use crate::model::{Model, State};
 use crate::rng::Rng;
 use std::collections::HashMap;
@@ -156,7 +156,7 @@ fn hidden_stmt(m: &mut Model, count: f64, ln: usize) -> Result<(), SettleError> 
     if m.notes.contains_key("learn:hidden") {
         return err(ln, "hidden things are already declared in this model");
     }
-    if count < 1.0 || count > 4096.0 || count.fract() != 0.0 {
+    if !(1.0..=4096.0).contains(&count) || count.fract() != 0.0 {
         return err(ln, "hidden takes a whole number from 1 to 4096");
     }
     let start = m.len();
@@ -618,7 +618,7 @@ fn classify_stmt(m: &Model, st: &mut State, name: &str, rest: &[Tok], ln: usize,
         None => return err(ln, "classify needs `labels:`, like labels: \"d0 d1 d2\" or labels: \"d*\""),
     };
     let labels = label_positions(&ex, &spec, ln)?;
-    let sweeps = kw(&kv, "sweeps").map(|v| num(v, ln)).transpose()?.unwrap_or(100.0) as usize;
+    let sweeps = whole(kw(&kv, "sweeps").map(|v| num(v, ln)).transpose()?.unwrap_or(100.0), 0.0, f64::INFINITY, "sweeps:", ln)?;
     if let Some(v) = kw(&kv, "seed") {
         st.rng = Rng::new(num(v, ln)? as u64);
     }

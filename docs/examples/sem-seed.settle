@@ -1,6 +1,6 @@
 # Each run block starts from the same default seed, so these two runs print the same numbers.
 model :coin do
-  thing :c
+  thing :c, leans: :yes, by: 0.2      # a slightly bent coin, so each draw is a real coin flip
 end
 
 run :coin do

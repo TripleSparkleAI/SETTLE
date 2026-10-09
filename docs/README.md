@@ -6,12 +6,12 @@ towards disagreement. Running the program is Settling: it draws many random arra
 with a probability set by those leans and pulls, and answers questions by counting.
 
 The syntax follows Ruby on Rails conventions: `do ... end` blocks, `:symbols` and `key: value` arguments. The
-interpreter is written in Rust; its one dependency is KANERVA, the sibling crate at `../kanerva` that holds the
-memory algorithms, so it builds offline. This documentation describes the interpreter in
-`experiments/thermosim/settle-rs/` and is checked against it: every example on these pages is a file in
-`docs/examples/`, and `cargo test --release` runs each one and compares its output with the output printed here.
+interpreter is written in Rust; its one dependency is KANERVA, the crate that holds the memory algorithms. Every
+example on these pages is a file in `docs/examples/`, and `cargo test --release` runs each one and compares its
+output with the output printed here.
 
-A gentler, picture-first introduction is on the demo site's tutorial page, WHAT? (`#/what`).
+New to SETTLE? Read [Install and run](01-install-and-run.md), then [the tour](02-tour.md). A picture-first
+introduction is on the demo site's WHAT? page (`#/what`).
 
 ## Contents
 
@@ -40,12 +40,12 @@ A gentler, picture-first introduction is on the demo site's tutorial page, WHAT?
 
 - `model` block and `run` block name the two kinds of block a program contains.
 - A code fence marked `settle` is a SETTLE program. The fence below it marked `text` is the exact output the
-  release interpreter prints for it. Timings in output vary between runs, so they are shown as `<time>`.
+  release interpreter prints for it. Timings in output vary between runs, so they are shown as `<time>`. A fence
+  marked `bash` holds commands you type.
 - "Thing" means one yes/no variable. "Lean" means a thing's own bias. "Pull" means a coupling between two
   things; a positive pull favours agreement and a negative one (written `pushes`) favours disagreement.
 
 ## Source repository
 
-The SETTLE source is moving to its own repository, <https://github.com/triplesparkle/SETTLE>. It is a private
-repository. Until the move is complete, the source lives at `experiments/thermosim/settle-rs/` in the dwarfstar
-repository.
+SETTLE has its own repository, <https://github.com/triplesparkle/SETTLE>, private for now.
+[Install and run](01-install-and-run.md#get-the-source) says how to get it.

@@ -1,7 +1,7 @@
-# Factor 15 with the default encoding, and 21 with the column encoding.
+# Factor 15 with the default encoding (columns, since 2026-10-06), and 21 with the older Rosenberg encoding.
 model :p do
   factor :f, number: 15
-  factor :g, number: 21, encoding: :columns
+  factor :g, number: 21, encoding: :rosenberg
 end
 
 run :p do

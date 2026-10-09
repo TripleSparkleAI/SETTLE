@@ -1,5 +1,5 @@
 settled: 40000 samples of 3 things at temperature 1
-ask :wet_grass: yes 11.8% of 40000 samples
+ask :wet_grass: yes 11.7% of 40000 samples
 ask :rain, and: :wet_grass: yes 7.5% of 40000 samples
 ask :rain, and_not: :wet_grass: yes 1.4% of 40000 samples
-ask :rain, or: :sprinkler, and: :wet_grass: yes 11.3% of 40000 samples
+ask :rain, or: :sprinkler, and: :wet_grass: yes 11.2% of 40000 samples

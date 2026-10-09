@@ -1,7 +1,7 @@
 line 6: no statement family knows this line inside a run. Known:
     hold :a, :yes
-    settle 10_000, temperature: 1, seed: 1
-    anneal 4_000, seed: 1
+    settle 10_000, temperature: 1, seed: 1, update: :metro   (or :gibbs)
+    anneal 4_000, seed: 1, update: :metro   (or :gibbs)
     show   /   best
     ask :a, and: :b, or_not: :c
     m.remember :cat   /   m.save :note, "some text"
@@ -9,8 +9,8 @@ line 6: no statement family knows this line inside a run. Known:
     m.recall key: "secret"   (the key finds the memory and reads it)
     img.lean_from "frame.pgm", by: 1, correct: :yes
     img.show_as "out.pgm", from: :rate
-    play :img, frames: "dir/", out: "dir2/", against: "other/", sweeps: 10, warm: :yes, read: :bits|:soft|:rb, keep: 1, correct: :tap|:bethe, copies: 8, update: :gibbs|:checker|:metro|:metro_checker|:cluster, fit: 8, fit_sweeps: 200, fit_update: :cluster, warm_fit: 1, warm_fit_sweeps: 400, warm_from: :leans|:correction, warm_step: 1, cut: 0.25, seed: 1, quiet: :no
-    anneal_each 10_000, seed: 1   (each puzzle keeps its own calmest arrangement)
+    play :img, frames: "dir/", out: "dir2/", against: "other/", sweeps: 10, warm: :yes, read: :bits|:soft|:rb, keep: 1, correct: :tap|:mean|:bethe, copies: 8, update: :metro_checker|:gibbs|:checker|:metro|:cluster, fit: 8, fit_sweeps: 200, fit_update: :cluster, warm_fit: 1, warm_fit_sweeps: 400, warm_from: :correction|:leans, warm_step: 1, cut: 0.25, seed: 1, quiet: :no
+    anneal_each 10_000, seed: 1, update: :metro|:gibbs   (each puzzle keeps its own calmest arrangement)
     s.solution   (after anneal: decode the calmest arrangement and check it by the rules)
     examples :data, "file.txt"   /   examples :data, rows: "110"
     learn :data, rounds: 200, rate: 0.05, method: :contrastive, sweeps: 1, batch: 50, decay: 0, seed: 1
@@ -42,7 +42,7 @@ line 6: no statement family knows this line inside a run. Known:
     c.decode_moves mover: :block, block: 4, sweeps: 400, seed: 2
     c.decode_nishimori mover: :block, sweeps: 2000, seed: 3
     refusal word-size: 256, load: 3000, level: 0.01   (the travel rule's threshold and the nearest-neighbour ceiling; no memory built)
-    anneal_schedule 100_000, temperature: 2.9, hot: 10, cold: 0.05, restarts: 10, seed: 1
+    anneal_schedule 100_000, temperature: 2.9, hot: 10, cold: 0.05, restarts: 10, seed: 1, update: :metro|:gibbs
     f.final   (judge the end state the walk came to rest in, beside f.solution's best-so-far)
     contenttrack word-size: 256, hard-locations: 100000, load: 3000, address-noise: 0.3, block: 0, samples: 200   (TRACK-C's predicted recall for the content reads; no memory built)
     descend 20_000, step: 0.01, temperature: 1, cool_to: 0, batch: 100, walkers: 4, seed: 1, method: :adam

@@ -1,5 +1,6 @@
-# Factoring as settling: bits of p and q, one helper thing per product of two bits (held to that product by a
-# penalty), and a pull toward (N - p x q) squared being zero. Pairwise pulls only, so the helpers are needed.
+# Factoring as settling, in the column encoding (the default since 2026-10-06): bits of p and q, one helper thing
+# per product of two bits, and carry bits, so each column of the long multiplication is pulled toward N's digit in
+# that column. Pairwise pulls only, so the helpers are needed. `encoding: :rosenberg` asks for the older form.
 model :semiprime do
   factor :f, number: 143
 end
@@ -8,10 +9,10 @@ model :prime do
 end
 
 run :semiprime do
-  anneal 10_000, temperature: 1158, seed: 1            # temperature = largest pull / 10, so the start is hot
+  anneal 10_000, temperature: 0.55, seed: 1            # temperature = largest pull / 10, so the start is hot
   f.solution
 end
 run :prime do
-  anneal 10_000, temperature: 1024, seed: 1
+  anneal 10_000, temperature: 0.6, seed: 1
   f.solution                                           # must say NOT VALID
 end

@@ -7,8 +7,8 @@ scores each channel and the whole picture.
 
 The source is `src/colour.rs`. It uses the grid family's player and options (`src/grid.rs`) and the options
 that `src/filmsharp.rs` adds to them. The measurements are in
-`experiments/thermosim/runs/gridplayer2/REPORT_GRIDPLAYER2.md` (section 3, where the family was built) and
-`experiments/thermosim/runs/filmsharp/REPORT_FILMSHARP.md` (section 5), both on a clip of Tears of Steel.
+`SETTLE/runs/gridplayer2/REPORT_GRIDPLAYER2.md` (section 3, where the family was built) and
+`SETTLE/runs/filmsharp/REPORT_FILMSHARP.md` (section 5), both on a clip of Tears of Steel.
 
 | Statement | Block | Summary |
 |---|---|---|
@@ -62,7 +62,7 @@ Output:
 
 ```text output=colour-channels
 settled: 200 samples of 1152 things at temperature 1
-show_as :film_g -> colour-channels-green.pgm (rate), PSNR 28.97 dB against the leans' picture
+show_as :film_g -> colour-channels-green.pgm (rate), PSNR 33.95 dB against the leans' picture
 ```
 
 **Errors:**
@@ -82,8 +82,8 @@ show_as :film_g -> colour-channels-green.pgm (rate), PSNR 28.97 dB against the l
 
 ```text
 play_colour :film, frames: "dir/", sweeps: 20, out: "dir2/", against: "other/", warm: :yes, read: :bits,
-                   keep: 1, by: 1, correct: :mean, copies: 1, update: :gibbs, fit: 0, fit_sweeps: 200,
-                   fit_update: :gibbs, temperature: 1, seed: 1, quiet: :no
+                   keep: 1, by: 1, correct: :tap, copies: 1, update: :metro_checker, fit: 0, fit_sweeps: 200,
+                   fit_update: :metro_checker, temperature: 1, seed: 1, quiet: :no
 ```
 
 A statement is one line; the form is split here only for reading.
@@ -101,9 +101,9 @@ A statement is one line; the form is split here only for reading.
 | `read:` | one of `:bits` / `:soft` / `:rb` | `:bits` | how a frame is read from the sweeps |
 | `keep:` | number above 0, at most 1 | `1` | the share of the last sweeps that is counted |
 | `by:` | number | `1` | multiplies the `atanh(m)` part of each lean |
-| `correct:` | one of `:mean` / `:yes` / `:tap` / `:bethe` / `:no` | `:mean` | the inversion from value to lean |
+| `correct:` | one of `:tap` / `:mean` / `:yes` / `:bethe` / `:no` | `:tap` (`:mean` until 2026-10-06) | the inversion from value to lean |
 | `copies:` | whole number, 1 to 4096 | `1` | independent copies of each channel whose counts are pooled |
-| `update:` | one of `:gibbs` / `:checker` / `:metro` / `:metro_checker` / `:cluster` | `:gibbs` | how each sweep updates the pixels |
+| `update:` | one of `:metro_checker` / `:gibbs` / `:checker` / `:metro` / `:cluster` | `:metro_checker` (`:gibbs` until 2026-10-06) | how each sweep updates the pixels |
 | `fit:` | whole number, 0 to 1000 | `0` | iterations of the lean fit run for each channel of each frame |
 | `fit_sweeps:` | whole number, at least 4 | `200` | sweeps per fit iteration |
 | `fit_update:` | as `update:` | the value of `update:` | the update rule of the fit's own chain |
@@ -144,9 +144,11 @@ For the bits read, the summary also gives the coin-noise law at no pulls for eac
 law_c = 10 log10(S / mean_i g_c,i (1 - g_c,i))
 ```
 
-This is the PSNR the bits read has when no pixel pulls another, because each sample is then an independent coin
-with chance `g`. The line gives the median of `law_c` over frames, computed from the played frames' values. It
-is a reference number: it is printed whatever `smooth:` is.
+This is the PSNR the bits read has when no pixel pulls another under `update: :gibbs`, because each sample is
+then an independent coin with chance `g`. The line gives the median of `law_c` over frames, computed from the
+played frames' values. It is a reference number: it is printed whatever `smooth:` and `update:` are. Under the
+default rule (`:metro_checker` since 2026-10-06) a pixel's successive draws are anti-correlated, so the bits read
+beats the law even with no pulls.
 
 **State after a play.** Each channel grid's leans are its last frame's leans. The run's yes-counts hold the
 **blue** channel's last-frame counts and zero for every other thing, because each channel's frame replaces the
@@ -185,10 +187,10 @@ end
 Output:
 
 ```text output=colour-play
-  f0.ppm  R 19.25 G 18.80 B 21.88 overall 19.78 dB
-  f1.ppm  R 19.10 G 19.04 B 22.20 overall 19.89 dB
-  f2.ppm  R 19.58 G 19.33 B 22.27 overall 20.20 dB
-play_colour :film: 3 frames, 20 sweeps, warm, bits: median PSNR R 19.25 G 19.04 B 22.20 overall 19.89 dB (worst overall 19.78) (coin-noise law at no pulls: R 19.59 G 19.59 B 22.14), <time> frames/s settling
+  f0.ppm  R 24.27 G 24.33 B 23.82 overall 24.13 dB
+  f1.ppm  R 24.36 G 24.01 B 23.44 overall 23.92 dB
+  f2.ppm  R 24.63 G 24.85 B 23.33 overall 24.22 dB
+play_colour :film: 3 frames, 20 sweeps, warm, bits: median PSNR R 24.36 G 24.33 B 23.44 overall 24.13 dB (worst overall 23.92) (coin-noise law at no pulls: R 19.59 G 19.59 B 22.14), <time> frames/s settling
 ```
 
 **Example:** the soft read with TAP leans, then the negative control.
@@ -207,8 +209,8 @@ end
 Output:
 
 ```text output=colour-soft
-play_colour :film: 3 frames, 20 sweeps, warm, soft, tap: median PSNR R 33.78 G 34.31 B 41.34 overall 35.48 dB (worst overall 34.87), <time> frames/s settling
-play_colour :film: 3 frames, 20 sweeps, warm, soft, tap, scored against another shot: median PSNR R 7.65 G 11.19 B 7.08 overall 8.31 dB (worst overall 8.17), <time> frames/s settling
+play_colour :film: 3 frames, 20 sweeps, warm, soft: median PSNR R 39.92 G 38.82 B 42.70 overall 40.13 dB (worst overall 39.97), <time> frames/s settling
+play_colour :film: 3 frames, 20 sweeps, warm, soft, scored against another shot: median PSNR R 7.67 G 11.14 B 7.07 overall 8.30 dB (worst overall 8.14), <time> frames/s settling
 ```
 
 **Example:** copies, `keep:`, a cold start, another update rule and a fit.
@@ -229,8 +231,8 @@ end
 Output:
 
 ```text output=colour-options
-play_colour :film: 3 frames, 2 copies x 10 sweeps, cold, bits, checker: median PSNR R 16.22 G 16.08 B 19.26 overall 16.98 dB (worst overall 16.81) (coin-noise law at no pulls: R 16.58 G 16.58 B 19.13), <time> frames/s settling
-play_colour :film: 3 frames, 20 sweeps, warm, rb, bethe: median PSNR R 30.30 G 29.92 B 37.48 overall 31.50 dB (worst overall 31.22), <time> frames/s settling
+play_colour :film: 3 frames, 2 copies x 10 sweeps, cold, bits, checker: median PSNR R 16.29 G 16.12 B 19.32 overall 17.03 dB (worst overall 16.92) (coin-noise law at no pulls: R 16.58 G 16.58 B 19.13), <time> frames/s settling
+play_colour :film: 3 frames, 20 sweeps, warm, rb, bethe: median PSNR R 36.24 G 36.83 B 40.12 overall 37.41 dB (worst overall 37.34), <time> frames/s settling
 ```
 
 **Example:** the warm-fit options belong to `play` only.
@@ -246,7 +248,7 @@ end
 ```
 
 ```text error=colour-no-warm-fit
-line 6: play_colour does not take `warm_fit:`
+line 6: play_colour does not take `warm_fit:`; it takes `frames:`, `out:`, `against:`, `sweeps:`, `warm:`, `read:`, `keep:`, `by:`, `correct:`, `copies:`, `update:`, `fit:`, `fit_sweeps:`, `fit_update:`, `temperature:`, `seed:` and `quiet:`
 ```
 
 **Errors:**

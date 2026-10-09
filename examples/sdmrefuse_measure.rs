@@ -16,6 +16,8 @@
 //! per address-noise per seed), SDMREFUSE_SEEDS, SDMREFUSE_SAMPLES (TRACK/RACE samples), SDMSCALE_THREADS.
 //! Everything is seeded; every part stamps UTC, load and power mode. Raw rows go to stdout as `ROW,...`.
 
+#![allow(clippy::needless_range_loop)] // index loops mirror the equations they measure
+
 use settle::rng::Rng;
 use settle::sdm::radius_for;
 use settle::sdmradius::{density_threshold_blocks, goal, radius_for_address_noise, search_window, Lazy};
@@ -225,7 +227,8 @@ fn refuse(read: &str, m: usize, ts: &[usize]) {
         println!("ROW,ruleR,{},{},{},{},{},{:.4},{:.4},{}", read, m, r, t, h, rref, refusal_prob(N, t, h), rrec.join(";"));
         // sweep every signal, plus the oracle nearest-neighbour arm
         println!("  signal | R50 / R90 / R99 at 10% | 20% | 30% | 40%   (R_x = best recall with never-stored refusal >= x)");
-        let mut arms: Vec<(String, Vec<Vec<(bool, f64)>>, Vec<f64>)> = Vec::new();
+        type Arm = (String, Vec<Vec<(bool, f64)>>, Vec<f64>);
+        let mut arms: Vec<Arm> = Vec::new();
         for (si, name) in SIGS.iter().enumerate() {
             let st_: Vec<Vec<(bool, f64)>> = (0..4).map(|di| srec.iter().filter(|x| x.0 == di).map(|x| (x.1, x.2[si])).collect()).collect();
             let nv: Vec<f64> = nrec.iter().map(|x| x.0[si]).collect();

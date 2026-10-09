@@ -5,16 +5,21 @@
 //! retired_uses(text)        - every (line, retired keyword) a SETTLE line in `text` uses
 //! uses_on_line(line)        - the retired keywords one line uses as keywords
 //! keyword_at(line, word)    - true when `word:` appears there as a keyword with a SETTLE value after it
+//! sdm_line(line)            - true when the line carries an SDM statement in SETTLE form (`sdm :s`)
 //! walk(dir, out)            - every scanned file under a folder, skipping build output and dependencies
 //! history(path)             - true for append-only records, which keep the words they were written with
 //! the_scanner_sees_a_retired_keyword - the positive control
 //! no_file_uses_a_retired_keyword     - the scan
 //!
 //! ** Technical Review **
-//! - The retired words are settle-rs's `lex::RETIRED` (experiments/thermosim/kanerva/KANERVA_TERMS.md). `cue`,
+//! - The retired words are settle-rs's `lex::RETIRED` (SETTLE/kanerva/KANERVA_TERMS.md). `cue`,
 //!   `damage`, `iterations` and `tolerate` are retired everywhere; `locations`, `radius`, `fire` and `size` only on
 //!   the SDM statements (`sdm`, `sdmscale`, `softsdm`, `contenttrack`, `refusal`), because the Hopfield `memory`,
-//!   `sudoku` and `landscape` keep `size:`.
+//!   `sudoku` and `landscape` keep `size:`. A line counts as an SDM line only when it carries an SDM statement in
+//!   SETTLE's own form, the statement word then a space then a symbol (`sdm :s, word-size: 64`); a JavaScript
+//!   variable named `sdm` (`const sdm = makeSdm(7, { radius: 112 })`) is not one.
+//! - `cue:` named the read-address, which takes only a symbol (`read-address: :cat`), so it counts only with a
+//!   symbol after it; a JavaScript option `cue: 0.5` is not a use.
 //! - A use is `word:` with no letter, digit, `_` or `-` before it, then spaces, then a SETTLE value: a symbol, a
 //!   number or a minus sign. So `read-address:` and a Rust type annotation `cue: Vec<f64>` are not uses.
 //! - The scan covers the SETTLE programs and every source that carries one: settle-rs and kanerva (.settle, .rs,
@@ -24,6 +29,7 @@
 //! - A line that carries the words `not a SETTLE line` (a JavaScript option object, say) is not a use.
 //! - The scan must read at least 100 files and 40 SETTLE programs, so a wrong root cannot pass by finding nothing.
 //! - Standalone: in SETTLE's own repository (no research repository around it) the scan covers this crate alone.
+//!
 //! </claudes_code_comments>
 
 use settle::lex::RETIRED;
@@ -45,7 +51,9 @@ fn keyword_at(line: &str, word: &str) -> bool {
         while j < b.len() && b[j] == b' ' {
             j += 1;
         }
-        let value_ok = j < b.len() && (b[j] == b':' || b[j] == b'-' || b[j] == b'.' || b[j].is_ascii_digit());
+        // `cue:` named the read-address, and a read-address is always a symbol
+        let value_ok = j < b.len()
+            && if word == "cue" { b[j] == b':' } else { b[j] == b':' || b[j] == b'-' || b[j] == b'.' || b[j].is_ascii_digit() };
         if before_ok && spaced && value_ok {
             return true;
         }
@@ -55,7 +63,16 @@ fn keyword_at(line: &str, word: &str) -> bool {
 }
 
 fn sdm_line(line: &str) -> bool {
-    line.split(|c: char| !(c.is_ascii_alphanumeric() || c == '_')).any(|w| SDM_STATEMENTS.contains(&w))
+    // the statement word, standing alone, then ` :` and a letter: `sdm :s`, `softsdm :m`
+    let b = line.as_bytes();
+    SDM_STATEMENTS.iter().any(|st| {
+        let pat = format!("{} :", st);
+        line.match_indices(&pat).any(|(at, _)| {
+            let before_ok = at == 0 || !(b[at - 1].is_ascii_alphanumeric() || b[at - 1] == b'_' || b[at - 1] == b'-');
+            let after = at + pat.len();
+            before_ok && after < b.len() && b[after].is_ascii_alphabetic()
+        })
+    })
 }
 
 fn uses_on_line(line: &str) -> Vec<&'static str> {
@@ -89,7 +106,7 @@ fn history(p: &Path) -> bool {
         || name == "KANERVA_TERMS.md"
         || s.contains("/runs/")
         // the retired table itself, and the tests that plant a retired keyword on purpose
-        || s.ends_with("src/lex.rs")
+        || s.ends_with("src/words/lex.rs")
         || s.ends_with("tests/kanerva_terms.rs")
 }
 
@@ -119,16 +136,23 @@ fn the_scanner_sees_a_retired_keyword() {
     // a one-line blob holding two programs: the memory's size: is fine, the sdm's is not
     let blob = concat!(r#""memory :m, size: 64\nend", "sdm :s, si"#, r#"ze: 64\nend""#);
     assert_eq!(retired_uses(blob), vec![(1, "size")]);
+    // JavaScript option objects in the site's hero art: a variable named sdm, a numeric cue, a result field
+    let js = concat!(
+        "  const sdm = makeSdm(5503, { m: 2000, radi", "us: 112 });\n",
+        "export const PMEM = { cols: 10, rows: 5, cu", "e: 0.5, frames: 16 };\n",
+        "  return { P, woken: sdm.woken(P.at(-1)).length, locati", "ons: 1500 };\n",
+    );
+    assert!(retired_uses(js).is_empty(), "{:?}", retired_uses(js));
 }
 
 #[test]
 fn no_file_uses_a_retired_keyword() {
     let here = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let mono = here.join("../../..");
+    let mono = here.join("../..");
     // inside the research repository the scan covers every package; in SETTLE's own repository (a clone of
     // github.com/triplesparkle/SETTLE, where this crate is the root) it covers this crate alone
-    let (root, dirs): (PathBuf, Vec<&str>) = if mono.join("experiments/thermosim/settle-rs").is_dir() {
-        (mono, vec!["experiments/thermosim/settle-rs", "experiments/thermosim/kanerva", "experiments/thermosim/settle-mcp", "sites/settle-site/src", "sites/settle-site/tests", "sites/settle-site/tools", "BRAND"])
+    let (root, dirs): (PathBuf, Vec<&str>) = if mono.join("SETTLE/settle-rs").is_dir() {
+        (mono, vec!["SETTLE/settle-rs", "SETTLE/kanerva", "SETTLE/settle-mcp", "SETTLE/settle-site/src", "SETTLE/settle-site/tests", "SETTLE/settle-site/tools", "BRAND"])
     } else {
         (here.to_path_buf(), vec!["."])
     };

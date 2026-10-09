@@ -26,10 +26,14 @@
 //! The store, the shuffles, the ball and intersection counting, the S-map and the Hopfield baseline are
 //! KANERVA's (`kanerva::store`, `kanerva::theory`, `kanerva::smap`, `kanerva::hopfield`), re-exported
 //! here under their old names. This file keeps the SETTLE statements.
+//!
+//! The statements are parsed by KANERVA (`kanerva::lang`), mounted in the registry by `crate::plug`; the printed
+//! lines come from `kanerva::lang::say`, and `exec` runs the typed statement on the model.
 
-use crate::ext::{Claim, Ctx, Ext};
-use crate::lex::{err, kw, kwargs, num, only, SettleError, Tok};
+use crate::ext::Ctx;
+use crate::lex::{err, SettleError};
 use crate::memory::{code, seed_of};
+use kanerva::lang::{say, Stmt, Via, Wake};
 use crate::model::{Model, State};
 use crate::rng::Rng;
 
@@ -38,8 +42,6 @@ pub use kanerva::hopfield::{hop_units_for, Hop};
 pub use kanerva::smap::SMap;
 pub use kanerva::store::{threads, ReadOut, Store};
 pub use kanerva::theory::{ball, intersection, phi, phi_inv};
-
-pub struct SdmScale;
 
 // ---------------------------------------------------------------- the SETTLE statements
 
@@ -71,45 +73,6 @@ fn rebuild(m: &Model, name: &str, ln: usize) -> Result<(Store, Vec<String>), Set
     Ok((st, words.clone()))
 }
 
-fn declare(m: &mut Model, rest: &[Tok], name: &str, ln: usize) -> Result<(), SettleError> {
-    if m.notes.contains_key(&note(name)) {
-        return err(ln, format!("sdmscale :{} is already declared", name));
-    }
-    let kv = kwargs(rest, ln)?;
-    only(&kv, &["word-size", "hard-locations", "activation-probability", "activation-radius", "tolerate-noise", "seed"], "sdmscale", ln)?;
-    let get = |k: &str, d: f64| kw(&kv, k).map(|v| num(v, ln)).transpose().map(|x| x.unwrap_or(d));
-    let n = get("word-size", 256.0)? as usize;
-    let mm = get("hard-locations", 100_000.0)? as usize;
-    let seed = get("seed", 1.0)?;
-    if !(16..=4096).contains(&n) {
-        return err(ln, "sdmscale word-size must be between 16 and 4096");
-    }
-    if !(1..=2_000_000).contains(&mm) || n * mm > 1_100_000_000 {
-        return err(ln, "sdmscale hard-locations must be 1 to 2,000,000, and word-size x hard-locations at most 1.1 billion bytes");
-    }
-    let fire = get("activation-probability", 0.001)?;
-    if !(fire > 0.0 && fire < 1.0) {
-        return err(ln, "activation-probability must be between 0 and 1");
-    }
-    let tolerate = get("tolerate-noise", -1.0)?;
-    let by_fire = if tolerate >= 0.0 {
-        if tolerate >= 0.5 {
-            return err(ln, "tolerate-noise is an address-noise fraction below 0.5");
-        }
-        // SDMRADIUS: the activation radius whose S-map capacity from a read-address at this address-noise is largest
-        let (lo, hi) = crate::sdmradius::search_window(n, mm);
-        crate::sdmradius::radius_for_address_noise(n, mm, tolerate, lo, hi).0
-    } else {
-        crate::sdm::radius_for(n, fire)
-    };
-    let radius = get("activation-radius", by_fire as f64)? as usize;
-    if radius > n {
-        return err(ln, "activation-radius cannot be larger than word-size");
-    }
-    m.notes.insert(note(name), (vec![n as f64, mm as f64, radius as f64, seed], Vec::new()));
-    Ok(())
-}
-
 fn put(m: &mut Model, name: &str, what: String, ln: usize) -> Result<(), SettleError> {
     match m.notes.get_mut(&note(name)) {
         Some((_, words)) => {
@@ -126,105 +89,54 @@ fn put(m: &mut Model, name: &str, what: String, ln: usize) -> Result<(), SettleE
     }
 }
 
-fn read(m: &Model, st: &mut State, name: &str, rest: &[Tok], ln: usize, ctx: &mut Ctx) -> Result<(), SettleError> {
-    let kv = kwargs(rest, ln)?;
-    only(&kv, &["read-address", "address-noise", "iterated-reads", "via", "wake", "seed"], "read", ln)?;
-    if let Some(x) = kw(&kv, "seed") {
-        st.rng = Rng::new(num(x, ln)? as u64);
+#[allow(clippy::too_many_arguments)]
+fn read(
+    m: &Model,
+    st: &mut State,
+    name: &str,
+    seed: Option<u64>,
+    iters: usize,
+    via: Via,
+    cue_name: &str,
+    damage: f64,
+    wake: Wake,
+    ln: usize,
+    ctx: &mut Ctx,
+) -> Result<(), SettleError> {
+    if let Some(x) = seed {
+        st.rng = Rng::new(x);
     }
-    let iters = kw(&kv, "iterated-reads").map(|x| num(x, ln)).transpose()?.unwrap_or(20.0) as usize;
-    let pulls = match kw(&kv, "via") {
-        None => false,
-        Some(Tok::Sym(s)) if s == "addresses" => false,
-        Some(Tok::Sym(s)) if s == "pulls" => true,
-        Some(_) => return err(ln, "via: takes :addresses or :pulls"),
-    };
-    let cue_name = match kw(&kv, "read-address") {
-        Some(Tok::Sym(c)) => c.clone(),
-        _ => return err(ln, "read needs read-address: :name"),
-    };
-    let damage_f = kw(&kv, "address-noise").map(|x| num(x, ln)).transpose()?.unwrap_or(0.2);
     let (store, words) = rebuild(m, name, ln)?;
-    let p: Vec<i8> = code(&cue_name, store.n).into_iter().map(|v| if v > 0.0 { 1 } else { -1 }).collect();
-    let cue = add_address_noise(&p, damage_f, &mut st.rng);
-    let wake = match kw(&kv, "wake") {
-        None => "fixed".to_string(),
-        Some(Tok::Sym(s)) if s == "fixed" || s == "density" || s == "top" => s.clone(),
-        Some(_) => return err(ln, "wake: takes :fixed (0.4 n), :density (scaled with the rows' load) or :top (the p M best rows)"),
-    };
-    if !pulls && wake != "fixed" {
-        return err(ln, "wake: applies to via: :pulls");
-    }
-    let out = if !pulls {
-        store.read_addresses(&cue, iters)
-    } else if wake == "density" {
-        store.read_pulls_at(&cue, iters, crate::sdmradius::density_threshold(&store, 0.1).0)
-    } else if wake == "top" {
-        store.read_pulls_topk(&cue, iters, (ball(store.n, store.radius) * store.m as f64).round().max(1.0) as usize)
-    } else {
-        store.read_pulls(&cue, iters)
+    let p: Vec<i8> = code(cue_name, store.n).into_iter().map(|v| if v > 0.0 { 1 } else { -1 }).collect();
+    let cue = add_address_noise(&p, damage, &mut st.rng);
+    let out = match (via, wake) {
+        (Via::Addresses, _) => store.read_addresses(&cue, iters),
+        (Via::Pulls, Wake::Density) => store.read_pulls_at(&cue, iters, crate::sdmradius::density_threshold(&store, 0.1).0),
+        (Via::Pulls, Wake::Top) => store.read_pulls_topk(&cue, iters, (ball(store.n, store.radius) * store.m as f64).round().max(1.0) as usize),
+        (Via::Pulls, Wake::Fixed) => store.read_pulls(&cue, iters),
     };
     let o = overlap(&out.z, &p);
-    let written = words.contains(&cue_name);
-    let verdict = if o >= 0.95 && written {
-        format!("-> :{}", cue_name)
-    } else if o >= 0.95 {
-        format!("-> back to :{} though it was never written (the read did not move it)", cue_name)
-    } else {
-        format!("-> nothing clear (overlap with :{} {:+.2})", cue_name, o)
-    };
-    ctx.say(format!(
-        "read :{} from read-address :{} with {:.0}% address-noise via {} ({} iterated reads, {} of {} hard locations activated, {} holding bit-counters): {}",
-        name,
-        cue_name,
-        100.0 * damage_f,
-        if pulls { "pulls" } else { "addresses" },
-        out.rounds,
-        out.awake,
-        store.m,
-        out.nonempty,
-        verdict
-    ));
+    let written = words.iter().any(|w| w == cue_name);
+    ctx.say(say::scale_read(name, cue_name, damage, via, out.rounds, out.awake, store.m, out.nonempty, o, written));
     Ok(())
 }
 
-impl Ext for SdmScale {
-    fn name(&self) -> &'static str {
-        "sdmscale"
-    }
+crate::plug::mount!(SdmScale, kanerva::lang::Family::SdmScale);
 
-    fn statements(&self) -> &'static [&'static str] {
-        &[
-            "model: sdmscale :k, word-size: 256, hard-locations: 100000, activation-probability: 0.001, seed: 1   (activation-radius: overrides activation-probability; tolerate-noise: 0.3 picks the activation-radius for 30% address-noise)",
-            "model: k.put :cat   /   k.fill 500   (random patterns, one fill per store)",
-            "run: k.read read-address: :cat, address-noise: 0.2, iterated-reads: 20, via: :addresses, seed: 1   (via: :pulls too, with wake: :fixed | :density | :top)",
-        ]
-    }
-
-    fn model_stmt(&self, m: &mut Model, t: &[Tok], ln: usize, _ctx: &mut Ctx) -> Claim {
-        match t {
-            [Tok::Ident(k), Tok::Sym(name), rest @ ..] if k == "sdmscale" => {
-                let rest = if rest.first() == Some(&Tok::Comma) { &rest[1..] } else { rest };
-                Some(declare(m, rest, name, ln))
-            }
-            [Tok::Ident(name), Tok::Dot, Tok::Ident(v), Tok::Sym(what)] if v == "put" && m.notes.contains_key(&note(name)) => {
-                Some(put(m, name, what.clone(), ln))
-            }
-            [Tok::Ident(name), Tok::Dot, Tok::Ident(v), Tok::Num(k)] if v == "fill" && m.notes.contains_key(&note(name)) => {
-                let name = name.clone();
-                Some(put(m, &name, format!("#{}", *k as usize), ln))
-            }
-            _ => None,
+/// Run one parsed sdmscale statement on this model: declare the store's note, put or fill, or read (the store is
+/// rebuilt from the note for each read). `st` is None inside a model block.
+pub fn exec(m: &mut Model, st: Option<&mut State>, s: Stmt, ln: usize, ctx: &mut Ctx) -> Result<(), SettleError> {
+    match (s, st) {
+        (Stmt::ScaleDeclare { name, word_size, hard_locations, activation_radius, seed }, _) => {
+            m.notes.insert(note(&name), (vec![word_size as f64, hard_locations as f64, activation_radius as f64, seed], Vec::new()));
+            Ok(())
         }
-    }
-
-    fn run_stmt(&self, m: &mut Model, st: &mut State, t: &[Tok], ln: usize, ctx: &mut Ctx) -> Claim {
-        match t {
-            [Tok::Ident(name), Tok::Dot, Tok::Ident(v), rest @ ..] if v == "read" && m.notes.contains_key(&note(name)) => {
-                Some(read(m, st, name, rest, ln, ctx))
-            }
-            _ => None,
+        (Stmt::ScalePut { name, what }, _) => put(m, &name, what, ln),
+        (Stmt::ScaleFill { name, count }, _) => put(m, &name, format!("#{}", count), ln),
+        (Stmt::ScaleRead { name, seed, iterated_reads, via, read_address, address_noise, wake }, Some(st)) => {
+            read(m, st, &name, seed, iterated_reads, via, &read_address, address_noise, wake, ln, ctx)
         }
+        _ => err(ln, "not an sdmscale statement in this place"),
     }
 }
 

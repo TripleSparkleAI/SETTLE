@@ -6,7 +6,7 @@ arguments, and the sweeps can be split into several independent walks (restarts)
 the arrangement the last walk came to rest in, where [`x.solution`](zoo.md#xsolution) judges it on the calmest
 arrangement the walk visited. With both statements a program can say which of the two it measured.
 
-The source is `src/zootemp.rs`. The family was measured in `experiments/thermosim/runs/zootemp/REPORT_ZOOTEMP.md`.
+The source is `src/zootemp.rs`. The family was measured in `SETTLE/runs/zootemp/REPORT_ZOOTEMP.md`.
 There, on the column encoding for factoring, a long anneal often visited the answer and then cooled away from
 it. At an equal total number of sweeps, many short walks judged by their end states landed on the answer more
 often than one long walk (19 of 20 seeds against 3 of 20 at 10,403).
@@ -23,7 +23,7 @@ often than one long walk (19 of 20 seeds against 3 of 20 at 10,403).
 **Form:**
 
 ```text
-anneal_schedule S, temperature: 1, hot: 10, cold: 0.05, restarts: 1, seed: 24301
+anneal_schedule S, temperature: 1, hot: 10, cold: 0.05, restarts: 1, seed: 24301, update: :metro
 ```
 
 A comma after `S` is allowed: `anneal_schedule 1_000, seed: 1` and `anneal_schedule 1_000 seed: 1` are the same.
@@ -38,6 +38,7 @@ A comma after `S` is allowed: `anneal_schedule 1_000, seed: 1` and `anneal_sched
 | `cold:` | number above zero | 0.05 | The schedule ends at `cold x T`. |
 | `restarts:` | whole number from 1 to `S` | 1 | `R`: the number of independent walks the sweeps are split into. |
 | `seed:` | whole number | the run's current generator | Replaces the run's random generator before the first walk. |
+| `update:` | `:metro` or `:gibbs` | the run's current rule (`:metro` at the start of a run block) | The rule each sweep updates a thing by, as for the core [`settle`](core.md#settle). |
 
 **What it does:** runs `R` walks one after another, each of `L = S / R` sweeps (rounded down, at least 1). Each
 walk starts from a fresh random arrangement, with held things held, and cools geometrically. Sweep `k` of a
@@ -127,6 +128,7 @@ The example for [`x.final`](#xfinal) below shows restarts on a factoring puzzle.
 **Errors:**
 
 - `` anneal_schedule does not take `<key>:` ``
+- `` `update:` takes :gibbs or :metro ``
 - `a number was expected`
 - `temperature must be above zero`
 - `hot and cold must be above zero`
@@ -168,19 +170,24 @@ then exactly the lines `x.solution` prints for the same puzzle and arrangement: 
 the verdict line. See [`x.solution`](zoo.md#xsolution) for every form.
 
 **Example:** one walk of 20,000 sweeps visits the factorisation of 899 and then cools away from it. Twenty walks
-of 1,000 sweeps each spend the same budget, and the calmest of their end states is the answer.
+of 1,000 sweeps each spend the same budget, and the calmest of their end states is the answer. The example names
+`update: :gibbs`, the rule ZOOTEMP measured restarts with; under the default `:metro` (since 2026-10-06) this
+seed's 20 end states miss the answer. Over 40 seeds (`runs/newdefaults/restarts_899_out.txt`) the calmest end state
+of 20 restarts was the answer on 26 seeds under `:gibbs` and 21 under `:metro`, and the calmest visited on 30 and
+32. One walk's end state was the answer on 2 and 7.
 
 ```settle example=zootemp-restarts
-# Factor 899 = 29 x 31 with the column encoding, on one budget of 20,000 sweeps, two ways.
+# Factor 899 = 29 x 31 with the column encoding, on one budget of 20,000 sweeps, two ways, under Gibbs (the rule
+# ZOOTEMP measured restarts with).
 model :p do
   factor :f, number: 899, encoding: :columns
 end
 
 run :p do
-  anneal_schedule 20_000, temperature: 0.65, seed: 5                # one long walk
+  anneal_schedule 20_000, temperature: 0.65, seed: 5, update: :gibbs                # one long walk
   f.solution   # judged on the calmest arrangement the walk visited
   f.final      # judged on where the walk came to rest
-  anneal_schedule 20_000, temperature: 0.65, restarts: 20, seed: 5  # 20 walks of 1,000 sweeps
+  anneal_schedule 20_000, temperature: 0.65, restarts: 20, seed: 5, update: :gibbs  # 20 walks of 1,000 sweeps
   f.solution   # the calmest arrangement any of the 20 walks visited
   f.final      # the calmest of the 20 end states
 end

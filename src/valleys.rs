@@ -34,8 +34,8 @@
 //! or fake.
 
 use crate::ext::{Claim, Ctx, Ext};
-use crate::lex::{err, kw, kwargs, num, only, yes_no, SettleError, Tok};
-use crate::memory::code;
+use crate::lex::{err, kw, kwargs, num, only, yes_no, SettleError, Tok, whole};
+use crate::engine::codes::code;
 use crate::model::{Model, State};
 use crate::rng::Rng;
 use std::collections::HashMap;
@@ -406,7 +406,9 @@ pub fn survey(m: &Model, st: &mut State, starts: usize, sweeps: usize, temp: f64
         e.count += 1;
     }
     let mut v: Vec<Found> = seen.into_values().collect();
-    v.sort_by(|a, b| b.count.cmp(&a.count).then(a.energy.partial_cmp(&b.energy).unwrap()));
+    // most visited first, then calmest, then by the arrangement itself: the last key makes ties (a valley and its
+    // mirror image often share count and energy) come out in one order on every run, not the hash map's order
+    v.sort_by(|a, b| b.count.cmp(&a.count).then(a.energy.partial_cmp(&b.energy).unwrap()).then_with(|| key(&a.state).cmp(&key(&b.state))));
     v
 }
 
@@ -720,7 +722,7 @@ fn bits_of(m: &Model, s: &[f64]) -> String {
 fn valleys_stmt(m: &Model, st: &State, rest: &[Tok], ln: usize, ctx: &mut Ctx) -> Result<(), SettleError> {
     let kv = kwargs(rest, ln)?;
     only(&kv, &["show"], "valleys", ln)?;
-    let show = kw(&kv, "show").map(|v| num(v, ln)).transpose()?.unwrap_or(10.0) as usize;
+    let show = whole(kw(&kv, "show").map(|v| num(v, ln)).transpose()?.unwrap_or(10.0), 0.0, f64::INFINITY, "show:", ln)?;
     let d = Dense::of(m, &st.held);
     if d.n > MAX_EXACT {
         return err(ln, format!("valleys is exact and visits every arrangement: {} free things is above {}; use survey", d.n, MAX_EXACT));
@@ -1006,8 +1008,12 @@ mod tests {
         let (m, d) = sk(12, 4);
         let c = enumerate(&d);
         let exact: std::collections::HashSet<u32> = c.valleys.iter().map(|v| v.rep).collect();
+        // 30,000 starts, not 3,000: under the default rule (Metropolised Gibbs since 2026-10-06, lane NEWDEFAULTS)
+        // the rarest mirror pair of this landscape is reached less often near zero temperature. Measured on seeds
+        // 2, 3 and 4: at 3,000 starts Gibbs found 16, 15 and 14 of 16 and Metropolised Gibbs 14, 15 and 15; at
+        // 30,000 starts Gibbs found 16 on all three and Metropolised Gibbs 16, 16 and 15. Seed 2 is pinned.
         let mut st = State::new(2);
-        let found = survey(&m, &mut st, 3000, 5, 0.05);
+        let found = survey(&m, &mut st, 30_000, 5, 0.05);
         for f in &found {
             let bits = f.state.iter().enumerate().fold(0u32, |a, (i, &v)| if v > 0.0 { a | (1 << i) } else { a });
             assert!(exact.contains(&bits), "survey returned a non-valley");
@@ -1016,6 +1022,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "sdm")] // a memory from the memory family
     fn a_hopfield_memory_of_one_pattern_has_two_valleys_its_pattern_and_mirror() {
         let mut it = Interp::default();
         it.exec("model :mind do\n  memory :m, size: 16\n  m.remember :cat\nend").unwrap();
@@ -1031,6 +1038,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "sdm")] // a memory from the memory family
     fn mirror_basins_stay_equal_when_many_slopes_tie() {
         // Hopfield pulls are multiples of 1/size, so slopes tie often; rounding must not break the mirror symmetry
         let mut it = Interp::default();
@@ -1068,5 +1076,16 @@ mod tests {
         assert!(out.iter().any(|l| l.starts_with("survey: 300 starts")));
         let e = Interp::default().exec("model :g do\n  landscape :volcano\nend").err().unwrap().0;
         assert!(e.starts_with("line 2: no landscape :volcano"), "{}", e);
+    }
+
+    #[test]
+    fn a_survey_prints_the_same_lines_on_every_run() {
+        // a valley and its mirror often tie on count and energy; before the arrangement tiebreak the hash map's
+        // per-instance order leaked into the output (examples/survey.settle printed 3 different texts in 6 runs)
+        let src = "model :sheet do\n  landscape :grid, width: 12, height: 12\nend\nrun :sheet do\n  survey starts: 200, sweeps: 1000, temperature: 0.05, seed: 2, show: 4\nend";
+        let first = Interp::default().exec(src).unwrap();
+        for _ in 0..6 {
+            assert_eq!(Interp::default().exec(src).unwrap(), first);
+        }
     }
 }

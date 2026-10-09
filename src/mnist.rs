@@ -35,6 +35,7 @@
 //!   The exact readout is argmax over c of -F(pixels, e_c). The pixel part of every hidden input is computed once.
 //! - Numbers: training is f32; the classify path converts to f64 so the browser port (JS numbers are f64) can
 //!   repeat it operation for operation. THRESHOLD = 128 (grey values 0 to 255).
+//!
 //! </claudes_code_comments>
 
 use crate::rng::Rng;
@@ -384,7 +385,7 @@ pub fn train(rbm: &mut Rbm, rows: &[f32], o: &TrainOpts, log: &mut dyn FnMut(&Ep
         let rate = (o.rate * (1.0 - 0.9 * epoch as f64 / o.epochs.max(1) as f64)) as f32;
         let mut wrong = 0.0;
         for (bi, chunk) in order.chunks(batch).enumerate() {
-            let per = (chunk.len() + threads - 1) / threads;
+            let per = chunk.len().div_ceil(threads);
             let rbm_ref: &Rbm = rbm;
             let mut chain_parts: Vec<&mut [Vec<f32>]> = if o.persistent {
                 chains[..chunk.len()].chunks_mut(per).collect()
@@ -404,7 +405,7 @@ pub fn train(rbm: &mut Rbm, rows: &[f32], o: &TrainOpts, log: &mut dyn FnMut(&Ep
                     });
                 }
             });
-            let used = (chunk.len() + per - 1) / per;
+            let used = chunk.len().div_ceil(per);
             for t in 1..used {
                 let (head, tail) = bufs.split_at_mut(t);
                 let (b0, bt) = (&mut head[0], &tail[0]);
@@ -449,7 +450,7 @@ impl Coin for Rng {
     }
 }
 
-/// The browser engine's xorshift128 (sites/settle-site/src/engine/ising.js), bit for bit, so a JS port can
+/// The browser engine's xorshift128 (SETTLE/settle-site/src/engine/ising.js), bit for bit, so a JS port can
 /// repeat a Rust settle exactly.
 pub struct Xs128 {
     a: u32,
@@ -660,7 +661,7 @@ impl Softmax {
 /// Class means of the training rows; returns the predicted class of each test row (squared Euclidean distance).
 pub fn nearest_centroid(train: &[f32], ytr: &[u8], test: &[f32], d: usize) -> Vec<usize> {
     let mut mu = vec![0f64; CLASSES * d];
-    let mut cnt = vec![0f64; CLASSES];
+    let mut cnt = [0f64; CLASSES];
     for (r, &y) in train.chunks_exact(d).zip(ytr) {
         cnt[y as usize] += 1.0;
         for i in 0..d {
@@ -690,6 +691,10 @@ pub fn shuffled_labels(y: &[u8], seed: u64) -> Vec<u8> {
     }
     out
 }
+
+/// Pinned by `xs128_matches_the_browser_engine_first_draws`; produced by the browser engine under node.
+#[cfg(test)]
+const XS128_SEED1_FIRST4: [u32; 4] = [3449496019, 3747456639, 1409788197, 648723358];
 
 #[cfg(test)]
 mod tests {
@@ -791,7 +796,7 @@ mod tests {
         let want = exact(&m);
         let mut v = vec![1.0f32; 5];
         let (mut x, mut h, mut y) = (vec![0f32; 3], vec![0f32; 3], vec![0f32; 5]);
-        let mut acc = vec![0f64; 5];
+        let mut acc = [0f64; 5];
         let sweeps = 1_000_000;
         for t in 0..sweeps + 1000 {
             m.hidden_inputs(&v, &mut x);
@@ -938,7 +943,3 @@ mod tests {
         assert_eq!(got, XS128_SEED1_FIRST4.to_vec());
     }
 }
-
-/// Pinned by `xs128_matches_the_browser_engine_first_draws`; produced by the browser engine under node.
-#[cfg(test)]
-const XS128_SEED1_FIRST4: [u32; 4] = [3449496019, 3747456639, 1409788197, 648723358];

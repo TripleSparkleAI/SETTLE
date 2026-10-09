@@ -29,7 +29,7 @@
 //! "did not settle", never as solved. A Cholesky factorisation certifies positive definiteness.
 
 use crate::ext::{Claim, Ctx, Ext};
-use crate::lex::{err, kw, kwargs, num, only, text, SettleError, Tok};
+use crate::lex::{err, kw, kwargs, num, only, text, SettleError, Tok, whole};
 use crate::model::{Model, State};
 use crate::rng::Rng;
 use std::time::Instant;
@@ -437,7 +437,7 @@ fn declare(m: &mut Model, rest: &[Tok], ln: usize) -> Result<(), SettleError> {
                 any = true;
             }
             Tok::Comma => {}
-            other => return err(ln, format!("unexpected {:?} in number (write: number :x, :y)", other)),
+            other => return err(ln, format!("unexpected `{}` in number (write: number :x, :y)", other)),
         }
     }
     if !any {
@@ -512,10 +512,10 @@ fn drift_opts(kv: &[(String, Tok)], steps: usize, ln: usize) -> Result<DriftOpts
         o.seed = num(v, ln)? as u64;
     }
     if let Some(v) = kw(kv, "burn") {
-        o.burn = Some(num(v, ln)? as usize);
+        o.burn = Some(whole(num(v, ln)?, 0.0, f64::INFINITY, "burn:", ln)?);
     }
     if let Some(v) = kw(kv, "steps") {
-        o.steps = num(v, ln)? as usize;
+        o.steps = whole(num(v, ln)?, 0.0, f64::INFINITY, "steps:", ln)?;
     }
     if o.steps < 20 {
         return err(ln, "drift needs at least 20 steps");
@@ -653,7 +653,7 @@ fn spread_stmt(m: &Model, ln: usize, ctx: &mut Ctx) -> Result<(), SettleError> {
 /// Parse "4 1 0; 1 3 1; 0 1 2" (rows by `;` or newline, entries by spaces or commas).
 fn parse_rows(s: &str, ln: usize) -> Result<Vec<Vec<f64>>, SettleError> {
     let mut rows = Vec::new();
-    for r in s.split(|c| c == ';' || c == '\n') {
+    for r in s.split([';', '\n']) {
         let cells: Vec<&str> = r.split(|c: char| c.is_whitespace() || c == ',').filter(|t| !t.is_empty()).collect();
         if cells.is_empty() {
             continue;
@@ -678,7 +678,7 @@ fn solve_stmt(m: &mut Model, rest: &[Tok], ln: usize, ctx: &mut Ctx) -> Result<(
             Tok::Sym(s) => names.push(s.clone()),
             Tok::Comma => {}
             Tok::Label(_) => break,
-            other => return err(ln, format!("unexpected {:?} in solve", other)),
+            other => return err(ln, format!("unexpected `{}` in solve", other)),
         }
         i += 1;
     }
@@ -805,7 +805,7 @@ impl Ext for Numbers {
 
     fn run_stmt(&self, m: &mut Model, _st: &mut State, t: &[Tok], ln: usize, ctx: &mut Ctx) -> Claim {
         Some(match t {
-            [Tok::Ident(k), Tok::Num(n), rest @ ..] if k == "drift" => drift_stmt(m, *n as usize, rest, ln, ctx),
+            [Tok::Ident(k), Tok::Num(n), rest @ ..] if k == "drift" => whole(*n, 0.0, f64::INFINITY, "drift", ln).and_then(|steps| drift_stmt(m, steps, rest, ln, ctx)),
             [Tok::Ident(k)] if k == "means" => means_stmt(m, ln, ctx),
             [Tok::Ident(k)] if k == "spread" => spread_stmt(m, ln, ctx),
             [Tok::Ident(k), rest @ ..] if k == "solve" => solve_stmt(m, rest, ln, ctx),

@@ -7,6 +7,8 @@
 //! dm_i/dh_j = <s_i s_j> - m_i m_j (the covariance, by enumeration), and steps dh = C^-1 (m* - m).
 //! This shows the exact leans exist at every pull tried and how far TAP's leans sit from them.
 
+#![allow(clippy::needless_range_loop)] // index loops mirror the equations they measure
+
 use settle::grid::{leans_for, Invert, Spec};
 use settle::model::Model;
 use settle::rng::Rng;

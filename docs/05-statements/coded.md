@@ -9,7 +9,7 @@ refused and prints no text. It never prints a guess.
 
 The source is `src/coded.rs`. The static English model used by the compressors is built from
 `data/coded_train_austen.txt` (provenance in `data/PROVENANCE.txt`). The family was measured in
-`experiments/thermosim/runs/sdmcoded/REPORT_SDMCODED.md`. The memories it stores into are documented in
+`SETTLE/runs/sdmcoded/REPORT_SDMCODED.md`. The memories it stores into are documented in
 [memory](memory.md) and [sdm](sdm.md).
 
 | Statement | Block | Summary |
@@ -445,4 +445,4 @@ recall_coded :m read-address :note (knows the whole pattern, 97% address-noise) 
 - A refusal is an answer, not an error: the program goes on. A wrong text can only be printed if a wrong frame
   passes the 16-bit check.
 - The report measures how much text comes back exactly for each choice of compressor and code, in a Hopfield memory
-  and in an sdm, at several loads and address-noise levels: `experiments/thermosim/runs/sdmcoded/REPORT_SDMCODED.md`.
+  and in an sdm, at several loads and address-noise levels: `SETTLE/runs/sdmcoded/REPORT_SDMCODED.md`.

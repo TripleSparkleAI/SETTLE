@@ -40,19 +40,21 @@
 //! (`kanerva::address::Addresses`), the iterated address read (`kanerva::address::iterated_read`), the
 //! activation radius rule (`kanerva::theory::radius_for`) and the codes and keys. This file keeps what only SETTLE
 //! has: the bit-counters as pulls, the leans, and the zero-temperature settle of the pulls.
+//!
+//! The statements are parsed by KANERVA (`kanerva::lang`), mounted in the registry by `crate::plug`; `exec` runs the
+//! typed statement on the model, and the printed lines come from `kanerva::lang::say`.
 
-use crate::ext::{Claim, Ctx, Ext};
-use crate::lex::{err, kw, kwargs, num, only, text, SettleError, Tok};
+use crate::ext::Ctx;
+use crate::lex::{err, SettleError};
 use crate::model::{Model, State};
 use crate::rng::Rng;
 use kanerva::address::{iterated_read, Addresses};
-use kanerva::codes::{bits_text, code, overlap, pattern};
-use kanerva::keys::{keyed_capacity, keyed_read_address, keyed_pattern, keyed_read};
+use kanerva::codes::{code, pattern};
+use kanerva::keys::{keyed_capacity, keyed_pattern, keyed_read_address};
+use kanerva::lang::{say, From, Stmt, Via};
 
 pub use kanerva::store::WAKE;
 pub use kanerva::theory::radius_for;
-
-pub struct Sdm;
 
 /// One SDM on a model: where its things are, its addresses (regenerated from the name and seed), and its
 /// settings.
@@ -71,6 +73,8 @@ pub struct View {
 }
 
 impl View {
+    // the eight values are the memory's own fields, set once; a struct for them would only rename the struct
+    #[allow(clippy::too_many_arguments)]
     fn build(name: &str, data: usize, n: usize, loc: usize, m_loc: usize, radius: usize, seed: u64, fade: f64) -> View {
         let addr = Addresses::named(name, seed, n, m_loc);
         View { name: name.to_string(), data, n, loc, m_loc, radius, seed, fade, addr, stored: Vec::new() }
@@ -203,41 +207,34 @@ impl View {
 
     /// The public pattern of a stored name (None for keyed text or an unknown name).
     pub fn public(&self, name: &str) -> Option<Vec<f64>> {
-        let tag = &self.stored.iter().find(|(n, _)| n == name)?.1;
-        match tag.chars().next() {
-            Some('#') => None,
-            Some('=') => Some(pattern(name, Some(&tag[1..]), self.n)),
-            _ => Some(code(name, self.n)),
-        }
+        say::public(&self.stored, name, self.n)
     }
 }
 
-fn declare(m: &mut Model, rest: &[Tok], name: &str, ln: usize) -> Result<(), SettleError> {
-    if m.notes.contains_key(&format!("sdm:{}", name)) {
-        return err(ln, format!("sdm :{} is already declared", name));
+crate::plug::mount!(Sdm, kanerva::lang::Family::Sdm);
+
+/// Run one parsed sdm statement on this model: declare the things and pulls, write into the pulls, or read.
+/// `st` is the run's state (None inside a model block, where no read can stand).
+pub fn exec(m: &mut Model, st: Option<&mut State>, s: Stmt, ln: usize, ctx: &mut Ctx) -> Result<(), SettleError> {
+    match s {
+        Stmt::SdmDeclare { name, word_size, hard_locations, activation_radius, seed, fade } => {
+            // A clash would make `Model::add` hand back an existing thing and break the fixed layout (this used to
+            // panic): refuse it, in the words softsdm uses and KANERVA's runner uses for the same program.
+            let data = (0..word_size).map(|j| format!("{}_{}", name, j));
+            let locs = (0..hard_locations).map(|i| format!("{}_loc_{}", name, i));
+            if let Some(clash) = data.chain(locs).find(|x| m.idx.contains_key(x)) {
+                return err(ln, format!("a thing :{} already exists; pick another sdm name", clash));
+            }
+            View::declare(m, &name, word_size, hard_locations, activation_radius, seed, fade);
+            Ok(())
+        }
+        Stmt::SdmWrite { name, what, text, key } => write(m, &name, &what, text, key, ln, ctx),
+        Stmt::SdmRead { name, seed, iterated_reads, via, from } => match st {
+            Some(st) => read(m, st, &name, seed, iterated_reads, via, &from, ln, ctx),
+            None => err(ln, "s.read is a run statement; put it inside `run :name do ... end`"),
+        },
+        _ => err(ln, "not an sdm statement"),
     }
-    let kv = kwargs(rest, ln)?;
-    only(&kv, &["word-size", "hard-locations", "activation-radius", "seed", "fade"], "sdm", ln)?;
-    let get = |k: &str, d: f64| kw(&kv, k).map(|v| num(v, ln)).transpose().map(|x| x.unwrap_or(d));
-    let n = get("word-size", 256.0)? as usize;
-    let m_loc = get("hard-locations", 2000.0)? as usize;
-    let seed = get("seed", 1.0)? as u64;
-    let fade = get("fade", 1.0)?;
-    if !(16..=4096).contains(&n) {
-        return err(ln, "sdm word-size must be between 16 and 4096");
-    }
-    if !(1..=100_000).contains(&m_loc) || n * m_loc > 20_000_000 {
-        return err(ln, "sdm hard-locations must be at least 1, and word-size x hard-locations at most 20 million");
-    }
-    if !(0.0..=1.0).contains(&fade) || fade == 0.0 {
-        return err(ln, "fade must be above 0 and at most 1");
-    }
-    let radius = get("activation-radius", radius_for(n, 0.02) as f64)? as usize;
-    if radius > n {
-        return err(ln, "activation-radius cannot be larger than word-size");
-    }
-    View::declare(m, name, n, m_loc, radius, seed, fade);
-    Ok(())
 }
 
 fn write(m: &mut Model, name: &str, what: &str, txt: Option<String>, key: Option<String>, ln: usize, ctx: &mut Ctx) -> Result<(), SettleError> {
@@ -262,135 +259,42 @@ fn write(m: &mut Model, name: &str, what: &str, txt: Option<String>, key: Option
     };
     let took = v.write(m, &p);
     if took == 0 {
-        ctx.say(format!("warning: no hard location of :{} is within activation-radius {} of :{}, so nothing was written", name, v.radius, what));
+        ctx.say(say::sdm_write_warning(name, v.radius, what));
     }
     v.stored.push((what.to_string(), tag));
     v.keep(m);
     Ok(())
 }
 
-
-fn read(m: &Model, st: &mut State, name: &str, rest: &[Tok], ln: usize, ctx: &mut Ctx) -> Result<(), SettleError> {
+#[allow(clippy::too_many_arguments)]
+fn read(m: &Model, st: &mut State, name: &str, seed: Option<u64>, iters: usize, via: Via, from: &From, ln: usize, ctx: &mut Ctx) -> Result<(), SettleError> {
     let v = View::load(m, name, ln)?;
-    let kv = kwargs(rest, ln)?;
-    only(&kv, &["read-address", "key", "address-noise", "iterated-reads", "via", "seed"], "read", ln)?;
-    if let Some(x) = kw(&kv, "seed") {
-        st.rng = Rng::new(num(x, ln)? as u64);
+    if let Some(s) = seed {
+        st.rng = Rng::new(s);
     }
-    let iters = kw(&kv, "iterated-reads").map(|x| num(x, ln)).transpose()?.unwrap_or(10.0) as usize;
-    let via = match kw(&kv, "via") {
-        None => "addresses".to_string(),
-        Some(Tok::Sym(s)) if s == "addresses" || s == "pulls" => s.clone(),
-        Some(_) => return err(ln, "via: takes :addresses or :pulls"),
-    };
-    let key = kw(&kv, "key").map(|t| text(t, ln)).transpose()?;
-    let (start, from) = match (kw(&kv, "read-address"), &key) {
-        (Some(_), Some(_)) => return err(ln, "read takes read-address: or key:, not both"),
-        (Some(Tok::Sym(c)), None) => {
-            let damage = kw(&kv, "address-noise").map(|x| num(x, ln)).transpose()?.unwrap_or(0.3);
+    let start: Vec<f64> = match from {
+        From::Address { name: c, noise } => {
             let p = v.public(c).unwrap_or_else(|| code(c, v.n));
-            let z: Vec<f64> = p.iter().map(|&b| if st.rng.unit() < damage { -b } else { b }).collect();
-            (z, format!("read-address :{} with {:.0}% address-noise", c, 100.0 * damage))
+            p.iter().map(|&b| if st.rng.unit() < *noise { -b } else { b }).collect()
         }
-        (Some(_), None) => return err(ln, "read-address: takes a symbol, like read-address: :cat"),
-        (None, Some(k)) => {
-            let damage = kw(&kv, "address-noise").map(|x| num(x, ln)).transpose()?.unwrap_or(0.0);
-            let p = keyed_read_address(k, v.n);
-            (p.iter().map(|&b| if st.rng.unit() < damage { -b } else { b }).collect(), "a key".to_string())
-        }
-        (None, None) => ((0..v.n).map(|_| if st.rng.unit() < 0.5 { -1.0 } else { 1.0 }).collect(), "pure noise".to_string()),
+        From::Key { key, noise } => keyed_read_address(key, v.n).iter().map(|&b| if st.rng.unit() < *noise { -b } else { b }).collect(),
+        From::Noise => (0..v.n).map(|_| if st.rng.unit() < 0.5 { -1.0 } else { 1.0 }).collect(),
     };
-    let (got, rounds, awake) = if via == "pulls" { v.read_pulls(m, st, &start, iters) } else { v.read_addresses(m, &start, iters) };
-    let head = format!("read :{} from {} via {} ({} iterated reads, {} of {} hard locations activated)", name, from, via, rounds, awake, v.m_loc);
-    if let Some(k) = &key {
-        match keyed_read(k, &got) {
-            Some(t) => ctx.say(format!("{}: text \"{}\"", head, t)),
-            None => ctx.say(format!("{}: nothing readable", head)),
-        }
-        return Ok(());
-    }
-    let mut scores: Vec<(String, f64)> = v.stored.iter().filter_map(|(n, _)| v.public(n).map(|p| (n.clone(), overlap(&got, &p)))).collect();
-    scores.sort_by(|x, y| y.1.abs().partial_cmp(&x.1.abs()).unwrap());
-    let top: Vec<String> = scores.iter().take(3).map(|(n, o)| format!(":{} {:+.2}", n, o)).collect();
-    let verdict = match scores.first() {
-        Some((n, o)) if *o >= 0.9 => format!("-> :{}", n),
-        Some((n, o)) => format!("-> nothing clear (closest :{} at {:+.2})", n, o),
-        None => "-> nothing is written".to_string(),
+    let (got, rounds, awake) = match via {
+        Via::Pulls => v.read_pulls(m, st, &start, iters),
+        Via::Addresses => v.read_addresses(m, &start, iters),
     };
-    ctx.say(format!("{}: {}  {}", head, top.join("  "), verdict));
-    if let Some((n, o)) = scores.first() {
-        if *o >= 0.9 {
-            if let Some((_, tag)) = v.stored.iter().find(|(x, _)| x == n) {
-                if let Some(t) = tag.strip_prefix('=') {
-                    let mask = code(n, v.n);
-                    let bits: Vec<f64> = got.iter().zip(&mask).map(|(a, b)| a * b).collect();
-                    ctx.say(format!("  text: \"{}\"", bits_text(&bits, t.len())));
-                }
-            }
-        }
+    for line in say::sdm_read(name, from, via, rounds, awake, v.m_loc, &got, &v.stored, v.n) {
+        ctx.say(line);
     }
     Ok(())
-}
-
-impl Ext for Sdm {
-    fn name(&self) -> &'static str {
-        "sdm"
-    }
-
-    fn statements(&self) -> &'static [&'static str] {
-        &[
-            "model: sdm :s, word-size: 256, hard-locations: 2000, activation-radius: 112, seed: 1, fade: 1",
-            "model: s.write :cat   /   s.write :note, \"text\"   /   s.write :diary, \"text\", key: \"secret\"",
-            "run: s.write ... (as in a model)",
-            "run: s.read read-address: :cat, address-noise: 0.3, iterated-reads: 10, via: :addresses, seed: 1   (via: :pulls too)",
-            "run: s.read key: \"secret\"   /   s.read   (from noise)",
-        ]
-    }
-
-    fn model_stmt(&self, m: &mut Model, t: &[Tok], ln: usize, ctx: &mut Ctx) -> Claim {
-        match t {
-            [Tok::Ident(k), Tok::Sym(name), rest @ ..] if k == "sdm" => {
-                let rest = if rest.first() == Some(&Tok::Comma) { &rest[1..] } else { rest };
-                Some(declare(m, rest, name, ln))
-            }
-            _ => write_stmt(m, t, ln, ctx),
-        }
-    }
-
-    fn run_stmt(&self, m: &mut Model, st: &mut State, t: &[Tok], ln: usize, ctx: &mut Ctx) -> Claim {
-        match t {
-            [Tok::Ident(name), Tok::Dot, Tok::Ident(v), rest @ ..] if v == "read" && m.notes.contains_key(&format!("sdm:{}", name)) => {
-                Some(read(m, st, name, rest, ln, ctx))
-            }
-            _ => write_stmt(m, t, ln, ctx),
-        }
-    }
-}
-
-fn write_stmt(m: &mut Model, t: &[Tok], ln: usize, ctx: &mut Ctx) -> Claim {
-    // `write` is shared with the softsdm family: leave a line alone when its name is a declared softsdm.
-    if let [Tok::Ident(name), ..] = t {
-        if m.notes.contains_key(&format!("softsdm:{}", name)) {
-            return None;
-        }
-    }
-    match t {
-        [Tok::Ident(name), Tok::Dot, Tok::Ident(v), Tok::Sym(what)] if v == "write" => Some(write(m, name, what, None, None, ln, ctx)),
-        [Tok::Ident(name), Tok::Dot, Tok::Ident(v), Tok::Sym(what), Tok::Comma, s, rest @ ..] if v == "write" => Some((|| {
-            let txt = text(s, ln)?;
-            let kv = kwargs(rest, ln)?;
-            only(&kv, &["key"], "write", ln)?;
-            let key = kw(&kv, "key").map(|k| text(k, ln)).transpose()?;
-            write(m, name, what, Some(txt), key, ln, ctx)
-        })()),
-        _ => None,
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::interp::Interp;
+    use kanerva::codes::overlap;
 
     fn run(src: &str) -> Vec<String> {
         Interp::default().exec(src).unwrap_or_else(|e| panic!("{}", e))
@@ -513,5 +417,13 @@ end",
         assert!(Interp::default().exec(old).err().unwrap().0.contains("is now `word-size:`"));
         let e = Interp::default().exec("model :m do\n  sdm :s, word-size: 64, hard-locations: 10\nend\nrun :m do\n  s.read via: :soft\nend").err().unwrap().0;
         assert!(e.starts_with("line 5: via:"), "{}", e);
+    }
+
+    #[test]
+    fn an_sdm_whose_things_clash_is_refused_not_a_panic() {
+        let e = Interp::default().exec("model :m do\n  softsdm :s, word-size: 64, hard-locations: 50\n  sdm :s, word-size: 64, hard-locations: 50\nend").err().unwrap().0;
+        assert_eq!(e, "line 3: a thing :s_loc_0 already exists; pick another sdm name");
+        // the control: two names that do not clash are both declared
+        assert!(Interp::default().exec("model :m do\n  softsdm :f, word-size: 64, hard-locations: 50\n  sdm :s, word-size: 64, hard-locations: 50\nend").is_ok());
     }
 }

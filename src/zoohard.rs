@@ -314,7 +314,7 @@ pub fn is_prime(n: u64) -> bool {
     }
     let mut d = 2;
     while d * d <= n {
-        if n % d == 0 {
+        if n.is_multiple_of(d) {
             return false;
         }
         d += 1;

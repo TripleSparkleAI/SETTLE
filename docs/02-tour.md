@@ -1,7 +1,7 @@
 # A tour of SETTLE
 
-This page walks through the language with three short programs. It takes about ten minutes. Each program is
-followed by its exact output.
+This page walks through the language with four short programs, about ten minutes. Each program is followed by
+its exact output.
 
 ## Things, leans and pulls
 
@@ -30,10 +30,10 @@ end
 
 ```text output=tour-first
 settled: 20000 samples of 2 things at temperature 1
-  a              ###################### 73.5%
-  b              #################### 68.0%
-ask :b: yes 68.0% of 20000 samples
-ask :a, and: :b: yes 64.9% of 20000 samples
+  a              ###################### 72.7%
+  b              #################### 67.3%
+ask :b: yes 67.3% of 20000 samples
+ask :a, and: :b: yes 63.9% of 20000 samples
 ```
 
 Line by line:
@@ -90,7 +90,7 @@ end
 ```text output=tour-hold
 settled: 20000 samples of 2 things at temperature 1
   a               0.0%  (held)
-  b              #### 12.1%
+  b              #### 11.9%
 ```
 
 With `a` held at no, `b` is pulled towards no and is yes only about 12% of the time. The exact value is
@@ -120,15 +120,56 @@ end
 
 ```text output=tour-anneal
 annealed: 2000 sweeps, calmest energy found -1.100
-best (energy -1.100): x yes, y no, z yes
+best (energy -1.100): x yes, y no, z no
 ```
 
 Declaring `:x` a second time does not create a new thing. It adds the new lean to the existing one.
 
+## Remembering
+
+The sdm statements add a memory: Kanerva's sparse distributed memory, an SDM. It stores long patterns of bits and
+gives one back from a damaged copy.
+
+```settle example=tour-remember
+# Write three patterns. Read one back from a noisy copy.
+model :mind do
+  sdm :s, word-size: 128, hard-locations: 1_000
+  s.write :cat
+  s.write :dog
+  s.write :owl
+end
+
+run :mind do
+  s.read read-address: :cat, address-noise: 0.2, seed: 1
+  s.read read-address: :zebra, address-noise: 0, seed: 2
+end
+```
+
+```text output=tour-remember
+read :s from read-address :cat with 20% address-noise via addresses (2 iterated reads, 22 of 1000 hard locations activated): :cat +1.00  :owl -0.16  :dog -0.08  -> :cat
+read :s from read-address :zebra with 0% address-noise via addresses (1 iterated reads, 13 of 1000 hard locations activated): :cat -0.08  :dog -0.06  :owl -0.02  -> nothing clear (closest :cat at -0.08)
+```
+
+Line by line:
+
+- `sdm :s, word-size: 128, hard-locations: 1_000` makes a memory named `s`. A pattern is 128 bits, the
+  **word size**. The memory has 1,000 **hard locations**: fixed random addresses, each with a counter for every
+  bit.
+- `s.write :cat` makes a random 128-bit pattern named `cat` and adds it to the counters of the hard locations
+  whose addresses lie near it.
+- `s.read read-address: :cat, address-noise: 0.2` flips 20% of cat's bits and reads from that copy, the
+  **read-address**. The hard locations near it vote bit by bit, and the vote is read again. Each number is the
+  overlap with a stored pattern, +1 for an exact match. `cat` came back whole: `-> :cat`.
+- `zebra` was never written. Its read finds no stored pattern, and the line says so: `nothing clear`.
+
+The memory and its statements belong to KANERVA, the library SETTLE mounts for them. The
+[sdm page](05-statements/sdm.md) has every argument.
+
 ## Beyond the core
 
-The statements above belong to the **core** family. Every other family adds statements that build larger
-models or read results in new ways, but they all rest on the same things, leans, pulls and sampler:
+The first three programs use the **core** family and the fourth uses **sdm**. Every other family adds statements
+that build larger models or read results in new ways, but they all rest on the same things, leans, pulls and
+sampler:
 
 | Family | What it adds |
 |---|---|

@@ -3,6 +3,8 @@
 //! capacity | noise | fade | controls | keys | all (default all). Predictions P1..P11 were sealed in the
 //! campaign ledger before this file existed. Everything is seeded; no timing is measured.
 
+#![allow(clippy::needless_range_loop)] // index loops mirror the equations they measure
+
 use settle::memory::{code, key_turn, keyed_read_address, keyed_pattern, keyed_read, shake, store_pattern};
 use settle::model::{Model, State};
 use settle::rng::Rng;
@@ -69,7 +71,9 @@ impl Sys {
     }
 }
 
-fn systems() -> Vec<(&'static str, Box<dyn Fn(u64) -> Sys + Sync>, usize)> {
+type System = (&'static str, Box<dyn Fn(u64) -> Sys + Sync>, usize);
+
+fn systems() -> Vec<System> {
     vec![
         ("H", Box::new(|_s| Sys::hop(N, 1.0)), 200),
         ("S2000a", Box::new(|s| Sys::sdm(N, 2000, 0.02, false, 1.0, s)), 1000),

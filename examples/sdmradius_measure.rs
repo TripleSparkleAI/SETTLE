@@ -153,6 +153,7 @@ struct Ckpt {
 
 /// Write patterns up the checkpoints; at each, read q read-addresses per address-noise with every arm (the same read-address for
 /// every arm). Stops after two checkpoints in a row where every arm and address-noise is under 50%.
+#[allow(clippy::too_many_arguments)]
 fn run_caps(n: usize, m: usize, r: usize, seed: u64, dmgs: &[f64], q: usize, arms: &[Reader], eps: f64) -> Vec<Ckpt> {
     let cps = checkpoints(m);
     let all = pats(seed, n, *cps.last().unwrap());
@@ -205,6 +206,7 @@ fn run_caps(n: usize, m: usize, r: usize, seed: u64, dmgs: &[f64], q: usize, arm
 }
 
 /// Pool seeds on the shared checkpoint prefix and print table, P90/P50 and the predictions beside them.
+#[allow(clippy::too_many_arguments)]
 fn report(tag: &str, n: usize, m: usize, r: usize, dmgs: &[f64], arms: &[Reader], runs: &[Vec<Ckpt>], secs: f64) {
     let len = runs.iter().map(|x| x.len()).min().unwrap();
     let lz = Lazy::new(n, m, r);

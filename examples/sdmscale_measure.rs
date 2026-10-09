@@ -471,7 +471,8 @@ fn anomaly(seeds: u64) {
             }
             out
         });
-        let all: Vec<&(bool, bool, bool, usize, usize, bool, bool, bool)> = res.iter().flatten().collect();
+        type Trial = (bool, bool, bool, usize, usize, bool, bool, bool);
+        let all: Vec<&Trial> = res.iter().flatten().collect();
         let stable = all.iter().filter(|x| x.5).count();
         let noise_hits = all.iter().filter(|x| x.6).count();
         let r1 = all.iter().filter(|x| x.7).count();
@@ -482,7 +483,7 @@ fn anomaly(seeds: u64) {
         let fixed = all.iter().filter(|x| x.2).count();
         let mfire = all.iter().map(|x| x.3 as f64).sum::<f64>() / n as f64;
         let mne = all.iter().map(|x| x.4 as f64).sum::<f64>() / n as f64;
-        let okv: Vec<&&(bool, bool, bool, usize, usize, bool, bool, bool)> = all.iter().filter(|x| x.0).collect();
+        let okv: Vec<&&Trial> = all.iter().filter(|x| x.0).collect();
         let (of, on) = if okv.is_empty() { (0.0, 0.0) } else { (okv.iter().map(|x| x.3 as f64).sum::<f64>() / okv.len() as f64, okv.iter().map(|x| x.4 as f64).sum::<f64>() / okv.len() as f64) };
         println!("{} | {} | {} | {} | {} | {} | {:.1}/{:.2} | {:.1}/{:.2}", t, n, ok, ok_land, land, fixed, mfire, mne, of, on);
         println!("  of the {} recalls: {} already at q after round 1, {} still at q after a 4th read; the same 3 reads from PURE NOISE land on q {} times of {}", ok, r1, stable, noise_hits, n);

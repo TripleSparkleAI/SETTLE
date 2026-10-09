@@ -1,6 +1,6 @@
 settled: 40000 samples of 3 things at temperature 1
-ask :burglary: yes 5.2% of 40000 samples
+ask :burglary: yes 5.4% of 40000 samples
 settled: 40000 samples of 3 things at temperature 1
-ask :burglary: yes 56.5% of 40000 samples
+ask :burglary: yes 56.0% of 40000 samples
 settled: 40000 samples of 3 things at temperature 1
 ask :burglary: yes 26.8% of 40000 samples

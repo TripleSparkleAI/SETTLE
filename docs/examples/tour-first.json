@@ -1,0 +1,1 @@
+{"settle": "0.1.0", "ok": true, "lines": ["settled: 20000 samples of 2 things at temperature 1", "  a              ###################### 72.7%", "  b              #################### 67.3%", "ask :b: yes 67.3% of 20000 samples", "ask :a, and: :b: yes 63.9% of 20000 samples"]}

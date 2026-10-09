@@ -20,7 +20,17 @@ fn main() {
     }).collect();
     let mut m = Model::default();
     for k in 0..w * h { m.add(&format!("p{}", k)); }
-    for y in 0..h { for x in 0..w { let i = y * w + x; if x + 1 < w { m.couple(i, i + 1, j); } if y + 1 < h { m.couple(i, i + w, j); } } }
+    for y in 0..h {
+        for x in 0..w {
+            let i = y * w + x;
+            if x + 1 < w {
+                m.couple(i, i + 1, j);
+            }
+            if y + 1 < h {
+                m.couple(i, i + w, j);
+            }
+        }
+    }
     let g = Spec { start: 0, w, h };
     let target: Vec<f64> = px.iter().map(|v| 2.0 * v.clamp(0.001, 0.999) - 1.0).collect();
     let tap = leans_for(&m, &g, &target, 1.0, Invert::Tap);

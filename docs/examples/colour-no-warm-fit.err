@@ -1,1 +1,1 @@
-line 6: play_colour does not take `warm_fit:`
+line 6: play_colour does not take `warm_fit:`; it takes `frames:`, `out:`, `against:`, `sweeps:`, `warm:`, `read:`, `keep:`, `by:`, `correct:`, `copies:`, `update:`, `fit:`, `fit_sweeps:`, `fit_update:`, `temperature:`, `seed:` and `quiet:`

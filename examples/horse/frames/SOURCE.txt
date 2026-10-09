@@ -1,0 +1,6 @@
+Eadweard Muybridge, The Horse in Motion (photographs 1878). Public domain.
+Source: https://commons.wikimedia.org/wiki/File:Muybridge_race_horse_animated.gif
+Frames: the 15 frames of that animation as PNG, each converted to 8-bit grey and resized to 150 x 100 with
+Lanczos (Python Pillow: Image.open(f).convert('L').resize((150, 100), Image.LANCZOS)), saved as binary PGM.
+They are byte-identical to the frames the GRIDPLAYER lane measured on (SETTLE/runs/gridplayer/frames/ in the
+SETTLE research repository).

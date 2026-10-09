@@ -42,7 +42,7 @@
 use crate::ext::{Claim, Ctx, Ext};
 use crate::grid::{write_pgm, Pgm};
 use crate::learn::{load_examples, Examples};
-use crate::lex::{err, kw, kwargs, num, only, text, SettleError, Tok};
+use crate::lex::{err, kw, kwargs, num, only, text, SettleError, Tok, whole};
 use crate::model::{Model, State};
 use crate::rng::Rng;
 use std::time::Instant;
@@ -108,7 +108,7 @@ impl Machine {
     }
 
     /// C^T x: what the held picture says to each hidden thing (fixed while x is held).
-    fn from_input(&self, x: &[f64], nh: usize) -> Vec<f64> {
+    fn input_drive(&self, x: &[f64], nh: usize) -> Vec<f64> {
         let mut cx = vec![0.0; nh];
         for (i, &xi) in x.iter().enumerate() {
             let row = &self.c[i * nh..(i + 1) * nh];
@@ -133,7 +133,7 @@ impl Machine {
     /// `sweeps` rounds of hidden-then-visible updates with x held, starting from v; returns the last v.
     pub fn settle(&self, v: &mut [f64], x: &[f64], g: f64, sweeps: usize, rng: &mut Rng) {
         let nh = self.b.len();
-        let cx = self.from_input(x, nh);
+        let cx = self.input_drive(x, nh);
         for _ in 0..sweeps {
             let z: Vec<f64> = self.hidden_inputs(v, &cx, nh).into_iter().map(|u| pbit(u, rng)).collect();
             for i in 0..v.len() {
@@ -145,7 +145,7 @@ impl Machine {
     /// Exact P(v | x) by enumerating visible and hidden arrangements (tests only; tiny machines).
     pub fn exact_conditional(&self, x: &[f64], g: f64) -> Vec<f64> {
         let (nv, nh) = (self.a.len(), self.b.len());
-        let cx = self.from_input(x, nh);
+        let cx = self.input_drive(x, nh);
         let lw: Vec<f64> = (0u64..(1 << nv))
             .map(|bits| {
                 let v: Vec<f64> = (0..nv).map(|i| if (bits >> i) & 1 == 1 { 1.0 } else { -1.0 }).collect();
@@ -205,7 +205,7 @@ pub fn train_machine(m: &mut Machine, rows: &[Vec<f64>], t: usize, steps: usize,
             for &r in chunk {
                 let vpos = flip(&rows[r], p_prev, &mut rng);
                 let x = flip(&vpos, q, &mut rng);
-                let cx = m.from_input(&x, nh);
+                let cx = m.input_drive(&x, nh);
                 let zpos: Vec<f64> = m.hidden_inputs(&vpos, &cx, nh).iter().map(|u| u.tanh()).collect();
                 let mut v = vpos.clone();
                 for _ in 0..o.sweeps {
@@ -394,22 +394,15 @@ fn report(
     if let Some(p) = kw(kv, "out") {
         let path = ctx.path(&text(p, ln)?);
         let cols = match kw(kv, "cols") {
-            Some(v) => num(v, ln)? as usize,
+            Some(v) => whole(num(v, ln)?, 1.0, f64::INFINITY, "cols:", ln)?,
             None => (samples.len() as f64).sqrt().ceil() as usize,
         };
-        let scale = kw(kv, "scale").map(|v| num(v, ln)).transpose()?.unwrap_or(4.0) as usize;
+        let scale = whole(kw(kv, "scale").map(|v| num(v, ln)).transpose()?.unwrap_or(4.0), 0.0, f64::INFINITY, "scale:", ln)?;
         write_pgm(&path, &sheet(&cells_to_rows(samples, cols), width, scale.max(1))).or_else(|e| err(ln, e))?;
         line.push_str(&format!("; wrote {}", path.file_name().map(|f| f.to_string_lossy().into_owned()).unwrap_or_default()));
     }
     ctx.say(line);
     Ok(())
-}
-
-fn whole(v: f64, lo: f64, hi: f64, what: &str, ln: usize) -> Result<usize, SettleError> {
-    if v < lo || v > hi || v.fract() != 0.0 {
-        return err(ln, format!("{} takes a whole number from {} to {}", what, lo, hi));
-    }
-    Ok(v as usize)
 }
 
 fn width_for(nv: usize, kv: &[(String, Tok)], cfg_width: f64, ln: usize) -> Result<usize, SettleError> {
@@ -544,7 +537,7 @@ fn generate_stmt(m: &Model, name: &str, count: f64, rest: &[Tok], ln: usize, ctx
     let samples: Vec<Vec<f64>> = chains.iter().map(|ch| ch.last().unwrap().clone()).collect();
     if let Some(p) = kw(&kv, "chain") {
         let path = ctx.path(&text(p, ln)?);
-        let scale = kw(&kv, "scale").map(|v| num(v, ln)).transpose()?.unwrap_or(4.0) as usize;
+        let scale = whole(kw(&kv, "scale").map(|v| num(v, ln)).transpose()?.unwrap_or(4.0), 0.0, f64::INFINITY, "scale:", ln)?;
         write_pgm(&path, &sheet(&chains[..chains.len().min(8)], width, scale.max(1))).or_else(|e| err(ln, e))?;
     }
     let ex = match data.first() {
@@ -771,8 +764,7 @@ mod tests {
             "  d.generate 4, out: \"u.pgm\", seed: 1\n  d.train :train, rounds: 20, seed: 1\n  d.generate 6, out: \"s.pgm\", rows: \"s.txt\", chain: \"c.pgm\", sweeps: 20, cols: 3, scale: 2\n  coins :train, 5, rows: \"k.txt\"\n  sample :train, 3, sweeps: 10, rows: \"x.txt\"",
             2,
         );
-        let mut it = Interp::default();
-        it.base_dir = dir.clone();
+        let mut it = Interp::in_dir(dir.clone());
         let out = it.exec(&src).unwrap();
         assert!(out.iter().any(|l| l.contains("untrained: random pulls")), "{:?}", out);
         assert!(out.iter().any(|l| l.starts_with("trained :d on :train (30 rows, 9 pixels): 2 machines")), "{:?}", out);

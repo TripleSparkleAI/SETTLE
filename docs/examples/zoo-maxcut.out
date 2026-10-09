@@ -3,5 +3,5 @@ annealed each: 1000 sweeps, calmest energy found -3.000; per puzzle :sq -2.000, 
   side yes: c   side no: a b d
 maxcut :sq: cut 4, exact best 4 by brute force: OPTIMAL
   (:tri judged on its own calmest arrangement from anneal_each)
-  side yes: a b   side no: c
+  side yes: b   side no: a c
 maxcut :tri: cut 2, exact best 2 by brute force: OPTIMAL, target 3: NOT REACHED

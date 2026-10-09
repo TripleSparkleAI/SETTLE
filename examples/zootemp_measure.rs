@@ -17,6 +17,8 @@
 //! "best" = the calmest arrangement the walk visited, judged by the plain-code checker (ZOOHARD's measure).
 //! "final" = the arrangement the walk ended in, judged by the same checker.
 
+#![allow(clippy::needless_range_loop)] // index loops mirror the equations they measure
+
 use settle::interp::Interp;
 use settle::model::{Model, State};
 use settle::rng::Rng;
@@ -528,7 +530,8 @@ fn part_sudokuarm() {
     println!("| band | given lean (x A) | cold x T | best of 50 | final of 50 | seconds |\n|---|---|---|---|---|---|");
     // one arm beside ZOOHARD's (lean 4A, cold 0.05 T): lean 16A (cut from six cells to fit the budget)
     for band in ["SINGLES", "GUESS"] {
-        for (g, c) in [(16.0, 0.05)] {
+        {
+            let (g, c) = (16.0, 0.05);
             let models: Vec<Model> = si.iter().map(|x| sudoku_model(&x.grid, &format!(", given_by: {}", g))).collect();
             {
                 let t0 = Instant::now();

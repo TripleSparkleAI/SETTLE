@@ -1,4 +1,4 @@
-  f0.ppm  R 19.25 G 18.80 B 21.88 overall 19.78 dB
-  f1.ppm  R 19.10 G 19.04 B 22.20 overall 19.89 dB
-  f2.ppm  R 19.58 G 19.33 B 22.27 overall 20.20 dB
-play_colour :film: 3 frames, 20 sweeps, warm, bits: median PSNR R 19.25 G 19.04 B 22.20 overall 19.89 dB (worst overall 19.78) (coin-noise law at no pulls: R 19.59 G 19.59 B 22.14), <time> frames/s settling
+  f0.ppm  R 24.27 G 24.33 B 23.82 overall 24.13 dB
+  f1.ppm  R 24.36 G 24.01 B 23.44 overall 23.92 dB
+  f2.ppm  R 24.63 G 24.85 B 23.33 overall 24.22 dB
+play_colour :film: 3 frames, 20 sweeps, warm, bits: median PSNR R 24.36 G 24.33 B 23.44 overall 24.13 dB (worst overall 23.92) (coin-noise law at no pulls: R 19.59 G 19.59 B 22.14), <time> frames/s settling

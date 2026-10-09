@@ -6,7 +6,8 @@
 #
 # Each example runs twice in a scratch copy of this folder (so files it writes never land here), from inside
 # that copy, which is what `cd docs/examples && settle NAME.settle` does. A program that exits 0 gets NAME.out
-# (its printed lines); one that fails gets NAME.err (its error message without the `settle: ` prefix).
+# (its printed lines); one that fails gets NAME.err (its error message without the `settle: ` prefix and without
+# the program line and caret the command prints under it, so the file holds what `Interp::exec` returns).
 # Timings are replaced with <time>, the same rule tests/docs_examples.rs applies. If the two runs differ,
 # the example is not deterministic and the script says so.
 # The test that checks these files: cargo test --release --test docs_examples
@@ -31,7 +32,7 @@ for n in "${names[@]}"; do
     t0=$(date +%s)
     out=$(cd "$TMP" && "$BIN" "$n.settle" 2>"$TMP/.stderr"); rc=$?
     secs=$(( $(date +%s) - t0 ))
-    if [[ $rc -eq 0 ]]; then runs+=("OUT$(printf '%s\n' "$out" | mask)"); else runs+=("ERR$(sed -E 's/^settle: //' "$TMP/.stderr" | mask)"); fi
+    if [[ $rc -eq 0 ]]; then runs+=("OUT$(printf '%s\n' "$out" | mask)"); else runs+=("ERR$(sed -E 's/^settle: //; /^ *[0-9]* \| /d' "$TMP/.stderr" | mask)"); fi
   done
   if [[ "${runs[0]}" != "${runs[1]}" ]]; then echo "  $n: NOT DETERMINISTIC (two runs differ)"; status=1; fi
   r="${runs[0]}"

@@ -1,3 +1,3 @@
 examples :train from data/learn-same.txt, 4 in all, over 4 things
 learned :train by exact gradients over 400 rounds of 4 rows: 4 visible, 4 hidden, 16 pulls, <time>s; exact log-likelihood per example -1.4313
-classify :train by settling 200 sweeps with 2 inputs held: 4 of 4 right (100.0%); exact one-hot readout 100.0%; chance 50.0%
+classify :train by settling 200 sweeps with 2 inputs held: 3 of 4 right (75.0%); exact one-hot readout 100.0%; chance 50.0%
