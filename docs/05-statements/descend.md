@@ -84,8 +84,9 @@ data :mnist, dir: "data", rows: 1_000, from: 0, split: "train"
 **What it does:** reads the examples the loss is fitted to. A CSV file holds one example per row, numbers
 separated by spaces or commas, the target in the last column. Empty lines and lines starting with `#` are
 skipped, and a first line that is not all numbers is a header. `:mnist` reads the MNIST IDX files from `dir:`
-(the four unzipped files; see `SETTLE/runs/mnist/PROVENANCE.md`): 784 features, each grey value
-divided by 255, and the digit as the target. `split:` defaults to `"train"`.
+(the four unzipped files of the MNIST database of Yann LeCun, Corinna Cortes and Christopher Burges:
+`train-images-idx3-ubyte`, `train-labels-idx1-ubyte`, `t10k-images-idx3-ubyte` and `t10k-labels-idx1-ubyte`):
+784 features, each grey value divided by 255, and the digit as the target. `split:` defaults to `"train"`.
 
 **Output:** `data: <n> examples of <p> features`.
 

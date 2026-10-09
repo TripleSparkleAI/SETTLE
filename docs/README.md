@@ -11,7 +11,7 @@ example on these pages is a file in `docs/examples/`, and `cargo test --release`
 output with the output printed here.
 
 New to SETTLE? Read [Install and run](01-install-and-run.md), then [the tour](02-tour.md). A picture-first
-introduction is on the demo site's WHAT? page (`#/what`).
+introduction is on the SETTLE site's WHAT? page (`#/what`).
 
 ## Contents
 
@@ -47,5 +47,5 @@ introduction is on the demo site's WHAT? page (`#/what`).
 
 ## Source repository
 
-SETTLE has its own repository, <https://github.com/triplesparkle/SETTLE>, private for now.
+SETTLE has its own public repository, <https://github.com/triplesparkle/SETTLE>, under the MIT licence.
 [Install and run](01-install-and-run.md#get-the-source) says how to get it.

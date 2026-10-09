@@ -424,7 +424,7 @@ yes, yes, ..., no, no (a single change from yes to no), so moving a block by one
 of price `by:`: one change per block, the blocks of a line in order with at least one empty cell between them, and
 each cell equal to the blocks of its row that cover it, and to the blocks of its column that cover it. The energy
 is zero exactly at a picture whose every row and column reads back as its clue, and the encoding goes through the
-QUBO translation above. It is the same encoding as the demo site's browser nonogram.
+QUBO translation above. It is the same encoding as the browser nonogram on the SETTLE site (`#/puzzles`).
 
 The layout is stored in the note `zoo:<name>`: the first thing, the height, the width, the number of variables,
 the word `nonogram`, and the two clue strings.

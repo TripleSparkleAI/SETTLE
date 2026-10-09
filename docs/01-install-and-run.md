@@ -4,24 +4,20 @@ Three steps: get the source, build it, run a program. Then the command line, Rus
 
 ## Get the source
 
-SETTLE has its own repository, <https://github.com/triplesparkle/SETTLE>. It is private for now, so a clone needs
-access:
+SETTLE has its own public repository, <https://github.com/triplesparkle/SETTLE>. Clone it:
 
 ```bash
 git clone https://github.com/triplesparkle/SETTLE
 cd SETTLE
 ```
 
-The commands on this page run from the root of that repository. It is an export of `SETTLE/settle-rs/` in the
-SETTLE research repository; the commands run the same from that folder.
+The commands on this page run from the root of that repository.
 
 ## Requirements
 
 - Rust with Cargo, stable channel. The crate uses the 2021 edition and was last built and tested with rustc 1.96.0.
-- The crate has one dependency, KANERVA, the sparse distributed memory library. In the SETTLE repository Cargo
-  fetches it with `git` from <https://github.com/triplesparkle/KANERVA>, so the first build needs the network and
-  the same access as the clone. In the research repository it is the sibling folder `../kanerva`, and the crate
-  builds offline.
+- The crate has one dependency, KANERVA, the sparse distributed memory library. Cargo fetches it with `git` from
+  its public repository <https://github.com/triplesparkle/KANERVA>, so the first build needs the network.
 - KANERVA comes in only with the sdm-family statements (`memory`, `sdm`, `softsdm`, `sdmscale`, `refusal`,
   `contenttrack`, and `coded`'s `save_coded` and `recall_coded`), through the `sdm` feature, on by default.
   `cargo build --release --no-default-features` builds SETTLE without it: every other statement prints exactly

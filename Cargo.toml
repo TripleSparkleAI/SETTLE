@@ -7,7 +7,8 @@ repository = "https://github.com/triplesparkle/SETTLE"
 readme = "README.md"
 keywords = ["ising", "boltzmann", "gibbs-sampling", "sparse-distributed-memory", "language"]
 categories = ["science", "compilers"]
-# NO LICENCE IS CHOSEN YET (LICENSE.md). When the owner chooses one, add `license = "<SPDX id>"` here.
+# MIT (the navigator, 2026-10-09); the text is LICENSE.
+license = "MIT"
 # Not published to crates.io: the owner decides (RELEASE_CHECKLIST.md).
 publish = false
 

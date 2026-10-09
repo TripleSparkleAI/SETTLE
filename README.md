@@ -31,9 +31,8 @@ cargo build --release
 ./target/release/settle docs/examples/tour-first.settle
 ```
 
-The repository is private for now, so a clone needs access until it is made public. The first build fetches
-KANERVA, SETTLE's one dependency, from `https://github.com/triplesparkle/KANERVA` with the `git` command
-(`.cargo/config.toml`), so it uses the same credentials as `git clone` and needs access to KANERVA too.
+The repository is public, so anyone can clone it. The first build fetches KANERVA, SETTLE's one dependency, from
+its public repository `https://github.com/triplesparkle/KANERVA` with the `git` command (`.cargo/config.toml`).
 
 The last command runs the first program of the documentation and prints:
 
@@ -162,7 +161,7 @@ same lines. `docs/07-extending.md` describes the floors, the registry and the bu
 ## Sparse distributed memory lives in KANERVA
 
 Every SDM algorithm the statements use (`memory`, `sdm`, `softsdm`, `sdmscale`, `refusal`, `contenttrack`) is in
-the KANERVA crate, a standalone library at `https://github.com/triplesparkle/KANERVA` (private for now). The
+the KANERVA crate, a standalone library at `https://github.com/triplesparkle/KANERVA`. The
 files in `src/` keep the statements, the pull layouts and their tests, and re-export KANERVA's items under their
 old names. Read KANERVA's README for the toolbox, its equations and its results.
 
@@ -179,9 +178,9 @@ research commit it came from.
 
 ## Licence
 
-No licence has been chosen yet; see `LICENSE.md`. Until one is, no rights to use, copy, modify or distribute
-this code are granted. The Muybridge frames are public domain (`examples/horse/frames/SOURCE.txt`) and the
-texts in `data/` are public-domain works (`data/PROVENANCE.txt`).
+SETTLE is under the MIT licence; the text is in `LICENSE`. Third-party material keeps its own terms: the Muybridge
+frames are public domain (`examples/horse/frames/SOURCE.txt`) and the texts in `data/` are public-domain works
+(`data/PROVENANCE.txt`).
 
 ## Changes
 

@@ -220,9 +220,9 @@ only (`runs/ldpcmoves/exact.txt`). So the decoders anneal to a calm codeword rat
 - H. Nishimori, *Statistical Physics of Spin Glasses and Information Processing: An Introduction* (Oxford
   University Press, 2001).
 
-## Further reading in this repository
+## Further reading
 
-- The campaign ledger, `SETTLE/SETTLE_CAMPAIGN_2026-09-30.md`, lists every experiment, its sealed
-  predictions and its results.
-- Each experiment's report, `SETTLE/runs/<experiment>/REPORT_<NAME>.md`, gives the measurements behind a
-  family, with the equations it uses and their readings.
+- The campaign ledger on the SETTLE site (`#/results/ledger`) lists every experiment, its sealed predictions and
+  its results.
+- The experiments' reports on the SETTLE site's results page (`#/results`) give the measurements behind a family,
+  with the equations they use and their readings.

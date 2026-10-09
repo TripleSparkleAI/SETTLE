@@ -22,13 +22,11 @@ release rather than trusting the dates here.
 
 ## The owner decides
 
-1. **The licence.** None is chosen. `LICENSE.md` says so and grants no rights; `Cargo.toml` has no `license`
-   field. When one is chosen: replace `LICENSE.md`, add `license = "<SPDX id>"` to `Cargo.toml`, and set the
-   licence in the site's `src/pkgrefs.js` (`PACKAGE_REFS.settle.licence`). KANERVA needs the same decision, and
-   SETTLE cannot be shared under terms that KANERVA's licence does not allow.
-2. **Making the repository public.** `github.com/triplesparkle/SETTLE` is private. Making it public is a setting
-   on GitHub, then the one switch in the site's `src/repo.js` (`REPOS.settle.visibility`). KANERVA must be made
-   public at the same time or before, because a clone of SETTLE fetches KANERVA when it builds.
+1. **The licence.** DECIDED: MIT (the navigator, 2026-10-09). `LICENSE` holds the text, `Cargo.toml` says
+   `license = "MIT"`, and the site's `src/pkgrefs.js` names it. KANERVA carries the same licence.
+2. **Making the repository public.** DECIDED: public at launch (the navigator, 2026-10-09). `SETTLE/launch.sh`'s
+   public step (step 7, or `--public` alone) makes all eight SETTLE repositories public, KANERVA with SETTLE, just
+   before the deploying push; the site's `src/repo.js` already says public.
 3. **Publishing to crates.io.** `publish = false` stops an accidental `cargo publish`. **The name `settle` is
    already taken on crates.io** by an unrelated crate (a Zettelkasten command-line tool, version 0.40.1, checked
    2026-10-05). Publishing needs a different crate name, and KANERVA would have to be published first, because

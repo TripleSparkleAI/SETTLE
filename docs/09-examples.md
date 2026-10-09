@@ -1,9 +1,8 @@
 # Examples
 
 This page catalogues every SETTLE program in the repository: the examples in this documentation, the example
-programs that ship with the interpreter, the Rust measurement programs, and the programs the experiments ran.
-Paths are relative to `SETTLE/settle-rs/` (the root of the SETTLE repository) unless they start with `SETTLE/`,
-which names the SETTLE research repository.
+programs that ship with the interpreter, and the Rust measurement programs. Paths are relative to the root of the
+SETTLE repository.
 
 ## Documentation examples
 
@@ -168,7 +167,7 @@ files write them relative to the example, so run them in a scratch copy of the f
 
 ## Example programs that ship with the interpreter
 
-`examples/*.settle` are the programs listed by `settle --help`. The demo site runs each one with the release
+`examples/*.settle` are the programs listed by `settle --help`. The SETTLE site runs each one with the release
 binary when it builds its data and shows the output at `#/settle/run-examples`. Every one runs from a clean clone
 with `./target/release/settle examples/<name>.settle`. The largest is the horse example, which plays 15 frames of
 150 x 100 pixels that ship beside it in `examples/horse/frames/` (public domain; `SOURCE.txt` there says where
@@ -211,40 +210,29 @@ ignores.
 | `examples/filmwarm_tau.rs` | FILMWARM: the time correlation of each update rule with the SAME fitted leans near the critical pull, and the 80-sweep read it predicts, bias included. |
 | `examples/gridplayer2_newton_exact.rs` | GRIDPLAYER-2 post-hoc (not sealed): the exact inversion by Newton's method on a 4x4 grid. |
 | `examples/gridplayer2_tap_exact.rs` | GRIDPLAYER-2 small-grid control: how close do mean-field and TAP leans land to the target greys, measured against the EXACT marginals of a 4x4 grid (every one of the 65,536 arrangements enumerated)? |
-| `examples/gradsettle_measure.rs` | GRADSETTLE: fit MNIST by Settling (Langevin at temperature 1), beside SGD and Adam at the same budget of gradient rows; accuracy, NLL, calibration and the cloud's own doubt. Needs the MNIST files (`SETTLE/runs/mnist/PROVENANCE.md`). |
-| `examples/ldpcmoves_measure.rs` | LDPCMOVES measurements: moves that change several things at once, decoding at the Nishimori temperature, and the sealed 10,000-sweep rerun of LDPCSETTLE's settle decoder, on SDMCODED's LDPC codes (n 512, codebook seed 1). Run: `cargo run --release --example ldpcmoves_measure <part> [args]`, part one of pilot | grid <blocks> <sweeps> | long <blocks> | controls <blocks> | exact <blocks> Predictions were sealed in the SETTLE campaign ledger before any measuring part ran. `pilot` prints only wall-clock time per decode, never an error count. Every result is seeded; timings are never claimed. Threads: LDPCMOVES_THREADS (default 6). |
-| `examples/ldpcsettle_measure.rs` | LDPCSETTLE measurements: decode SDMCODED's LDPC codes by settling, against its belief propagation. Run: `cargo run --release --example ldpcsettle_measure <part> [args]`, part one of census | pilot | bsc [blocks] | kappa [blocks] | controls | soft <sum|chain> | diag [blocks] Predictions were sealed in the SETTLE campaign ledger before the measuring parts were run. `pilot` prints only wall-clock time per decode (to pick the sweep budget) and never an error count. Everything is seeded. |
+| `examples/gradsettle_measure.rs` | GRADSETTLE: fit MNIST by Settling (Langevin at temperature 1), beside SGD and Adam at the same budget of gradient rows; accuracy, NLL, calibration and the cloud's own doubt. Needs the MNIST files (see the `data` statement of [the descend family](05-statements/descend.md)). |
+| `examples/ldpcmoves_measure.rs` | LDPCMOVES measurements: moves that change several things at once, decoding at the Nishimori temperature, and the sealed 10,000-sweep rerun of LDPCSETTLE's settle decoder, on SDMCODED's LDPC codes (n 512, codebook seed 1). Run: `cargo run --release --example ldpcmoves_measure <part> [args]`, part one of pilot | grid <blocks> <sweeps> | long <blocks> | controls <blocks> | exact <blocks> Predictions were sealed in the campaign ledger (`#/results/ledger`) before any measuring part ran. `pilot` prints only wall-clock time per decode, never an error count. Every result is seeded; timings are never claimed. Threads: LDPCMOVES_THREADS (default 6). |
+| `examples/ldpcsettle_measure.rs` | LDPCSETTLE measurements: decode SDMCODED's LDPC codes by settling, against its belief propagation. Run: `cargo run --release --example ldpcsettle_measure <part> [args]`, part one of census | pilot | bsc [blocks] | kappa [blocks] | controls | soft <sum|chain> | diag [blocks] Predictions were sealed in the campaign ledger (`#/results/ledger`) before the measuring parts were run. `pilot` prints only wall-clock time per decode (to pick the sweep budget) and never an error count. Everything is seeded. |
 | `examples/mnist_measure.rs` | MNIST: restricted settling machines on the 60,000 + 10,000 handwritten digits (`src/mnist.rs`), with nearest-centroid and logistic-regression baselines. Needs the MNIST files. |
 | `examples/numbers_bench.rs` | SMOOTHNUMBERS measurement bench: error of the settled solution against settling time, the inverse from the spread, wall clock against Gaussian elimination, and the refusal controls. |
-| `examples/sdmcoded_measure.rs` | SDMCODED measurements: compress, then error-code, then mask, then store in a memory; read back end to end. Run: `cargo run --release --example sdmcoded_measure <part> [args]`, part one of ratio | passages <dir> | fragility | bsc | grid <hop|sdm> | controls Predictions were sealed in the SETTLE campaign ledger before this instrument was run. Everything is seeded; the only timings printed are wall-clock totals, stamped by the caller with the machine load. |
-| `examples/sdmkeys_measure.rs` | SDMKEYS measurements: Hopfield (memory.rs) against Kanerva SDM (sdm.rs), fake valleys, fade, controls, and what a key protects. Run: `cargo run --release --example sdmkeys_measure [part]`, part one of capacity | noise | fade | controls | keys | all (default all). Predictions P1..P11 were sealed in the campaign ledger before this file existed. Everything is seeded; no timing is measured. |
+| `examples/sdmcoded_measure.rs` | SDMCODED measurements: compress, then error-code, then mask, then store in a memory; read back end to end. Run: `cargo run --release --example sdmcoded_measure <part> [args]`, part one of ratio | passages <dir> | fragility | bsc | grid <hop|sdm> | controls Predictions were sealed in the campaign ledger (`#/results/ledger`) before this instrument was run. Everything is seeded; the only timings printed are wall-clock totals, stamped by the caller with the machine load. |
+| `examples/sdmkeys_measure.rs` | SDMKEYS measurements: Hopfield (memory.rs) against Kanerva SDM (sdm.rs), fake valleys, fade, controls, and what a key protects. Run: `cargo run --release --example sdmkeys_measure [part]`, part one of capacity | noise | fade | controls | keys | all (default all). Predictions P1..P11 were sealed in the campaign ledger (`#/results/ledger`) before this file existed. Everything is seeded; no timing is measured. |
 | `examples/sdmradius_measure.rs` | SDMRADIUS measurements: a activation radius chosen per address-noise level, a density-scaled pulls read, the trade-off frontier across radii, and Hopfield at equal memory (`src/sdmradius.rs` on `src/sdmscale.rs`'s store). |
 | `examples/sdmrefuse_measure.rs` | SDMREFUSE measurements (`src/sdmrefuse.rs` on `src/sdmscale.rs`'s store). |
 | `examples/sdmscale_measure.rs` | SDMSCALE measurements: Kanerva SDM from 2,000 to 1,000,000 hard locations (`src/sdmscale.rs`). |
 | `examples/sdmtrack_measure.rs` | SDMTRACK measurements (`src/sdmtrack.rs` on `src/sdmscale.rs`'s store, SDMREFUSE's diagnostic reads). |
-| `examples/valleymap.rs` | VALLEYMAP measurement driver: every table in runs/valleymap/REPORT_VALLEYMAP.md comes from here. |
+| `examples/valleymap.rs` | VALLEYMAP measurement driver: every table in `runs/valleymap/REPORT_VALLEYMAP.md` comes from here. |
 | `examples/zoohard_measure.rs` | ZOOHARD measurements (`src/zoohard.rs`, `src/zoo.rs`). Report: `runs/zoohard/REPORT_ZOOHARD.md`. |
 | `examples/zootemp_measure.rs` | ZOOTEMP measurements (`src/zootemp.rs`). Report: `runs/zootemp/REPORT_ZOOTEMP.md`. |
 
 ## Programs the experiments ran
 
-The experiments kept the SETTLE programs behind their measurements beside their reports in
-`SETTLE/runs/<experiment>/`. They read frames and data that are not in git, and many take minutes to
-hours, so they are records of what was run rather than examples to copy. The tracked ones:
-
-| Folder | Programs | What they are |
-|---|---|---|
-| `SETTLE/runs/backends/out/` | `ctl_random16.settle`, `ctl_weather.settle`, `mc16.settle`, `mc64.settle`, `random16.settle`, `rt_mc16.settle`, `rt_mc64.settle`, `rt_random16.settle`, `rt_weather.settle`, `weather.settle` | the grass is wet: was it the rain or the sprinkler? |
-| `SETTLE/runs/filmsharp/` | `collapse_j300.settle`, `collapse_j350.settle`, `collapse_j380.settle`, `collapse_j400.settle`, `collapse_j420.settle`, `collapse_j440.settle`, `colour.settle`, `mixing.settle`, `posthoc_best_j400.settle`, `posthoc_best_j440.settle`, `posthoc_fitbudget.settle`, `posthoc_relation.settle`, `rb.settle` | FILMSHARP sealed collapse arms at pull 0.30: TAP, Bethe, fitted leans (Gibbs play and cluster play). |
-| `SETTLE/runs/filmwarm/` | `budget_j300.settle`, `budget_j400.settle`, `budget_j440.settle`, `controls_j200.settle`, `controls_j400.settle`, `controls_j440.settle`, `cut_j300.settle`, `cut_j400.settle`, `cut_j440.settle`, `live_j400.settle`, `live_j420.settle`, `live_j440.settle`, `posthoc_live_j400.settle`, `posthoc_live_j440.settle`, `posthoc_step_cut_j400.settle`, `posthoc_step_cut_j440.settle`, `posthoc_step_cut_trim_j440.settle`, `posthoc_step_horse6_j440.settle`, `posthoc_step_horse_j400.settle`, `posthoc_step_horse_j440.settle`, `posthoc_step_tos6_j440.settle` | FILMWARM sealed: quality (soft 1000, Gibbs) against fit sweeps per frame, cold and warm fits, horse, pull 0.3 |
-| `SETTLE/runs/gridplayer/` | `posthoc.settle`, `sheet.settle`, `sweep.settle`, `timing.settle` | GRIDPLAYER post-hoc arms (NOT sealed): a weaker pull, and the strong pull without the mean-field correction. |
-| `SETTLE/runs/gridplayer2/` | `colour.settle`, `copies.settle`, `tap.settle` | GRIDPLAYER-2 sealed colour run: Tears of Steel (CC BY 3.0, see SOURCE.txt), 24 frames at 160x67, three grids. |
-
-Generated programs under `runs/boltzlearn/data/` and `runs/boltzlearn2/data/` are written by those experiments'
-harnesses and are not in git.
+The experiments that measured these families also ran SETTLE programs of their own, on frames and data that are
+not in this repository, and many of them take minutes to hours. They are records of what was run rather than
+examples to copy. Each family's page gives the measurements, and the experiments with a card on the SETTLE site's
+results page (`#/results`) have their full report there.
 
 ## The first interpreter
 
-`SETTLE/origins/settle-python-toy/settle.py` is the Python interpreter that came before this one, with an older syntax
-(`thing rain, sprinkler`, `rain leans no by 1.5`). Its example is `SETTLE/origins/settle-python-toy/examples/rain.settle`.
-Those programs do not run on the Rust interpreter.
+SETTLE began as a small Python interpreter with an older syntax (`thing rain, sprinkler`, `rain leans no by 1.5`).
+Those programs do not run on this interpreter.
