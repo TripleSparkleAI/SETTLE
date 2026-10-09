@@ -25,14 +25,14 @@ Version 0.1.0 (`Cargo.toml`).
 You need a Rust toolchain with Cargo (stable; it was last built and tested with rustc 1.96.0).
 
 ```bash
-git clone https://github.com/triplesparkle/SETTLE
+git clone https://github.com/TripleSparkleAI/SETTLE
 cd SETTLE
 cargo build --release
 ./target/release/settle docs/examples/tour-first.settle
 ```
 
 The repository is public, so anyone can clone it. The first build fetches KANERVA, SETTLE's one dependency, from
-its public repository `https://github.com/triplesparkle/KANERVA` with the `git` command (`.cargo/config.toml`).
+its public repository `https://github.com/TripleSparkleAI/KANERVA` with the `git` command (`.cargo/config.toml`).
 
 The last command runs the first program of the documentation and prints:
 
@@ -161,7 +161,7 @@ same lines. `docs/07-extending.md` describes the floors, the registry and the bu
 ## Sparse distributed memory lives in KANERVA
 
 Every SDM algorithm the statements use (`memory`, `sdm`, `softsdm`, `sdmscale`, `refusal`, `contenttrack`) is in
-the KANERVA crate, a standalone library at `https://github.com/triplesparkle/KANERVA`. The
+the KANERVA crate, a standalone library at `https://github.com/TripleSparkleAI/KANERVA`. The
 files in `src/` keep the statements, the pull layouts and their tests, and re-export KANERVA's items under their
 old names. Read KANERVA's README for the toolbox, its equations and its results.
 

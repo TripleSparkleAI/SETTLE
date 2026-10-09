@@ -5,7 +5,7 @@ version = 4
 [[package]]
 name = "kanerva"
 version = "0.1.0"
-source = "git+https://github.com/triplesparkle/KANERVA#464696765e98e913a2ef142ab3c04d30ca25df9e"
+source = "git+https://github.com/TripleSparkleAI/KANERVA#46668efe181daff3eda71caf4dcd404dcc814165"
 
 [[package]]
 name = "settle"

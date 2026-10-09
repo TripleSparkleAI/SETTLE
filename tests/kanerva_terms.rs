@@ -150,7 +150,7 @@ fn no_file_uses_a_retired_keyword() {
     let here = Path::new(env!("CARGO_MANIFEST_DIR"));
     let mono = here.join("../..");
     // inside the research repository the scan covers every package; in SETTLE's own repository (a clone of
-    // github.com/triplesparkle/SETTLE, where this crate is the root) it covers this crate alone
+    // github.com/TripleSparkleAI/SETTLE, where this crate is the root) it covers this crate alone
     let (root, dirs): (PathBuf, Vec<&str>) = if mono.join("SETTLE/settle-rs").is_dir() {
         (mono, vec!["SETTLE/settle-rs", "SETTLE/kanerva", "SETTLE/settle-mcp", "SETTLE/settle-site/src", "SETTLE/settle-site/tests", "SETTLE/settle-site/tools", "BRAND"])
     } else {

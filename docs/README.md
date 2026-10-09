@@ -47,5 +47,5 @@ introduction is on the SETTLE site's WHAT? page (`#/what`).
 
 ## Source repository
 
-SETTLE has its own public repository, <https://github.com/triplesparkle/SETTLE>, under the MIT licence.
+SETTLE has its own public repository, <https://github.com/TripleSparkleAI/SETTLE>, under the MIT licence.
 [Install and run](01-install-and-run.md#get-the-source) says how to get it.
